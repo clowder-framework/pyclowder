@@ -11,7 +11,7 @@
 #DEBUG=echo
 
 # make sure PROJECT ends with /
-PROJECT=${PROJECT:-"ncsa"}
+PROJECT=${PROJECT:-"clowder"}
 if [ ! "${PROJECT}" = "" -a ! "$( echo $PROJECT | tail -c 2)" = "/" ]; then
   PROJECT="${PROJECT}/"
 fi
@@ -89,7 +89,7 @@ create() {
 
 # Create the docker containers
 create "." "pyclowder2"
-create "sample-extractors/wordcount" "pyclowder2-extractors-wordcount"
+create "sample-extractors/wordcount" "extractors-wordcount"
 
 # remove latest tags
 #for r in $LATEST; do
