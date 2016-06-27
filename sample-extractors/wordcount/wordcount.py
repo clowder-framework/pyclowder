@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+"""Example extractor based on the clowder code."""
+
 import argparse
 import logging
 import os
@@ -10,6 +12,7 @@ import clowder.api
 
 
 class WordCount(Extractor):
+    """Count the number of characters, words and lines in a text file."""
     def __init__(self, ssl_verify=False):
         Extractor.__init__(self, 'wordcount', ssl_verify)
 
@@ -24,7 +27,7 @@ class WordCount(Extractor):
 
         # call actual program
         result = subprocess.check_output(['wc', inputfile], stderr=subprocess.STDOUT)
-        (lines, words, characters, filename) = result.split()
+        (lines, words, characters, _) = result.split()
 
         # context url
         context_url = 'https://clowder.ncsa.illinois.edu/clowder/contexts/metadata.jsonld'
@@ -34,9 +37,10 @@ class WordCount(Extractor):
             '@context': [
                 context_url,
                 {
-                    'lines': 'http://clowder.ncsa.illinois.edu/' + self.extractor_name + '#lines',
-                    'words': 'http://clowder.ncsa.illinois.edu/' + self.extractor_name + '#words',
-                    'characters': 'http://clowder.ncsa.illinois.edu/' + self.extractor_name + '#characters'
+                    'lines': 'http://clowder.ncsa.illinois.edu/%s#lines' % self.extractor_name,
+                    'words': 'http://clowder.ncsa.illinois.edu/%s#words' % self.extractor_name,
+                    'characters': 'http://clowder.ncsa.illinois.edu/%s#characters'
+                                  % self.extractor_name
                 }
             ],
             'attachedTo': {
@@ -44,7 +48,8 @@ class WordCount(Extractor):
             },
             'agent': {
                 '@type': 'cat:extractor',
-                'extractor_id': 'https://clowder.ncsa.illinois.edu/extractors/' + self.extractor_name
+                'extractor_id': 'https://clowder.ncsa.illinois.edu/extractors/%s'
+                                % self.extractor_name
             },
             'content': {
                 'lines': lines,
@@ -58,17 +63,19 @@ class WordCount(Extractor):
         clowder.api.upload_file_metadata_jsonld(connector, host, secret_key, file_id, metadata)
 
 
-if __name__ == "__main__":
+def main():
+    """main function"""
     # read values from environment variables, otherwise use defaults
     # this is the specific setup for the extractor
-    rabbitmqURI = os.getenv('RABBITMQ_URI', "amqp://guest:guest@127.0.0.1/%2f")
-    rabbitmqExchange = os.getenv('RABBITMQ_EXCHANGE', "clowder")
-    registrationEndpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
-    rabbitmqKey = "*.file.text.#"
+    rabbitmq_uri = os.getenv('RABBITMQ_URI', "amqp://guest:guest@127.0.0.1/%2f")
+    rabbitmq_exchange = os.getenv('RABBITMQ_EXCHANGE', "clowder")
+    registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
+    rabbitmq_key = "*.file.text.#"
 
     # parse command line arguments
-    parser = argparse.ArgumentParser(description='WordCount extractor. Counts the number of characters, words and'
-                                                 ' lines in the text file that was uploaded.')
+    parser = argparse.ArgumentParser(description='WordCount extractor. Counts the number of'
+                                                 ' characters, words and lines in the text'
+                                                 ' file that was uploaded.')
     parser.add_argument('--connector', '-c', type=str, nargs='?', default="RabbitMQ",
                         choices=["RabbitMQ", "HPC"],
                         help='connector to use (default=RabbitMQ)')
@@ -78,12 +85,12 @@ if __name__ == "__main__":
                         help='number of parallel instances (default=1)')
     parser.add_argument('--pickle', type=file, nargs='*', default=None, action='append',
                         help='pickle file that needs to be processed (only needed for HPC)')
-    parser.add_argument('--register', '-r', nargs='?', default=registrationEndpoints,
-                        help='Clowder registration URL (default=%s)' % registrationEndpoints)
-    parser.add_argument('--rabbitmqURI', nargs='?', default=rabbitmqURI,
-                        help='rabbitMQ URI (default=%s)' % rabbitmqURI.replace("%", "%%"))
-    parser.add_argument('--rabbitmqExchange', nargs='?', default=rabbitmqExchange,
-                        help='rabbitMQ exchange (default=%s)' % rabbitmqExchange)
+    parser.add_argument('--register', '-r', nargs='?', default=registration_endpoints,
+                        help='Clowder registration URL (default=%s)' % registration_endpoints)
+    parser.add_argument('--rabbitmqURI', nargs='?', default=rabbitmq_uri,
+                        help='rabbitMQ URI (default=%s)' % rabbitmq_uri.replace("%", "%%"))
+    parser.add_argument('--rabbitmqExchange', nargs='?', default=rabbitmq_exchange,
+                        help='rabbitMQ exchange (default=%s)' % rabbitmq_exchange)
     parser.add_argument('--sslignore', '-s', dest="sslverify", action='store_false',
                         help='should SSL certificates be ignores')
     parser.add_argument('--version', action='version', version='%(prog)s 1.0')
@@ -101,6 +108,9 @@ if __name__ == "__main__":
     extractor.start_connector(args.connector, args.num,
                               rabbitmq_uri=args.rabbitmqURI,
                               rabbitmq_exchange=args.rabbitmqExchange,
-                              rabbitmq_key=rabbitmqKey,
+                              rabbitmq_key=rabbitmq_key,
                               hpc_picklefile=args.pickle,
                               regstration_endpoints=args.register)
+
+if __name__ == "__main__":
+    main()
