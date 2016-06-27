@@ -11,16 +11,20 @@ Following is an example of the WordCount extractor. This example will allow the 
 ```
 #!/usr/bin/env python
 
+"""Example extractor based on the clowder code."""
+
 import argparse
 import logging
 import os
 import subprocess
 
 from clowder.extractors import Extractor
-import clowder.api
+from clowder.utils import setup_logging
+import clowder.files
 
 
 class WordCount(Extractor):
+    """Count the number of characters, words and lines in a text file."""
     def __init__(self, ssl_verify=False):
         Extractor.__init__(self, 'wordcount', ssl_verify)
 
@@ -35,7 +39,7 @@ class WordCount(Extractor):
 
         # call actual program
         result = subprocess.check_output(['wc', inputfile], stderr=subprocess.STDOUT)
-        (lines, words, characters, filename) = result.split()
+        (lines, words, characters, _) = result.split()
 
         # context url
         context_url = 'https://clowder.ncsa.illinois.edu/clowder/contexts/metadata.jsonld'
@@ -45,9 +49,10 @@ class WordCount(Extractor):
             '@context': [
                 context_url,
                 {
-                    'lines': 'http://clowder.ncsa.illinois.edu/' + self.extractor_name + '#lines',
-                    'words': 'http://clowder.ncsa.illinois.edu/' + self.extractor_name + '#words',
-                    'characters': 'http://clowder.ncsa.illinois.edu/' + self.extractor_name + '#characters'
+                    'lines': 'http://clowder.ncsa.illinois.edu/%s#lines' % self.extractor_name,
+                    'words': 'http://clowder.ncsa.illinois.edu/%s#words' % self.extractor_name,
+                    'characters': 'http://clowder.ncsa.illinois.edu/%s#characters'
+                                  % self.extractor_name
                 }
             ],
             'attachedTo': {
@@ -55,7 +60,8 @@ class WordCount(Extractor):
             },
             'agent': {
                 '@type': 'cat:extractor',
-                'extractor_id': 'https://clowder.ncsa.illinois.edu/extractors/' + self.extractor_name
+                'extractor_id': 'https://clowder.ncsa.illinois.edu/extractors/%s'
+                                % self.extractor_name
             },
             'content': {
                 'lines': lines,
@@ -66,20 +72,22 @@ class WordCount(Extractor):
         logger.debug(metadata)
 
         # upload metadata
-        clowder.api.upload_file_metadata_jsonld(connector, host, secret_key, file_id, metadata)
+        clowder.files.upload_file_metadata_jsonld(connector, host, secret_key, file_id, metadata)
 
 
-if __name__ == "__main__":
+def main():
+    """main function"""
     # read values from environment variables, otherwise use defaults
     # this is the specific setup for the extractor
-    rabbitmqURI = os.getenv('RABBITMQ_URI', "amqp://guest:guest@127.0.0.1/%2f")
-    rabbitmqExchange = os.getenv('RABBITMQ_EXCHANGE', "clowder")
-    registrationEndpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
-    rabbitmqKey = "*.file.text.#"
+    rabbitmq_uri = os.getenv('RABBITMQ_URI', "amqp://guest:guest@127.0.0.1/%2f")
+    rabbitmq_exchange = os.getenv('RABBITMQ_EXCHANGE', "clowder")
+    registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
+    rabbitmq_key = "*.file.text.#"
 
     # parse command line arguments
-    parser = argparse.ArgumentParser(description='WordCount extractor. Counts the number of characters, words and'
-                                                 ' lines in the text file that was uploaded.')
+    parser = argparse.ArgumentParser(description='WordCount extractor. Counts the number of'
+                                                 ' characters, words and lines in the text'
+                                                 ' file that was uploaded.')
     parser.add_argument('--connector', '-c', type=str, nargs='?', default="RabbitMQ",
                         choices=["RabbitMQ", "HPC"],
                         help='connector to use (default=RabbitMQ)')
@@ -89,32 +97,33 @@ if __name__ == "__main__":
                         help='number of parallel instances (default=1)')
     parser.add_argument('--pickle', type=file, nargs='*', default=None, action='append',
                         help='pickle file that needs to be processed (only needed for HPC)')
-    parser.add_argument('--register', '-r', nargs='?', default=registrationEndpoints,
-                        help='Clowder registration URL (default=%s)' % registrationEndpoints)
-    parser.add_argument('--rabbitmqURI', nargs='?', default=rabbitmqURI,
-                        help='rabbitMQ URI (default=%s)' % rabbitmqURI.replace("%", "%%"))
-    parser.add_argument('--rabbitmqExchange', nargs='?', default=rabbitmqExchange,
-                        help='rabbitMQ exchange (default=%s)' % rabbitmqExchange)
+    parser.add_argument('--register', '-r', nargs='?', default=registration_endpoints,
+                        help='Clowder registration URL (default=%s)' % registration_endpoints)
+    parser.add_argument('--rabbitmqURI', nargs='?', default=rabbitmq_uri,
+                        help='rabbitMQ URI (default=%s)' % rabbitmq_uri.replace("%", "%%"))
+    parser.add_argument('--rabbitmqExchange', nargs='?', default=rabbitmq_exchange,
+                        help='rabbitMQ exchange (default=%s)' % rabbitmq_exchange)
     parser.add_argument('--sslignore', '-s', dest="sslverify", action='store_false',
                         help='should SSL certificates be ignores')
     parser.add_argument('--version', action='version', version='%(prog)s 1.0')
     args = parser.parse_args()
 
-    # create the extractor
-    extractor = WordCount(ssl_verify=args.sslverify)
-
     # setup logging for the exctractor
-    extractor.setup_logging(args.logging)
+    setup_logging(args.logging)
     logging.getLogger('clowder').setLevel(logging.DEBUG)
     logging.getLogger('__main__').setLevel(logging.DEBUG)
 
     # start the extractor
+    extractor = WordCount(ssl_verify=args.sslverify)
     extractor.start_connector(args.connector, args.num,
                               rabbitmq_uri=args.rabbitmqURI,
                               rabbitmq_exchange=args.rabbitmqExchange,
-                              rabbitmq_key=rabbitmqKey,
+                              rabbitmq_key=rabbitmq_key,
                               hpc_picklefile=args.pickle,
                               regstration_endpoints=args.register)
+
+if __name__ == "__main__":
+    main()
 ```
 
 ## Initialization
@@ -144,18 +153,16 @@ Next the extractor should implement one or both of the check_message and process
 
 ## Starting the Extractor
 
-The extractor base class has convenient functions to setup logging and connectors. The logging function takes a single argument that can be None. The argument is either a pointer to a file that is read with the configuration options, the connector can be setup in a similair fashion.
+The extractor base class has convenient functions for starting a connector. The function that starts the extractor will take an argument that is the connector to use and the options needed to setup the connector. Once the start_connector function is called the code will not return until the connector is finished, or is interrupted.
 
 ```
-    # create the extractor
-    extractor = WordCount(ssl_verify=args.sslverify)
-
     # setup logging for the exctractor
-    extractor.setup_logging(args.logging)
+    setup_logging(args.logging)
     logging.getLogger('clowder').setLevel(logging.DEBUG)
     logging.getLogger('__main__').setLevel(logging.DEBUG)
 
     # start the extractor
+    extractor = WordCount(ssl_verify=args.sslverify)
     extractor.start_connector(args.connector, args.num,
                               rabbitmq_uri=args.rabbitmqURI,
                               rabbitmq_exchange=args.rabbitmqExchange,
@@ -181,7 +188,16 @@ The RabbitMQ connector connects to a RabbitMQ instance, creates a queue and bind
 The HPC connector will run extractions based on the pickle files that are passed in to the constructor as an argument. Once all pickle files are processed the extractor will stop. The pickle file is assumed to have one additional argument, the logfile that is being monitored to send feedback back to clowder. This connector takes a single argument (which can be list):
 
 * picklefile [REQUIRED] : a single file, or list of files that are the pickled messsages to be processed.
- 
-# Clowder API
+
+
+# Clowder API wrappers
+
+Besides code to create extractors there are also functins that wrap the clowder API. They are broken up into modules that map to the routes endpoint of clowder, for example /api/files/:id/download will be in the clowder.files package.
+
+## utils
+
+The clowder.utils package contains some utility functions that should make it easier to create new code that works as an extractor or code that interacts with clowder. One of these functions is setup_logging, which will initalize the logging system for you. The logging function takes a single argument that can be None. The argument is either a pointer to a file that is read with the configuration options.
+
+# files
 
 
