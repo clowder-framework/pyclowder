@@ -1,3 +1,8 @@
+"""Clowder API
+
+This module provides simple wrappers around the clowder API
+"""
+
 import json
 import logging
 import os
@@ -26,13 +31,13 @@ def download_file(connector, host, key, fileid, intermediatefileid, ext=""):
     connector.status_update(fileid=fileid, status="Downloading file.")
 
     url = '%sapi/files/%s?key=%s' % (host, intermediatefileid, key)
-    r = requests.get(url, stream=True, verify=connector.ssl_verify)
-    r.raise_for_status()
-    (fd, inputfile) = tempfile.mkstemp(suffix=ext)
-    with os.fdopen(fd, "w") as f:
-        for chunk in r.iter_content(chunk_size=10*1024):
-            f.write(chunk)
-    return inputfile
+    result = requests.get(url, stream=True, verify=connector.ssl_verify)
+    result.raise_for_status()
+    (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
+    with os.fdopen(inputfile, "w") as outputfile:
+        for chunk in result.iter_content(chunk_size=10*1024):
+            outputfile.write(chunk)
+    return inputfilename
 
 
 def upload_file_metadata_jsonld(connector, host, key, fileid, metadata):
@@ -50,8 +55,9 @@ def upload_file_metadata_jsonld(connector, host, key, fileid, metadata):
 
     headers = {'Content-Type': 'application/json'}
     url = '%sapi/files/%s/metadata.jsonld?key=%s' % (host, fileid, key)
-    r = requests.post(url, headers=headers, data=json.dumps(metadata), verify=connector.ssl_verify)
-    r.raise_for_status()
+    result = requests.post(url, headers=headers, data=json.dumps(metadata),
+                           verify=connector.ssl_verify)
+    result.raise_for_status()
 
 
 def upload_file_thumbnail(connector, host, key, fileid, thumbnail):
@@ -69,19 +75,20 @@ def upload_file_thumbnail(connector, host, key, fileid, thumbnail):
     url = host + 'api/fileThumbnail?key=' + key
 
     # upload preview
-    with open(thumbnail, 'rb') as f:
-        files = {"File": f}
-        r = requests.post(url, files=files, verify=connector.ssl_verify)
-        r.raise_for_status()
-    thumbnailid = r.json()['id']
+    with open(thumbnail, 'rb') as inputfile:
+        files = {"File": inputfile}
+        result = requests.post(url, files=files, verify=connector.ssl_verify)
+        result.raise_for_status()
+    thumbnailid = result.json()['id']
     logger.debug("preview id = [%s]", thumbnailid)
 
     # associate uploaded preview with orginal file/dataset
     if fileid:
         headers = {'Content-Type': 'application/json'}
         url = host + 'api/files/' + fileid + '/thumbnails/' + thumbnailid + '?key=' + key
-        r = requests.post(url, headers=headers, data=json.dumps({}), verify=connector.ssl_verify)
-        r.raise_for_status()
+        result = requests.post(url, headers=headers, data=json.dumps({}),
+                               verify=connector.ssl_verify)
+        result.raise_for_status()
 
     return thumbnailid
 

@@ -1,3 +1,36 @@
+"""Connectors
+
+The system has two connectors defined by default. The connectors are used to
+start the extractors. The connector will look for messages and call the
+check_message and process_message of the extractor. The two connectors are
+RabbitMQConnector and HPCConnector. Both of these will call the check_message
+first, and based on the result of this will ignore the message, download the
+file and call process_message or bypass the download and just call the
+process_message.
+
+RabbitMQConnector
+
+The RabbitMQ connector connects to a RabbitMQ instance, creates a queue and
+binds itself to that queue. Any message in the queue will be fetched and
+passed to the check_message and process_message. This connector takesthree
+parameters:
+
+* rabbitmq_uri [REQUIRED] : the uri of the RabbitMQ server
+* rabbitmq_exchange [OPTIONAL] : the exchange to which to bind the queue
+* rabbitmq_key [OPTIONAL] : the key that binds the queue to the exchange
+
+HPCConnector
+
+The HPC connector will run extractions based on the pickle files that are
+passed in to the constructor as an argument. Once all pickle files are
+processed the extractor will stop. The pickle file is assumed to have one
+additional argument, the logfile that is being monitored to send feedback
+back to clowder. This connector takes a single argument (which can be list):
+
+* picklefile [REQUIRED] : a single file, or list of files that are the
+                          pickled messsages to be processed.
+"""
+
 import json
 import logging
 import os
@@ -9,11 +42,11 @@ import time
 import pika
 import requests
 
-import api
+import clowder.api
 
 
 # this takes advantage of the fact that 0 == False and anything else == True
-class CheckMessage:
+class CheckMessage(object):
     """Value to be returned from check_message function.
 
     Based on the result the following actions will happen:
@@ -29,7 +62,7 @@ class CheckMessage:
         pass
 
 
-class Connector:
+class Connector(object):
     """ Class that will listen for messages.
 
      Once a message is received this will start the extraction process. It is assumed
@@ -38,7 +71,7 @@ class Connector:
 
     registered_clowder = list()
 
-    def __init__(self,  extractor_name, check_message=None, process_message=None, ssl_verify=True):
+    def __init__(self, extractor_name, check_message=None, process_message=None, ssl_verify=True):
         self.extractor_name = extractor_name
         self.check_message = check_message
         self.process_message = process_message
@@ -59,6 +92,8 @@ class Connector:
         Next it will call check_message to see if the message should be processed and if the
         file should be downloaded. Finally it will call the actual process_message function.
         """
+
+        logger = logging.getLogger(__name__)
         # parse body back from json
         fileid = body['id']
         filename = body.get('filename', '')
@@ -72,7 +107,7 @@ class Connector:
 
         # compute some variables from jbody
         ext = os.path.splitext(filename)[1]
-        if not (host.endswith('/')):
+        if not host.endswith('/'):
             host += '/'
             body['host'] = host
 
@@ -100,7 +135,8 @@ class Connector:
                     try:
                         if check_result != CheckMessage.bypass:
                             # download file
-                            inputfile = api.download_file(self, host, secret_key, fileid, intermediatefileid, ext)
+                            inputfile = clowder.api.download_file(self, host, secret_key,
+                                                                  fileid, intermediatefileid, ext)
                             body['inputfile'] = inputfile
 
                         if self.process_message:
@@ -110,35 +146,32 @@ class Connector:
                             try:
                                 os.remove(inputfile)
                             except OSError:
-                                logging.getLogger(__name__).exception("Error removing download file")
-                                pass
+                                logger.exception("Error removing download file")
             else:
                 self.status_update(fileid=fileid, status="Skipped in check_message")
-        except SystemExit as e:
-            status = "sys.exit : " + e.message
-            logging.getLogger(__name__).exception("[%s] %s", fileid, status)
+        except SystemExit as exc:
+            status = "sys.exit : " + exc.message
+            logger.exception("[%s] %s", fileid, status)
             self.status_update(fileid=fileid, status=status)
             raise
-        except SystemError as e:
-            status = "system error : " + e.message
-            logging.getLogger(__name__).exception("[%s] %s", fileid, status)
+        except SystemError as exc:
+            status = "system error : " + exc.message
+            logger.exception("[%s] %s", fileid, status)
             self.status_update(fileid=fileid, status=status)
             raise
         except KeyboardInterrupt:
             status = "keyboard interrupt"
-            logging.getLogger(__name__).exception("[%s] %s", fileid, status)
+            logger.exception("[%s] %s", fileid, status)
             self.status_update(fileid=fileid, status=status)
             raise
-        except subprocess.CalledProcessError as e:
-            status = str.format("Error processing [exit code={}]\n{}", e.returncode, e.output)
-            logging.getLogger(__name__).exception("[%s] %s", fileid, status)
+        except subprocess.CalledProcessError as exc:
+            status = str.format("Error processing [exit code={}]\n{}", exc.returncode, exc.output)
+            logger.exception("[%s] %s", fileid, status)
             self.status_update(fileid=fileid, status=status)
-            pass
-        except Exception as e:
-            status = "Error processing : " + e.message
-            logging.getLogger(__name__).exception("[%s] %s", fileid, status)
+        except Exception as exc:
+            status = "Error processing : " + exc.message
+            logger.exception("[%s] %s", fileid, status)
             self.status_update(fileid=fileid, status=status)
-            pass
         finally:
             self.status_update(fileid=fileid, status="Done")
 
@@ -167,10 +200,12 @@ class Connector:
                 for url in endpoints.split(','):
                     if url not in Connector.registered_clowder:
                         Connector.registered_clowder.append(url)
-                        r = requests.post(url.strip(), headers=headers, data=json.dumps(info), verify=self.ssl_verify)
-                        logger.debug("Registering extractor with " + url + " : " + r.text)
-        except Exception as e:
-            logger.error('Error in registering extractor: ' + str(e))
+                        result = requests.post(url.strip(), headers=headers,
+                                               data=json.dumps(info),
+                                               verify=self.ssl_verify)
+                        logger.debug("Registering extractor with %s : %s", url, result.text)
+        except Exception as exc:
+            logger.error('Error in registering extractor: ' + str(exc))
 
     def status_update(self, status, fileid):
         """Sends a status message.
@@ -222,7 +257,8 @@ class RabbitMQConnector(Connector):
         # register with an exchange
         if self.rabbitmq_exchange:
             # declare the exchange in case it does not exist
-            self.channel.exchange_declare(exchange=self.rabbitmq_exchange, exchange_type='topic', durable=True)
+            self.channel.exchange_declare(exchange=self.rabbitmq_exchange, exchange_type='topic',
+                                          durable=True)
 
             # connect queue and exchange
             if self.rabbitmq_key:
@@ -231,10 +267,10 @@ class RabbitMQConnector(Connector):
                                             exchange=self.rabbitmq_exchange,
                                             routing_key=self.rabbitmq_key)
                 else:
-                    for x in self.rabbitmq_key:
+                    for key in self.rabbitmq_key:
                         self.channel.queue_bind(queue=self.extractor_name,
                                                 exchange=self.rabbitmq_exchange,
-                                                routing_key=x)
+                                                routing_key=key)
 
             self.channel.queue_bind(queue=self.extractor_name,
                                     exchange=self.rabbitmq_exchange,
@@ -248,7 +284,8 @@ class RabbitMQConnector(Connector):
             self.connect()
 
         # create listener
-        self.consumer_tag = self.channel.basic_consume(self.on_message, queue=self.extractor_name, no_ack=False)
+        self.consumer_tag = self.channel.basic_consume(self.on_message, queue=self.extractor_name,
+                                                       no_ack=False)
 
         # start listening
         logging.getLogger(__name__).info("Starting to listen for messages.")
@@ -259,7 +296,6 @@ class RabbitMQConnector(Connector):
             raise
         except Exception:
             logging.getLogger(__name__).exception("Error while consuming messages.")
-            pass
         finally:
             logging.getLogger(__name__).info("Stopped listening for messages.")
             if self.channel:
@@ -300,9 +336,10 @@ class RabbitMQConnector(Connector):
         statusreport['extractor_id'] = self.extractor_name
         statusreport['status'] = status
         statusreport['start'] = time.strftime('%Y-%m-%dT%H:%M:%S')
+        properties = pika.BasicProperties(correlation_id=self.header.correlation_id)
         self.channel.basic_publish(exchange='',
                                    routing_key=self.header.reply_to,
-                                   properties=pika.BasicProperties(correlation_id=self.header.correlation_id),
+                                   properties=properties,
                                    body=json.dumps(statusreport))
 
 
@@ -328,9 +365,9 @@ class HPCConnector(Connector):
             finally:
                 self.logfile = None
         else:
-            for p in self.picklefile:
+            for onepickle in self.picklefile:
                 try:
-                    with open(p, 'rb') as pfile:
+                    with open(onepickle, 'rb') as pfile:
                         body = pickle.load(pfile)
                         self.logfile = body['logfile']
                         self._process_message(body)
