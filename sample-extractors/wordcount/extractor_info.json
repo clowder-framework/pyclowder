@@ -1,0 +1,16 @@
+{
+  "@context": "http://clowder.ncsa.illinois.edu/contexts/extractors.jsonld",
+  "name": "ncsa.wordcount",
+  "version": "1.0",
+  "description": "Word count extractor",
+  "author": "Rob Kooper <kooper@illinois.edu>",
+  "contributors": [],
+  "contexts": [],
+  "repository": {
+    "repType": "git",
+    "repUrl": "https://opensource.ncsa.illinois.edu/stash/scm/cats/pyclowder.git"
+  },
+  "external_services": [],
+  "dependencies": [],
+  "bibtex": []
+}

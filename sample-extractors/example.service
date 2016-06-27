@@ -1,0 +1,16 @@
+[Unit]
+Description=Wordcount Example
+After=docker.service
+Requires=docker.service
+
+[Service]
+TimeoutSec=60
+RestartSec=60
+Restart=always
+ExecStartPre=-/usr/bin/docker kill clowder-wordcount
+ExecStartPre=-/usr/bin/docker rm clowder-wordcount
+ExecStartPre=/usr/bin/docker pull ncsa/clowder-extractors-wordcount:latest
+ExecStart=/usr/bin/docker run --name clowder-wordcount -e "RABBITMQ_URI=amqp://rabbitmqserver/clowder" ncsa/clowder-extractors-wordcount
+
+[Install]
+WantedBy=multi-user.target
