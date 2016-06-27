@@ -8,7 +8,8 @@ import os
 import subprocess
 
 from clowder.extractors import Extractor
-import clowder.api
+from clowder.utils import setup_logging
+import clowder.files
 
 
 class WordCount(Extractor):
@@ -60,7 +61,7 @@ class WordCount(Extractor):
         logger.debug(metadata)
 
         # upload metadata
-        clowder.api.upload_file_metadata_jsonld(connector, host, secret_key, file_id, metadata)
+        clowder.files.upload_file_metadata_jsonld(connector, host, secret_key, file_id, metadata)
 
 
 def main():
@@ -96,15 +97,13 @@ def main():
     parser.add_argument('--version', action='version', version='%(prog)s 1.0')
     args = parser.parse_args()
 
-    # create the extractor
-    extractor = WordCount(ssl_verify=args.sslverify)
-
     # setup logging for the exctractor
-    extractor.setup_logging(args.logging)
+    setup_logging(args.logging)
     logging.getLogger('clowder').setLevel(logging.DEBUG)
     logging.getLogger('__main__').setLevel(logging.DEBUG)
 
     # start the extractor
+    extractor = WordCount(ssl_verify=args.sslverify)
     extractor.start_connector(args.connector, args.num,
                               rabbitmq_uri=args.rabbitmqURI,
                               rabbitmq_exchange=args.rabbitmqExchange,

@@ -1,6 +1,6 @@
 """Clowder API
 
-This module provides simple wrappers around the clowder API
+This module provides simple wrappers around the clowder Files API
 """
 
 import json
@@ -9,11 +9,6 @@ import os
 import tempfile
 
 import requests
-
-
-# ----------------------------------------------------------------------
-# FILES
-# ----------------------------------------------------------------------
 
 
 def download_file(connector, host, key, fileid, intermediatefileid, ext=""):
@@ -91,7 +86,3 @@ def upload_file_thumbnail(connector, host, key, fileid, thumbnail):
         result.raise_for_status()
 
     return thumbnailid
-
-# ----------------------------------------------------------------------
-# DATASETS
-# ----------------------------------------------------------------------

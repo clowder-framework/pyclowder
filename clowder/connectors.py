@@ -42,24 +42,8 @@ import time
 import pika
 import requests
 
-import clowder.api
-
-
-# this takes advantage of the fact that 0 == False and anything else == True
-class CheckMessage(object):
-    """Value to be returned from check_message function.
-
-    Based on the result the following actions will happen:
-    - ignore : the process_message function is not called
-    - download : the input file will be downloaded and process_message is called
-    - bypass : the file is NOT downloaded but process_message is still called
-    """
-    ignore = 0
-    download = 1
-    bypass = 2
-
-    def __init__(self):
-        pass
+import clowder.files
+from clowder.utils import CheckMessage
 
 
 class Connector(object):
@@ -135,8 +119,9 @@ class Connector(object):
                     try:
                         if check_result != CheckMessage.bypass:
                             # download file
-                            inputfile = clowder.api.download_file(self, host, secret_key,
-                                                                  fileid, intermediatefileid, ext)
+                            inputfile = clowder.files.download_file(self, host, secret_key,
+                                                                    fileid, intermediatefileid,
+                                                                    ext)
                             body['inputfile'] = inputfile
 
                         if self.process_message:
