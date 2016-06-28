@@ -11,7 +11,7 @@ import tempfile
 import requests
 
 
-def download_file(connector, host, key, fileid, intermediatefileid, ext=""):
+def download_file(connector, host, key, fileid, intermediatefileid=None, ext=""):
     """Download file to be processed from Clowder.
 
     Keyword arguments:
@@ -24,6 +24,10 @@ def download_file(connector, host, key, fileid, intermediatefileid, ext=""):
     """
 
     connector.status_update(fileid=fileid, status="Downloading file.")
+
+    # TODO: intermediateid doesn't really seem to be used here, can we remove entirely?
+    if not intermediatefileid:
+        intermediatefileid = fileid
 
     url = '%sapi/files/%s?key=%s' % (host, intermediatefileid, key)
     result = requests.get(url, stream=True, verify=connector.ssl_verify)
