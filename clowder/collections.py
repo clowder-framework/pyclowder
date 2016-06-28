@@ -23,15 +23,15 @@ def upload_collection_preview(connector, host, key, collectionid, previewfile, p
                     section this preview should be associated with.
     """
 
-    connector.status_update(fileid=fileid, status="Uploading collection preview.")
+    connector.status_update(fileid=collectionid, status="Uploading collection preview.")
 
     logger = logging.getLogger(__name__)
-    headers={'Content-Type': 'application/json'}
+    headers = {'Content-Type': 'application/json'}
 
     # upload preview
     url = '%sapi/previews?key=%s' % (host, key)
-    with open(previewfile, 'rb') as f:
-        result = requests.post(url, files={"File" : f},
+    with open(previewfile, 'rb') as filebytes:
+        result = requests.post(url, files={"File" : filebytes},
                                verify=connector.ssl_verify)
         result.raise_for_status()
     previewid = result.json()['id']

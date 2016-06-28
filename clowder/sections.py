@@ -5,8 +5,6 @@ This module provides simple wrappers around the clowder Datasets API
 
 import json
 import logging
-import os
-import tempfile
 
 import requests
 
@@ -25,13 +23,13 @@ def upload_section(connector, host, key, sectiondata):
     headers = {'Content-Type': 'application/json'}
 
     # upload section
-    url = '%sapi/sections?key=%s' % (host, fileid, key)
+    url = '%sapi/sections?key=%s' % (host, key)
     result = requests.post(url, headers=headers, data=json.dumps(sectiondata),
                            verify=connector.ssl_verify)
     result.raise_for_status()
 
     sectionid = result.json()['id']
-    logger.debug("section id = [%s]",sectionid)
+    logger.debug("section id = [%s]", sectionid)
 
     return sectionid
 
@@ -47,10 +45,10 @@ def upload_section_tags(connector, host, key, sectionid, tags):
     tags -- the tags to be uploaded
     """
 
-    connector.status_update(fileid=fileid, status="Uploading section tags.")
+    connector.status_update(fileid=sectionid, status="Uploading section tags.")
 
     headers = {'Content-Type': 'application/json'}
-    url = '%sapi/sections/%s/tags?key=%s' % (host, fileid, key)
+    url = '%sapi/sections/%s/tags?key=%s' % (host, sectionid, key)
     result = requests.post(url, headers=headers, data=json.dumps(tags),
                            verify=connector.ssl_verify)
     result.raise_for_status()

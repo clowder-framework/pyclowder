@@ -77,14 +77,14 @@ def extract_zip_contents(zipfilepath):
     zipfilepath -- path of zipfile to extract
     """
 
-    zip = zipfile.ZipFile(zipfilepath)
+    zipobj = zipfile.ZipFile(zipfilepath)
     output_folder = zipfilepath.replace(".zip", "")
-    zip.extractall(output_folder)
+    zipobj.extractall(output_folder)
 
     file_list = []
     for root, subdirs, files in os.walk(output_folder):
-        for f in files:
-            file_list.append(os.path.join(root, f))
+        for currfile in files:
+            file_list.append(os.path.join(root, currfile))
 
     return file_list
 

@@ -27,8 +27,8 @@ def create_dataset(connector, host, key, datasetname, description):
     url = '%sapi/datasets/createempty?key=%s' % (host, key)
 
     result = requests.post(url, headers={"Content-Type":"application/json"},
-                  data='{"name":"%s", "description":"%s"}' % (datasetname, description),
-                  verify=connector.ssl_verify)
+                           data='{"name":"%s", "description":"%s"}' % (datasetname, description),
+                           verify=connector.ssl_verify)
     result.raise_for_status()
 
     datasetid = result.json()['id']
@@ -52,13 +52,13 @@ def download_dataset(connector, host, key, datasetid):
     # fetch dataset zipfile
     url = '%sapi/datasets/%s/download?key=%s' % (host, datasetid, key)
     result = requests.get(url, stream=True,
-                   verify=connector.ssl_verify)
+                          verify=connector.ssl_verify)
     result.raise_for_status()
 
-    (fd, zipfile)=tempfile.mkstemp(suffix=".zip")
-    with os.fdopen(fd, "w") as f:
-        for chunk in r.iter_content(chunk_size=10*1024):
-            f.write(chunk)
+    (filedescriptor, zipfile) = tempfile.mkstemp(suffix=".zip")
+    with os.fdopen(filedescriptor, "w") as outfile:
+        for chunk in result.iter_content(chunk_size=10*1024):
+            outfile.write(chunk)
 
     return zipfile
 
@@ -116,8 +116,7 @@ def get_dataset_filelist(connector, host, key, datasetid):
 
     url = "%sapi/datasets/%s/listFiles?key=%s" % (host, datasetid, key)
 
-    result = requests.get(url,
-                     verify=connector.ssl_verify)
+    result = requests.get(url, verify=connector.ssl_verify)
     result.raise_for_status()
 
     return json.loads(result.text)
@@ -140,7 +139,7 @@ def remove_dataset_metadata_jsonld(connector, host, key, datasetid, extractor=No
 
     # fetch data
     result = requests.delete(url, stream=True,
-                          verify=connector.ssl_verify)
+                             verify=connector.ssl_verify)
     result.raise_for_status()
 
 # TODO: Implement non-JSONLD metadata wrapper, or consider it deprecated?
@@ -155,7 +154,7 @@ def upload_dataset_metadata_jsonld(connector, host, key, datasetid, metadata):
     metadata -- the metadata to be uploaded
     """
 
-    connector.status_update(fileid=fileid, status="Uploading dataset metadata.")
+    connector.status_update(fileid=datasetid, status="Uploading dataset metadata.")
 
     headers = {'Content-Type': 'application/json'}
     url = '%sapi/datasets/%s/metadata.jsonld?key=%s' % (host, datasetid, key)

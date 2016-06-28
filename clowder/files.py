@@ -53,23 +53,11 @@ def download_file_metadata_jsonld(connector, host, key, fileid, extractor=None):
 
     # fetch data
     result = requests.get(url, stream=True,
-                   verify=connector.ssl_verify)
+                          verify=connector.ssl_verify)
     result.raise_for_status()
 
     return result.json()
 
-
-def get_file_url(connector, host, key, fileid):
-    """Return Clowder URL of file with given ID.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    fileid -- the file to return URL of
-    """
-
-    return '%sapi/files/%s?key=%s%s' % (host, fileid, key)
 
 # TODO: Implement non-JSONLD metadata wrapper, or consider it deprecated?
 def upload_file_metadata_jsonld(connector, host, key, fileid, metadata):
@@ -101,19 +89,19 @@ def upload_file_preview(connector, host, key, fileid, previewfile, previewmetada
     key -- the secret key to login to clowder
     fileid -- the file that is currently being processed
     previewfile -- the file containing the preview
-    previewmetadata -- any metadata to be associated with preview, can contain a section_id to indicate the
-                    section this preview should be associated with.
+    previewmetadata -- any metadata to be associated with preview, can contain a section_id
+                    to indicate the section this preview should be associated with.
     """
 
     connector.status_update(fileid=fileid, status="Uploading file preview.")
 
     logger = logging.getLogger(__name__)
-    headers={'Content-Type': 'application/json'}
+    headers = {'Content-Type': 'application/json'}
 
     # upload preview
     url = '%sapi/previews?key=%s' % (host, key)
-    with open(previewfile, 'rb') as f:
-        result = requests.post(url, files={"File" : f},
+    with open(previewfile, 'rb') as filebytes:
+        result = requests.post(url, files={"File" : filebytes},
                                verify=connector.ssl_verify)
         result.raise_for_status()
     previewid = result.json()['id']
@@ -123,14 +111,14 @@ def upload_file_preview(connector, host, key, fileid, previewfile, previewmetada
     if fileid and not (previewmetadata and previewmetadata['section_id']):
         url = '%sapi/files/%s/previews/%s?key=%s' % (host, fileid, previewid, key)
         result = requests.post(url, headers=headers, data=json.dumps({}),
-                          verify=connector.ssl_verify)
+                               verify=connector.ssl_verify)
         result.raise_for_status()
 
     # associate metadata with preview
     if previewmetadata is not None:
         url = '%sapi/previews/%s/metadata?key=%s' % (host, previewid, key)
         result = requests.post(url, headers=headers, data=json.dumps(previewmetadata),
-                          verify=connector.ssl_verify)
+                               verify=connector.ssl_verify)
         result.raise_for_status()
 
     return previewid
@@ -201,7 +189,7 @@ def upload_file_to_dataset(connector, host, key, datasetid, filepath):
     """
 
     logger = logging.getLogger(__name__)
-    url='%sapi/uploadToDataset/%s?key=%s' % (host, datasetid, key)
+    url = '%sapi/uploadToDataset/%s?key=%s' % (host, datasetid, key)
 
     if os.path.exists(filepath):
         result = requests.post(url, files={"File" : open(filepath, 'rb')},
@@ -209,7 +197,7 @@ def upload_file_to_dataset(connector, host, key, datasetid, filepath):
         result.raise_for_status()
 
         uploadedfileid = result.json()['id']
-        logger.debug("uploaded file id = [%s]",uploadedfileid)
+        logger.debug("uploaded file id = [%s]", uploadedfileid)
 
         return uploadedfileid
     else:
