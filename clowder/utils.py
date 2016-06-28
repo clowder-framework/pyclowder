@@ -88,24 +88,3 @@ def extract_zip_contents(zipfilepath):
 
     return file_list
 
-# TODO: How to handle this if config.py is deprecated?
-def register_extractor(registrationEndpoints):
-    """Register extractor info with Clowder"""
-
-    logger = logging.getLogger(__name__)
-
-    logger.info("Registering extractor...")
-    headers = {'Content-Type': 'application/json'}
-
-    try:
-        with open('extractor_info.json') as info_file:
-            info = json.load(info_file)
-            # This makes it consistent: we only need to change the name at one place: config.py.
-            info["name"] = _extractorName
-            for url in registrationEndpoints.split(','):
-                # Trim the URL in case there are spaces in the config.py string.
-                r = requests.post(url.strip(), headers=headers, data=json.dumps(info), verify=_sslVerify)
-                _logger.debug("Registering extractor with " +  url + " : " + r.text)
-    except Exception as e:
-        _logger.error('Error in registering extractor: ' + str(e))
-
