@@ -63,7 +63,7 @@ def download_dataset(connector, host, key, datasetid):
     return zipfile
 
 
-def download_dataset_metadata_jsonld(connector, host, key, datasetid, extractor=None):
+def download_dataset_metadata(connector, host, key, datasetid, extractor=None):
     """Download dataset JSON-LD metadata from Clowder.
 
     Keyword arguments:
@@ -122,7 +122,7 @@ def get_dataset_filelist(connector, host, key, datasetid):
     return json.loads(result.text)
 
 
-def remove_dataset_metadata_jsonld(connector, host, key, datasetid, extractor=None):
+def remove_dataset_metadata(connector, host, key, datasetid, extractor=None):
     """Delete dataset JSON-LD metadata from Clowder.
 
     Keyword arguments:
@@ -142,8 +142,8 @@ def remove_dataset_metadata_jsonld(connector, host, key, datasetid, extractor=No
                              verify=connector.ssl_verify)
     result.raise_for_status()
 
-# TODO: Implement non-JSONLD metadata wrapper, or consider it deprecated?
-def upload_dataset_metadata_jsonld(connector, host, key, datasetid, metadata):
+
+def upload_dataset_metadata(connector, host, key, datasetid, metadata):
     """Upload dataset JSON-LD metadata to Clowder.
 
     Keyword arguments:

@@ -41,7 +41,7 @@ def download_file(connector, host, key, fileid, intermediatefileid=None, ext="")
     return inputfilename
 
 
-def download_file_metadata_jsonld(connector, host, key, fileid, extractor=None):
+def download_file_metadata(connector, host, key, fileid, extractor=None):
     """Download file JSON-LD metadata from Clowder.
 
     Keyword arguments:
@@ -63,8 +63,7 @@ def download_file_metadata_jsonld(connector, host, key, fileid, extractor=None):
     return result.json()
 
 
-# TODO: Implement non-JSONLD metadata wrapper, or consider it deprecated?
-def upload_file_metadata_jsonld(connector, host, key, fileid, metadata):
+def upload_file_metadata(connector, host, key, fileid, metadata):
     """Upload file JSON-LD metadata to Clowder.
 
     Keyword arguments:
