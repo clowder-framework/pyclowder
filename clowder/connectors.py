@@ -69,6 +69,7 @@ class Connector(object):
          """
         pass
 
+    # pylint: disable=too-many-branches,too-many-statements
     def _process_message(self, body):
         """The actuall processing of the message.
 
@@ -109,6 +110,7 @@ class Connector(object):
         self.status_update(fileid=fileid, status="Started processing file")
 
         # checks whether to process the file in this message or not
+        # pylint: disable=too-many-nested-blocks
         try:
             check_result = CheckMessage.download
             if self.check_message:
@@ -153,7 +155,7 @@ class Connector(object):
             status = str.format("Error processing [exit code={}]\n{}", exc.returncode, exc.output)
             logger.exception("[%s] %s", fileid, status)
             self.status_update(fileid=fileid, status=status)
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             status = "Error processing : " + exc.message
             logger.exception("[%s] %s", fileid, status)
             self.status_update(fileid=fileid, status=status)
@@ -189,9 +191,10 @@ class Connector(object):
                                                data=json.dumps(info),
                                                verify=self.ssl_verify)
                         logger.debug("Registering extractor with %s : %s", url, result.text)
-        except Exception as exc:
+        except Exception as exc:  # pylint: disable=broad-except
             logger.error('Error in registering extractor: ' + str(exc))
 
+    # pylint: disable=no-self-use
     def status_update(self, status, fileid):
         """Sends a status message.
 
@@ -201,6 +204,7 @@ class Connector(object):
         logging.getLogger(__name__).info("[%s] : %s", fileid, status)
 
 
+# pylint: disable=too-many-instance-attributes
 class RabbitMQConnector(Connector):
     """Listens for messages on RabbitMQ.
 
@@ -210,6 +214,7 @@ class RabbitMQConnector(Connector):
     exchange and queue.
     """
 
+    # pylint: disable=too-many-arguments
     def __init__(self, extractor_name, rabbitmq_uri, rabbitmq_exchange=None, rabbitmq_key=None,
                  check_message=None, process_message=None, ssl_verify=True):
         Connector.__init__(self, extractor_name, check_message, process_message, ssl_verify)
@@ -275,11 +280,12 @@ class RabbitMQConnector(Connector):
         # start listening
         logging.getLogger(__name__).info("Starting to listen for messages.")
         try:
+            # pylint: disable=protected-access
             while self.channel and self.channel._consumer_infos:
                 self.channel.connection.process_data_events(time_limit=1)  # 1 second
         except KeyboardInterrupt:
             raise
-        except Exception:
+        except Exception:  # pylint: disable=broad-except
             logging.getLogger(__name__).exception("Error while consuming messages.")
         finally:
             logging.getLogger(__name__).info("Stopped listening for messages.")
@@ -330,6 +336,8 @@ class RabbitMQConnector(Connector):
 
 class HPCConnector(Connector):
     """Takes pickle files and processes them."""
+
+    # pylint: disable=too-many-arguments
     def __init__(self, extractor_name, picklefile,
                  check_message=None, process_message=None, ssl_verify=True):
         Connector.__init__(self, extractor_name, check_message, process_message, ssl_verify)
