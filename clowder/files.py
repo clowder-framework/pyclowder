@@ -11,6 +11,7 @@ import tempfile
 import requests
 
 
+# pylint: disable=too-many-arguments
 def download_file(connector, host, key, fileid, intermediatefileid=None, ext=""):
     """Download file to be processed from Clowder.
 
@@ -83,6 +84,7 @@ def upload_file_metadata(connector, host, key, fileid, metadata):
     result.raise_for_status()
 
 
+# pylint: disable=too-many-arguments
 def upload_file_preview(connector, host, key, fileid, previewfile, previewmetadata):
     """Upload preview to Clowder.
 
@@ -204,5 +206,5 @@ def upload_file_to_dataset(connector, host, key, datasetid, filepath):
 
         return uploadedfileid
     else:
-        logger.error("unable to upload file %s (not found)" % filepath)
+        logger.error("unable to upload file %s (not found)", filepath)
 

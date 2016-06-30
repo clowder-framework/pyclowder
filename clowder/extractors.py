@@ -87,6 +87,7 @@ class Extractor(object):
         while connectors:
             connectors.pop(0).stop()
 
+    # pylint: disable=no-self-use,unused-argument
     def check_message(self, connector, parameters):
         """Checks to see if the message needs to be processed.
 
@@ -103,6 +104,7 @@ class Extractor(object):
         logging.getLogger(__name__).debug("default check message : " + str(parameters))
         return CheckMessage.download
 
+    # pylint: disable=no-self-use,unused-argument
     def process_message(self, connector, parameters):
         """Process the message and send results back to clowder.
 

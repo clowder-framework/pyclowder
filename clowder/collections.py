@@ -9,6 +9,7 @@ import logging
 import requests
 
 
+# pylint: disable=too-many-arguments
 def upload_collection_preview(connector, host, key, collectionid, previewfile, previewmetadata):
     """Upload preview to Clowder.
 
@@ -31,7 +32,7 @@ def upload_collection_preview(connector, host, key, collectionid, previewfile, p
     # upload preview
     url = '%sapi/previews?key=%s' % (host, key)
     with open(previewfile, 'rb') as filebytes:
-        result = requests.post(url, files={"File" : filebytes},
+        result = requests.post(url, files={"File": filebytes},
                                verify=connector.ssl_verify)
         result.raise_for_status()
     previewid = result.json()['id']
@@ -52,4 +53,3 @@ def upload_collection_preview(connector, host, key, collectionid, previewfile, p
     result.raise_for_status()
 
     return previewid
-

@@ -17,6 +17,7 @@ import yaml
 
 
 # this takes advantage of the fact that 0 == False and anything else == True
+# pylint: disable=too-few-public-methods
 class CheckMessage(Enum):
     """Value to be returned from check_message function.
 
@@ -82,9 +83,8 @@ def extract_zip_contents(zipfilepath):
     zipobj.extractall(output_folder)
 
     file_list = []
-    for root, subdirs, files in os.walk(output_folder):
+    for root, _, files in os.walk(output_folder):
         for currfile in files:
             file_list.append(os.path.join(root, currfile))
 
     return file_list
-
