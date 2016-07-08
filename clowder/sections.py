@@ -9,7 +9,7 @@ import logging
 import requests
 
 
-def upload_section(connector, host, key, sectiondata):
+def upload(connector, host, key, sectiondata):
     """Upload section to Clowder.
 
     Keyword arguments:
@@ -34,7 +34,7 @@ def upload_section(connector, host, key, sectiondata):
     return sectionid
 
 
-def upload_section_tags(connector, host, key, sectionid, tags):
+def upload_tags(connector, host, key, sectionid, tags):
     """Upload section tag to Clowder.
 
     Keyword arguments:

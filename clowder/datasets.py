@@ -11,7 +11,7 @@ import tempfile
 import requests
 
 
-def create_dataset(connector, host, key, datasetname, description):
+def create_empty(connector, host, key, datasetname, description):
     """Create a new dataset in Clowder.
 
     Keyword arguments:
@@ -37,7 +37,7 @@ def create_dataset(connector, host, key, datasetname, description):
     return datasetid
 
 
-def download_dataset(connector, host, key, datasetid):
+def download(connector, host, key, datasetid):
     """Download dataset to be processed from Clowder as zip file.
 
     Keyword arguments:
@@ -63,7 +63,7 @@ def download_dataset(connector, host, key, datasetid):
     return zipfile
 
 
-def download_dataset_metadata(connector, host, key, datasetid, extractor=None):
+def download_metadata(connector, host, key, datasetid, extractor=None):
     """Download dataset JSON-LD metadata from Clowder.
 
     Keyword arguments:
@@ -85,7 +85,7 @@ def download_dataset_metadata(connector, host, key, datasetid, extractor=None):
     return result.json()
 
 
-def get_dataset_info(connector, host, key, datasetid):
+def get_info(connector, host, key, datasetid):
     """Get basic dataset information from UUID.
 
     Keyword arguments:
@@ -104,7 +104,7 @@ def get_dataset_info(connector, host, key, datasetid):
     return json.loads(result.text)
 
 
-def get_dataset_filelist(connector, host, key, datasetid):
+def get_filelist(connector, host, key, datasetid):
     """Get list of files in a dataset as JSON object.
 
     Keyword arguments:
@@ -122,7 +122,7 @@ def get_dataset_filelist(connector, host, key, datasetid):
     return json.loads(result.text)
 
 
-def remove_dataset_metadata(connector, host, key, datasetid, extractor=None):
+def remove_metadata(connector, host, key, datasetid, extractor=None):
     """Delete dataset JSON-LD metadata from Clowder.
 
     Keyword arguments:
@@ -143,7 +143,7 @@ def remove_dataset_metadata(connector, host, key, datasetid, extractor=None):
     result.raise_for_status()
 
 
-def upload_dataset_metadata(connector, host, key, datasetid, metadata):
+def upload_metadata(connector, host, key, datasetid, metadata):
     """Upload dataset JSON-LD metadata to Clowder.
 
     Keyword arguments:

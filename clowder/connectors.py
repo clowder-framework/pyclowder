@@ -121,7 +121,7 @@ class Connector(object):
                     try:
                         if check_result != CheckMessage.bypass:
                             # download file
-                            inputfile = clowder.files.download_file(self, host, secret_key,
+                            inputfile = clowder.files.download(self, host, secret_key,
                                                                     fileid, intermediatefileid,
                                                                     ext)
                             body['inputfile'] = inputfile
