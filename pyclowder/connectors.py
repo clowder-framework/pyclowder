@@ -42,8 +42,8 @@ import time
 import pika
 import requests
 
-import clowder.files
-from clowder.utils import CheckMessage
+import pyclowder.files
+from pyclowder.utils import CheckMessage
 
 
 class Connector(object):
@@ -121,8 +121,8 @@ class Connector(object):
                     try:
                         if check_result != CheckMessage.bypass:
                             # download file
-                            inputfile = clowder.files.download(self, host, secret_key,
-                                                               fileid, intermediatefileid, ext)
+                            inputfile = pyclowder.files.download(self, host, secret_key,
+                                                                 fileid, intermediatefileid, ext)
                             body['inputfile'] = inputfile
 
                         if self.process_message:

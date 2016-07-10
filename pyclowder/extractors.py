@@ -14,8 +14,8 @@ import threading
 
 import time
 
-from clowder.connectors import RabbitMQConnector, HPCConnector
-from clowder.utils import CheckMessage
+from pyclowder.connectors import RabbitMQConnector, HPCConnector
+from pyclowder.utils import CheckMessage
 
 
 class Extractor(object):

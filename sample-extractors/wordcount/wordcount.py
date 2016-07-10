@@ -7,9 +7,9 @@ import logging
 import os
 import subprocess
 
-from clowder.extractors import Extractor
-from clowder.utils import setup_logging
-import clowder.files
+from pyclowder.extractors import Extractor
+from pyclowder.utils import setup_logging
+import pyclowder.files
 
 
 class WordCount(Extractor):
@@ -61,7 +61,7 @@ class WordCount(Extractor):
         logger.debug(metadata)
 
         # upload metadata
-        clowder.files.upload_metadata(connector, host, secret_key, file_id, metadata)
+        pyclowder.files.upload_metadata(connector, host, secret_key, file_id, metadata)
 
 
 def main():
@@ -102,7 +102,7 @@ def main():
 
     # setup logging for the exctractor
     setup_logging(args.logging)
-    logging.getLogger('clowder').setLevel(logging.DEBUG)
+    logging.getLogger('pyclowder').setLevel(logging.DEBUG)
     logging.getLogger('__main__').setLevel(logging.DEBUG)
 
     # start the extractor

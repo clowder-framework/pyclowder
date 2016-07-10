@@ -6,10 +6,10 @@ import argparse
 import logging
 import os
 
-from clowder.extractors import Extractor
-from clowder.connectors import CheckMessage
-from clowder.utils import setup_logging
-import clowder.files
+from pyclowder.extractors import Extractor
+from pyclowder.connectors import CheckMessage
+from pyclowder.utils import setup_logging
+import pyclowder.files
 
 
 class Echo(Extractor):
@@ -63,7 +63,7 @@ class Echo(Extractor):
         logging.getLogger(__name__).debug(metadata)
 
         # upload metadata
-        clowder.files.upload_file_metadata_jsonld(connector, host, secret_key, file_id, metadata)
+        pyclowder.files.upload_metadata(connector, host, secret_key, file_id, metadata)
 
 
 def main():
@@ -100,7 +100,7 @@ def main():
 
     # setup logging for the exctractor
     setup_logging(args.logging)
-    logging.getLogger('clowder').setLevel(logging.DEBUG)
+    logging.getLogger('pyclowder').setLevel(logging.DEBUG)
     logging.getLogger('__main__').setLevel(logging.DEBUG)
 
     # start the extractor

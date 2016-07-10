@@ -1,14 +1,17 @@
 FROM ubuntu:16.04
 MAINTAINER Rob Kooper <kooper@illinois.edu>
 
-COPY clowder/* /tmp/clowder/clowder/
-COPY setup.py requirements.txt /tmp/clowder/
+RUN apt-get -q -q update && apt-get install -y --no-install-recommends \
+        netcat \
+        python \
+        python-pip \
+    && pip install --upgrade setuptools \
+    && rm -rf /var/lib/apt/lists/* \
+    && adduser --system clowder
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python \
-    python-pip && \
-    rm -rf /var/lib/apt/lists/* && \
-    pip install --upgrade  -r /tmp/clowder/requirements.txt && \
-    pip install --upgrade /tmp/clowder && \
-    rm -rf /tmp/clowder && \
-    adduser --system clowder
+COPY pyclowder /tmp/pyclowder/pyclowder
+COPY setup.py requirements.txt /tmp/pyclowder/
+
+RUN pip install --upgrade  -r /tmp/pyclowder/requirements.txt \
+    && pip install --upgrade /tmp/pyclowder \
+    && rm -rf /tmp/pyclowder
