@@ -20,14 +20,14 @@ BRANCH="$(git rev-parse --abbrev-ref HEAD)"
 VERSION=${VERSION:-""}
 if [ "$VERSION" = "" ]; then
   VERSION="$(git tag --points-at HEAD)"
-  if [ "$VERSION" = "" ]; then
-    VERSION="${BRANCH}"
-  fi
   if [ "$BRANCH" = "master" ]; then
     PUSH=${PUSH:-"push"}
     VERSION="${VERSION} 2"
   else
     PUSH=${PUSH:-""}
+  fi
+  if [ "$VERSION" = "" ]; then
+    VERSION="${BRANCH}"
   fi
 else
   PUSH=${PUSH:-""}
@@ -97,7 +97,7 @@ create() {
 
 # Create the docker containers
 create "."                           "pyclowder"
-create "sample-extractors/wordcount" "extractors-wordcount2"
+create "sample-extractors/wordcount" "extractors-wordcount"
 
 # remove latest tags
 if [ "$RM" = "rm" ]; then
