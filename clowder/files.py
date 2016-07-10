@@ -106,7 +106,7 @@ def upload_preview(connector, host, key, fileid, previewfile, previewmetadata):
     # upload preview
     url = '%sapi/previews?key=%s' % (host, key)
     with open(previewfile, 'rb') as filebytes:
-        result = requests.post(url, files={"File" : filebytes},
+        result = requests.post(url, files={"File": filebytes},
                                verify=connector.ssl_verify)
         result.raise_for_status()
     previewid = result.json()['id']
@@ -197,7 +197,7 @@ def upload_to_dataset(connector, host, key, datasetid, filepath):
     url = '%sapi/uploadToDataset/%s?key=%s' % (host, datasetid, key)
 
     if os.path.exists(filepath):
-        result = requests.post(url, files={"File" : open(filepath, 'rb')},
+        result = requests.post(url, files={"File": open(filepath, 'rb')},
                                verify=connector.ssl_verify)
         result.raise_for_status()
 
@@ -207,4 +207,3 @@ def upload_to_dataset(connector, host, key, datasetid, filepath):
         return uploadedfileid
     else:
         logger.error("unable to upload file %s (not found)", filepath)
-

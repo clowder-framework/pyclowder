@@ -1,5 +1,4 @@
-# FROM clowder/python-base
-FROM ncsa/pyclowder2:latest
+FROM clowder/pyclowder2
 MAINTAINER Rob Kooper <kooper@illinois.edu>
 
 # Setup environment variables. These are passed into the container. You can change
@@ -10,6 +9,7 @@ MAINTAINER Rob Kooper <kooper@illinois.edu>
 # could be https://clowder.ncsa.illinois.edu/clowder/api/extractors?key=secretKey
 ENV RABBITMQ_URI="" \
     RABBITMQ_EXCHANGE="clowder" \
+    RABBITMQ_QUEUE="ncsa.wordcount" \
     REGISTRATION_ENDPOINTS="https://clowder.ncsa.illinois.edu/extractors" \
     MAIN_SCRIPT="wordcount.py"
 

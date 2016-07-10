@@ -1,4 +1,4 @@
-FROM ubuntu:14.04
+FROM ubuntu:16.04
 MAINTAINER Rob Kooper <kooper@illinois.edu>
 
 COPY clowder/* /tmp/clowder/clowder/

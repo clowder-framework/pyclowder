@@ -161,4 +161,3 @@ def upload_metadata(connector, host, key, datasetid, metadata):
     result = requests.post(url, headers=headers, data=json.dumps(metadata),
                            verify=connector.ssl_verify)
     result.raise_for_status()
-

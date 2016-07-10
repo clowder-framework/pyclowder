@@ -14,8 +14,8 @@ import clowder.files
 
 class WordCount(Extractor):
     """Count the number of characters, words and lines in a text file."""
-    def __init__(self, ssl_verify=False):
-        Extractor.__init__(self, 'wordcount', ssl_verify)
+    def __init__(self, extractor_name, ssl_verify=False):
+        Extractor.__init__(self, extractor_name, ssl_verify)
 
     def process_message(self, connector, parameters):
         # Process the file and upload the results
@@ -61,7 +61,7 @@ class WordCount(Extractor):
         logger.debug(metadata)
 
         # upload metadata
-        clowder.files.upload_file_metadata_jsonld(connector, host, secret_key, file_id, metadata)
+        clowder.files.upload_metadata(connector, host, secret_key, file_id, metadata)
 
 
 def main():
@@ -70,6 +70,7 @@ def main():
     # this is the specific setup for the extractor
     rabbitmq_uri = os.getenv('RABBITMQ_URI', "amqp://guest:guest@127.0.0.1/%2f")
     rabbitmq_exchange = os.getenv('RABBITMQ_EXCHANGE', "clowder")
+    rabbitmq_queue = os.getenv('RABBITMQ_QUEUE', "clowder")
     registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
     rabbitmq_key = "*.file.text.#"
 
@@ -92,6 +93,8 @@ def main():
                         help='rabbitMQ URI (default=%s)' % rabbitmq_uri.replace("%", "%%"))
     parser.add_argument('--rabbitmqExchange', nargs='?', default=rabbitmq_exchange,
                         help='rabbitMQ exchange (default=%s)' % rabbitmq_exchange)
+    parser.add_argument('--rabbitmqQueue', nargs='?', default=rabbitmq_queue,
+                        help='rabbitMQ queue (default=%s)' % rabbitmq_queue)
     parser.add_argument('--sslignore', '-s', dest="sslverify", action='store_false',
                         help='should SSL certificates be ignores')
     parser.add_argument('--version', action='version', version='%(prog)s 1.0')
@@ -103,7 +106,7 @@ def main():
     logging.getLogger('__main__').setLevel(logging.DEBUG)
 
     # start the extractor
-    extractor = WordCount(ssl_verify=args.sslverify)
+    extractor = WordCount(args.rabbitmqQueue, ssl_verify=args.sslverify)
     extractor.start_connector(args.connector, args.num,
                               rabbitmq_uri=args.rabbitmqURI,
                               rabbitmq_exchange=args.rabbitmqExchange,

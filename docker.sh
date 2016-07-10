@@ -10,18 +10,10 @@
 
 #DEBUG=echo
 
-# make sure PROJECT ends with /
+# set default for clowder
 PROJECT=${PROJECT:-"clowder"}
-if [ ! "${PROJECT}" = "" -a ! "$( echo $PROJECT | tail -c 2)" = "/" ]; then
-  PROJECT="${PROJECT}/"
-fi
 
-# make sure PROJECT ends with /
-if [ ! "${PROJECT}" = "" ]; then
-  if [ ! "$( echo $PROJECT | tail -c 2)" = "/" ]; then
-    PROJECT="${PROJECT}/"
-  fi
-fi
+RM=${RM:-"rm"}
 
 # find out version and if we should push
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
@@ -29,8 +21,7 @@ VERSION=${VERSION:-""}
 if [ "$VERSION" = "" ]; then
   VERSION="$(git tag --points-at HEAD)"
   if [ "$VERSION" = "" ]; then
-    VERSION="latest"
-    BRANCE="master"
+    VERSION="${BRANCH}"
   fi
   if [ "$BRANCH" = "master" ]; then
     PUSH=${PUSH:-"push"}
@@ -54,33 +45,56 @@ LATEST=""
 # helper to create the docker container
 # $1 - folder that contains the Dockerfile
 # $2 - name of docker image
+# $3 - name of Dockerfile
 create() {
   if [ -z "$1" ]; then echo "Missing repo/Dockerfile name."; exit -1; fi
-  if [ ! -e "$1/Dockerfile" ]; then echo "Missing Dockerfile in $1."; exit -1; fi
   if [ -z "$2" ]; then echo "Missing name for $1."; exit -1; fi
 
-  echo "Building : ${PROJECT}${2}:[$VERSION] from $1"
+  DOCKERFILE=${3:-"$1/Dockerfile"}
 
   # create image using temp id
   local ID=$(uuidgen)
-  ${DEBUG} docker build --tag $$ $1
+  ${DEBUG} docker build  --tag $$ --file ${DOCKERFILE} $1
   if [ $? -ne 0 ]; then
-    echo "FAILED build of $1/Dockerfile"
+    echo "FAILED build of $1/${DOCKERFILE}"
     exit -1
   fi
 
   # tag all versions
   for v in $VERSION; do
-    ${DEBUG} docker tag $$ ${PROJECT}${2}:${v}
-    if [ "$PUSH" = "push" -a ! "$PROJECT" = "" ]; then
-      ${DEBUG} docker push ${PROJECT}${2}:${v}
+    if [ "$PROJECT" = "" ]; then
+      ${DEBUG} docker tag $$ ${2}:${v}
+    else
+      for p in ${PROJECT}; do
+        if [ "$p" = "ncsa" ]; then
+          NAME="clowder-$2"
+        else
+          NAME=$2
+        fi
+        ${DEBUG} docker tag $$ ${p}/${NAME}:${v}
+        if [ "$PUSH" = "push" ]; then
+          ${DEBUG} docker push ${p}/${NAME}:${v}
+        fi
+      done
     fi
   done
 
   # tag version as latest, but don't push
   if [ ! "$BRANCH" = "master" ]; then
-    ${DEBUG} docker tag $$ ${PROJECT}${2}:latest
-    LATEST="$LATEST $2"
+    if [ "$PROJECT" = "" ]; then
+      ${DEBUG} docker tag $$ ${2}:latest
+      LATEST="$LATEST ${2}:latest"
+    else
+      for p in ${PROJECT}; do
+        if [ "$p" = "ncsa" ]; then
+          NAME="clowder-$2"
+        else
+          NAME=$2
+        fi
+        ${DEBUG} docker tag $$ ${p}/${NAME}:latest
+        LATEST="$LATEST ${p}/${NAME}:latest"
+      done
+    fi
   fi
 
   # delete image with temp id
@@ -88,10 +102,12 @@ create() {
 }
 
 # Create the docker containers
-create "." "pyclowder2"
-create "sample-extractors/wordcount" "extractors-wordcount"
+create "."                           "pyclowder2"
+create "sample-extractors/wordcount" "extractors-wordcount2"
 
 # remove latest tags
-#for r in $LATEST; do
-#  ${DEBUG} docker rmi ${PROJECT}${r}:latest
-#done
+if [ "$RM" = "rm" ]; then
+    for r in $LATEST; do
+      ${DEBUG} docker rmi ${r}
+    done
+fi

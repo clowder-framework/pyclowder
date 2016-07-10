@@ -52,4 +52,3 @@ def upload_tags(connector, host, key, sectionid, tags):
     result = requests.post(url, headers=headers, data=json.dumps(tags),
                            verify=connector.ssl_verify)
     result.raise_for_status()
-
