@@ -25,13 +25,7 @@ if [ "$VERSION" = "" ]; then
   fi
   if [ "$BRANCH" = "master" ]; then
     PUSH=${PUSH:-"push"}
-    VERSION="${VERSION} latest"
-  elif [ "$BRANCH" = "develop" ]; then
-    PUSH=${PUSH:-"push"}
-    VERSION="${VERSION} latest"
-  elif [ "$( echo $BRANCH | sed -e 's#^release/.*$#release#')" = "release" ]; then
-    PUSH=${PUSH:-"push"}
-    VERSION="$( echo $BRANCH | sed -e 's#^release/\(.*\)$#\1#' )"
+    VERSION="${VERSION} 2"
   else
     PUSH=${PUSH:-""}
   fi
@@ -102,7 +96,7 @@ create() {
 }
 
 # Create the docker containers
-create "."                           "pyclowder2"
+create "."                           "pyclowder"
 create "sample-extractors/wordcount" "extractors-wordcount2"
 
 # remove latest tags

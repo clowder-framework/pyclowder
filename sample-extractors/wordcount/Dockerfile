@@ -1,4 +1,4 @@
-FROM clowder/pyclowder2
+FROM clowder/pyclowder:2
 MAINTAINER Rob Kooper <kooper@illinois.edu>
 
 # Setup environment variables. These are passed into the container. You can change
