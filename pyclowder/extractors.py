@@ -113,8 +113,10 @@ class Extractor(object):
                     logger.error("Missing URI for RabbitMQ")
                 else:
                     rabbitmq_key = []
-                    for key, value in self.extractor_info['register'].iteritems():
+                    for key, value in self.extractor_info['process'].iteritems():
                         for mt in value:
+                            while mt.endswith("/") or mt.endswith("*"):
+                                mt = mt[:-1]
                             if mt == "":
                                 rabbitmq_key.append("*.%s.#" % key)
                             else:
@@ -182,7 +184,7 @@ class Extractor(object):
         if logger.isEnabledFor(logging.DEBUG):
             for k in content:
                 if not self._check_key(k, self.extractor_info['contexts']):
-                    logger.debug("Simple check could not find %s in contexs" % k)
+                    logger.debug("Simple check could not find %s in contexts" % k)
 
         return {
             '@context': [context_url] + self.extractor_info['contexts'],
@@ -201,8 +203,13 @@ class Extractor(object):
     def _check_key(self, key, obj):
         if key in obj:
             return True
-        for x in obj:
-            if isinstance(x, dict) or isinstance(x, dict):
+
+        if isinstance(obj, dict):
+            for x in obj.values():
+                if self._check_key(key, x):
+                    return True
+        elif isinstance(obj, list):
+            for x in obj:
                 if self._check_key(key, x):
                     return True
         return False

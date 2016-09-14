@@ -16,9 +16,10 @@
     "repType": "git",
     "repUrl": "https://opensource.ncsa.illinois.edu/stash/scm/cats/pyclowder.git"
   },
-  "register": {
+  "process": {
     "file": [
-      "text"
+      "text/*",
+      "application/json"
     ]
   },
   "external_services": [],
