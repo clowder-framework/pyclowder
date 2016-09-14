@@ -36,7 +36,6 @@ import logging
 import os
 import pickle
 import subprocess
-import sys
 import time
 
 import pika
@@ -55,8 +54,8 @@ class Connector(object):
 
     registered_clowder = list()
 
-    def __init__(self, extractor_name, check_message=None, process_message=None, ssl_verify=True):
-        self.extractor_name = extractor_name
+    def __init__(self, extractor_info, check_message=None, process_message=None, ssl_verify=True):
+        self.extractor_info = extractor_info
         self.check_message = check_message
         self.process_message = process_message
         self.ssl_verify = ssl_verify
@@ -173,25 +172,24 @@ class Connector(object):
             return
 
         logger = logging.getLogger(__name__)
-        filename = 'extractor_info.json'
-        if not os.path.isfile(filename):
-            pathname = os.path.abspath(os.path.dirname(sys.argv[0]))
-            filename = os.path.join(pathname, 'extractor_info.json')
 
         headers = {'Content-Type': 'application/json'}
-        try:
-            with open(filename) as info_file:
-                info = json.load(info_file)
-                info["name"] = self.extractor_name
-                for url in endpoints.split(','):
-                    if url not in Connector.registered_clowder:
-                        Connector.registered_clowder.append(url)
-                        result = requests.post(url.strip(), headers=headers,
-                                               data=json.dumps(info),
-                                               verify=self.ssl_verify)
-                        logger.debug("Registering extractor with %s : %s", url, result.text)
-        except Exception as exc:  # pylint: disable=broad-except
-            logger.error('Error in registering extractor: ' + str(exc))
+        # TODO BUG right now contexts is list of IDs
+        r = dict(self.extractor_info)
+        del r['contexts']
+        data = json.dumps(r)
+
+        for url in endpoints.split(','):
+            if url not in Connector.registered_clowder:
+                Connector.registered_clowder.append(url)
+                try:
+                    result = requests.post(url.strip(), headers=headers,
+                                           data=data,
+                                           verify=self.ssl_verify)
+                    result.raise_for_status()
+                    logger.debug("Registering extractor with %s : %s", url, result.text)
+                except Exception as exc:  # pylint: disable=broad-except
+                    logger.exception('Error in registering extractor: ' + str(exc))
 
     # pylint: disable=no-self-use
     def status_update(self, status, fileid):
@@ -209,14 +207,14 @@ class RabbitMQConnector(Connector):
 
     This will connect to rabbitmq and register the extractor with a queue. If the exchange
     and key are specified it will bind the exchange to the queue. If an exchange is
-    specified it will always try to bind the special key extractors.<extractor_name> to the
+    specified it will always try to bind the special key extractors.<extractor_info[name]> to the
     exchange and queue.
     """
 
     # pylint: disable=too-many-arguments
-    def __init__(self, extractor_name, rabbitmq_uri, rabbitmq_exchange=None, rabbitmq_key=None,
+    def __init__(self, extractor_info, rabbitmq_uri, rabbitmq_exchange=None, rabbitmq_key=None,
                  check_message=None, process_message=None, ssl_verify=True):
-        Connector.__init__(self, extractor_name, check_message, process_message, ssl_verify)
+        Connector.__init__(self, extractor_info, check_message, process_message, ssl_verify)
         self.rabbitmq_uri = rabbitmq_uri
         self.rabbitmq_exchange = rabbitmq_exchange
         self.rabbitmq_key = rabbitmq_key
@@ -241,7 +239,7 @@ class RabbitMQConnector(Connector):
         self.channel.basic_qos(prefetch_count=1)
 
         # declare the queue in case it does not exist
-        self.channel.queue_declare(queue=self.extractor_name, durable=True)
+        self.channel.queue_declare(queue=self.extractor_info['name'], durable=True)
 
         # register with an exchange
         if self.rabbitmq_exchange:
@@ -252,18 +250,18 @@ class RabbitMQConnector(Connector):
             # connect queue and exchange
             if self.rabbitmq_key:
                 if isinstance(self.rabbitmq_key, str):
-                    self.channel.queue_bind(queue=self.extractor_name,
+                    self.channel.queue_bind(queue=self.extractor_info['name'],
                                             exchange=self.rabbitmq_exchange,
                                             routing_key=self.rabbitmq_key)
                 else:
                     for key in self.rabbitmq_key:
-                        self.channel.queue_bind(queue=self.extractor_name,
+                        self.channel.queue_bind(queue=self.extractor_info['name'],
                                                 exchange=self.rabbitmq_exchange,
                                                 routing_key=key)
 
-            self.channel.queue_bind(queue=self.extractor_name,
+            self.channel.queue_bind(queue=self.extractor_info['name'],
                                     exchange=self.rabbitmq_exchange,
-                                    routing_key="extractors." + self.extractor_name)
+                                    routing_key="extractors." + self.extractor_info['name'])
 
     def listen(self):
         """Listen for messages coming from RabbitMQ"""
@@ -273,7 +271,7 @@ class RabbitMQConnector(Connector):
             self.connect()
 
         # create listener
-        self.consumer_tag = self.channel.basic_consume(self.on_message, queue=self.extractor_name,
+        self.consumer_tag = self.channel.basic_consume(self.on_message, queue=self.extractor_info['name'],
                                                        no_ack=False)
 
         # start listening
@@ -318,12 +316,13 @@ class RabbitMQConnector(Connector):
             self.method = None
             self.header = None
 
+    # def status_update(self, status, msg, resource_type=None, resource_id=None, start_time=None, end_time=None):
     def status_update(self, status, fileid):
         """Send a status message back using RabbitMQ"""
 
         statusreport = dict()
         statusreport['file_id'] = fileid
-        statusreport['extractor_id'] = self.extractor_name
+        statusreport['extractor_id'] = self.extractor_info['name']
         statusreport['status'] = status
         statusreport['start'] = time.strftime('%Y-%m-%dT%H:%M:%S')
         properties = pika.BasicProperties(correlation_id=self.header.correlation_id)
@@ -337,9 +336,9 @@ class HPCConnector(Connector):
     """Takes pickle files and processes them."""
 
     # pylint: disable=too-many-arguments
-    def __init__(self, extractor_name, picklefile,
+    def __init__(self, extractor_info, picklefile,
                  check_message=None, process_message=None, ssl_verify=True):
-        Connector.__init__(self, extractor_name, check_message, process_message, ssl_verify)
+        Connector.__init__(self, extractor_info, check_message, process_message, ssl_verify)
         self.picklefile = picklefile
         self.logfile = None
         self.body = None
@@ -377,7 +376,7 @@ class HPCConnector(Connector):
                 with open(self.logfile, 'a') as log:
                     statusreport = dict()
                     statusreport['file_id'] = fileid
-                    statusreport['extractor_id'] = self.extractor_name
+                    statusreport['extractor_id'] = self.extractor_info['name']
                     statusreport['status'] = status
                     statusreport['start'] = time.strftime('%Y-%m-%dT%H:%M:%S')
                     log.write(json.dumps(statusreport) + '\n')

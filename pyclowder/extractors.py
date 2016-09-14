@@ -8,14 +8,19 @@ one or both of the check_message and process message functions. The
 check_message should return one of the values in CheckMessage.
 """
 
+import argparse
+import json
 import logging
 import logging.config
+import os
+import sys
 import threading
+import traceback
 
 import time
 
 from pyclowder.connectors import RabbitMQConnector, HPCConnector
-from pyclowder.utils import CheckMessage
+from pyclowder.utils import CheckMessage, setup_logging
 
 
 class Extractor(object):
@@ -26,54 +31,119 @@ class Extractor(object):
     process_message function should be called) the check_message
     function can be used.
     """
-    def __init__(self, extractor_name, ssl_verify=False):
-        self.extractor_name = extractor_name
-        self.ssl_verify = ssl_verify
 
-    def start_connector(self, connector, num, **kwargs):
+    def __init__(self):
+        self.extractor_info = None
+        self.args = None
+        self.ssl_verify = False
+
+        # load extractor_info.json
+        filename = 'extractor_info.json'
+        if not os.path.isfile(filename):
+            pathname = os.path.abspath(os.path.dirname(sys.argv[0]))
+            filename = os.path.join(pathname, 'extractor_info.json')
+
+        if not os.path.isfile(filename):
+            print("Could not find extractor_info.json")
+            sys.exit(-1)
+        try:
+            with open(filename) as info_file:
+                self.extractor_info = json.load(info_file)
+        except Exception:  # pylint: disable=broad-except
+            print("Error loading extractor_info.json")
+            traceback.print_exc()
+            sys.exit(-1)
+
+        # read values from environment variables, otherwise use defaults
+        # this is the specific setup for the extractor
+        rabbitmq_uri = os.getenv('RABBITMQ_URI', "amqp://guest:guest@127.0.0.1/%2f")
+        rabbitmq_exchange = os.getenv('RABBITMQ_EXCHANGE', "clowder")
+        registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
+
+        # create the actual extractor
+        self.parser = argparse.ArgumentParser(description=self.extractor_info['description'])
+        self.parser.add_argument('--connector', '-c', type=str, nargs='?', default="RabbitMQ",
+                                 choices=["RabbitMQ", "HPC"],
+                                 help='connector to use (default=RabbitMQ)')
+        self.parser.add_argument('--logging', '-l', nargs='?', default=None,
+                                 help='file or logging coonfiguration (default=None)')
+        self.parser.add_argument('--num', '-n', type=int, nargs='?', default=1,
+                                 help='number of parallel instances (default=1)')
+        self.parser.add_argument('--pickle', type=file, nargs='*', dest="hpc_picklefile",
+                                 default=None, action='append',
+                                 help='pickle file that needs to be processed (only needed for HPC)')
+        self.parser.add_argument('--register', '-r', nargs='?', dest="regstration_endpoints",
+                                 default=registration_endpoints,
+                                 help='Clowder registration URL (default=%s)' % registration_endpoints)
+        self.parser.add_argument('--rabbitmqURI', nargs='?', dest='rabbitmq_uri', default=rabbitmq_uri,
+                                 help='rabbitMQ URI (default=%s)' % rabbitmq_uri.replace("%", "%%"))
+        self.parser.add_argument('--rabbitmqExchange', nargs='?', dest="rabbitmq_exchange", default=rabbitmq_exchange,
+                                 help='rabbitMQ exchange (default=%s)' % rabbitmq_exchange)
+        self.parser.add_argument('--sslignore', '-s', dest="sslverify", action='store_false',
+                                 help='should SSL certificates be ignores')
+        self.parser.add_argument('--version', action='version', version='%(prog)s 1.0')
+
+    def setup(self):
+        """Parse command line arguments and so some setup
+
+        This will parse any command line arguments, update some variables based on these command line arguments and
+        initialize the logging system.
+        """
+        self.args = self.parser.parse_args()
+
+        # use command line option for ssl_verify
+        if 'sslverify' in self.args:
+            self.ssl_verify = self.args.sslverify
+
+        # start logging system
+        setup_logging(self.args.logging)
+
+    def start(self):
         """Create the connector and start listening.
 
-        Based on the num variable this will start multiple instances of a
-        connector and run each of them in their own thread. Once the
-        connector(s) are created this function will go into a endless loop
-        until either all connectors have stopped or the user kill the
-        program.
-
-        Args:
-            connector (string): the connector to create
-            num (int): the number of connector instaces to create
-            **kwargs: arguments used to confgure the connectors
+        Based on the num command line argument this will start multiple instances of a connector and run each of them
+        in their own thread. Once the connector(s) are created this function will go into a endless loop until either
+        all connectors have stopped or the user kills the program.
         """
         logger = logging.getLogger(__name__)
         connectors = list()
-        for connum in xrange(num):
-            if connector == "RabbitMQ":
-                if 'rabbitmq_uri' not in kwargs:
+        for connum in xrange(self.args.num):
+            if self.args.connector == "RabbitMQ":
+                if 'rabbitmq_uri' not in self.args:
                     logger.error("Missing URI for RabbitMQ")
                 else:
-                    rconn = RabbitMQConnector(self.extractor_name,
+                    rabbitmq_key = []
+                    for key, value in self.extractor_info['register'].iteritems():
+                        for mt in value:
+                            if mt == "":
+                                rabbitmq_key.append("*.%s.#" % key)
+                            else:
+                                rabbitmq_key.append("*.%s.%s.#" % (key, mt.replace("/", ".")))
+
+                    rconn = RabbitMQConnector(self.extractor_info,
                                               check_message=self.check_message,
                                               process_message=self.process_message,
-                                              rabbitmq_uri=kwargs.get('rabbitmq_uri'),
-                                              rabbitmq_exchange=kwargs.get('rabbitmq_exchange'),
-                                              rabbitmq_key=kwargs.get('rabbitmq_key'))
+                                              rabbitmq_uri=self.args.rabbitmq_uri,
+                                              rabbitmq_exchange=self.args.rabbitmq_exchange,
+                                              rabbitmq_key=rabbitmq_key)
                     rconn.connect()
-                    rconn.register_extractor(kwargs.get('regstration_endpoints'))
+                    rconn.register_extractor(self.args.regstration_endpoints)
                     connectors.append(rconn)
                     threading.Thread(target=rconn.listen, name="Connector-" + str(connum)).start()
-            elif connector == "HPC":
-                if 'hpc_picklefile' not in kwargs:
+            elif self.args.connector == "HPC":
+                if 'hpc_picklefile' not in self.args:
                     logger.error("Missing hpc_picklefile for HPCExtractor")
                 else:
-                    hconn = HPCConnector(self.extractor_name,
+                    hconn = HPCConnector(self.extractor_info,
                                          check_message=self.check_message,
                                          process_message=self.process_message,
-                                         picklefile=kwargs.get('hpc_picklefile'))
-                    hconn.register_extractor(kwargs.get('regstration_endpoints'))
+                                         picklefile=self.args.hpc_picklefile)
+                    hconn.register_extractor(self.args.regstration_endpoints)
                     connectors.append(hconn)
                     threading.Thread(target=hconn.listen, name="Connector-" + str(connum)).start()
             else:
-                logger.error("Could not create instance of %s connector.", connector)
+                logger.error("Could not create instance of %s connector.", self.args.connector)
+                sys.exit(-1)
 
         logger.info("Waiting for messages. To exit press CTRL+C")
         try:
@@ -86,6 +156,54 @@ class Extractor(object):
 
         while connectors:
             connectors.pop(0).stop()
+
+    def get_metadata(self, content, resource_type, resource_id, server=None):
+        """Generate a metadata field.
+
+        This will return a metadata dict that is valid JSON-LD. This will use the results as well as the information
+        in extractor_info.json to create the metadata record.
+
+        Currently this does not check for validity, but in the future this might change.
+
+        Args:
+            content (dict): the data that is in the content
+            resource_type (string); type of resource such as file, dataset, etc
+            resource_id (string): id of the resource the metadata is associated with
+            server (string): clowder url, used for extractor_id, if None it will use
+                             https://clowder.ncsa.illinois.edu/extractors
+        """
+        logger = logging.getLogger(__name__)
+        context_url = 'https://clowder.ncsa.illinois.edu/contexts/metadata.jsonld'
+        if not server:
+            server = "https://clowder.ncsa.illinois.edu/"
+
+        # bad check
+        for k in content:
+            if not self._check_key(k, self.extractor_info['contexts']):
+                logger.warn("Simple check could not find %s in contexs" % k)
+
+        return {
+            '@context': [context_url] + self.extractor_info['contexts'],
+            'attachedTo': {
+                'resourceType': resource_type,
+                'id': resource_id
+            },
+            'agent': {
+                '@type': 'cat:extractor',
+                'extractor_id': '%sextractors/%s/%s' %
+                                (server, self.extractor_info['name'], self.extractor_info['version'])
+            },
+            'content': content
+        }
+
+    def _check_key(self, key, obj):
+        if key in obj:
+            return True
+        for x in obj:
+            if isinstance(x, dict) or isinstance(x, dict):
+                if self._check_key(key, x):
+                    return True
+        return False
 
     # pylint: disable=no-self-use,unused-argument
     def check_message(self, connector, parameters):

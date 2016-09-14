@@ -5,10 +5,19 @@
   "description": "Echo extractor.",
   "author": "Rob Kooper <kooper@illinois.edu>",
   "contributors": [],
-  "contexts": [],
+  "contexts": [
+    {
+      "rabbitmq": "http://clowder.ncsa.illinois.edu/metadata/ncsa.echo#rabbitmq"
+    }
+  ],
   "repository": {
     "repType": "git",
     "repUrl": "https://opensource.ncsa.illinois.edu/stash/scm/cats/pyclowder.git"
+  },
+  "register": {
+    "file": [
+      ""
+    ]
   },
   "external_services": [],
   "dependencies": [],
