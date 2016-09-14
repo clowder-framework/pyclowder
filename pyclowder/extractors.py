@@ -163,7 +163,8 @@ class Extractor(object):
         This will return a metadata dict that is valid JSON-LD. This will use the results as well as the information
         in extractor_info.json to create the metadata record.
 
-        Currently this does not check for validity, but in the future this might change.
+        This does a simple check for validity, and prints to debug any issues it finds (i.e. a key in conent is not
+        defined in the context).
 
         Args:
             content (dict): the data that is in the content
@@ -177,10 +178,11 @@ class Extractor(object):
         if not server:
             server = "https://clowder.ncsa.illinois.edu/"
 
-        # bad check
-        for k in content:
-            if not self._check_key(k, self.extractor_info['contexts']):
-                logger.warn("Simple check could not find %s in contexs" % k)
+        # simple check to see if content is in context
+        if logger.isEnabledFor(logging.DEBUG):
+            for k in content:
+                if not self._check_key(k, self.extractor_info['contexts']):
+                    logger.debug("Simple check could not find %s in contexs" % k)
 
         return {
             '@context': [context_url] + self.extractor_info['contexts'],
