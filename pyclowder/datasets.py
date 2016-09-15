@@ -104,7 +104,7 @@ def get_info(connector, host, key, datasetid):
     return json.loads(result.text)
 
 
-def get_filelist(connector, host, key, datasetid):
+def get_file_list(connector, host, key, datasetid):
     """Get list of files in a dataset as JSON object.
 
     Keyword arguments:

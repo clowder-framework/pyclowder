@@ -38,6 +38,7 @@ import pickle
 import subprocess
 import sys
 import time
+import zipfile
 
 import pika
 import requests
@@ -71,7 +72,7 @@ class Connector(object):
 
     # pylint: disable=too-many-branches,too-many-statements
     def _process_message(self, body):
-        """The actuall processing of the message.
+        """The actual processing of the message.
 
         This will register the extractor with the clowder instance that the message came from.
         Next it will call check_message to see if the message should be processed and if the
@@ -79,26 +80,41 @@ class Connector(object):
         """
 
         logger = logging.getLogger(__name__)
-        # parse body back from json
-        fileid = body['id']
-        filename = body.get('filename', '')
-        secret_key = body['secretKey']
-        intermediatefileid = body['intermediateId']
-        host = body['host']
 
+        # id of file that was added
+        fileid = body['id']
+        body['fileid'] = body['id']
+        intermediatefileid = body['intermediateId']
+        # id of dataset file was added to
+        datasetid = body.get('datasetId', '')
+        # name of file that was added (only on file messages, NOT dataset messages)
+        filename = body.get('filename', '')
+        # get & clean clowder connection details
+        secret_key = body['secretKey']
+        host = body['host']
+        if not host.endswith('/'):
+            host += '/'
+            body['host'] = host
         # TODO CATS-583 error with metadata only
         if host == "":
             return
 
-        # compute some variables from jbody
-        ext = os.path.splitext(filename)[1]
-        if not host.endswith('/'):
-            host += '/'
-            body['host'] = host
-
-        # add some extra fields to body
-        body['fileid'] = body['id']
-        body['ext'] = ext
+        # determine what kind of extraction this is (i.e. what to download) and add relevant data to body
+        # TODO: Can this be improved by simply checking rabbitmq_key of extractor?
+        if filename == '':
+            extractor_type = "DATASET"
+            # get dataset details and contents so extractor check_message can evaluate
+            body['dataset_info'] = pyclowder.datasets.get_info(self, host, secret_key, datasetid)
+            body['filelist'] = pyclowder.datasets.get_file_list(self, host, secret_key, datasetid)
+            # populate filename field with the file that triggered this message
+            for f in body['filelist']:
+                if f['id'] == fileid:
+                    filename = f['filename']
+                    body['filename'] = filename
+        else:
+            extractor_type = "FILE"
+            ext = os.path.splitext(filename)[1]
+            body['ext'] = ext
 
         # register extractor
         url = "%sapi/extractors" % host
@@ -107,7 +123,9 @@ class Connector(object):
             self.register_extractor("%s?key=%s" % (url, secret_key))
 
         # tell everybody we are starting to process the file
+        # TODO: How to handle these for datasets?
         self.status_update(fileid=fileid, status="Started processing file")
+
 
         # checks whether to process the file in this message or not
         # pylint: disable=too-many-nested-blocks
@@ -117,22 +135,49 @@ class Connector(object):
                 check_result = self.check_message(self, body)
             if check_result:
                 if self.process_message:
-                    inputfile = None
-                    try:
-                        if check_result != CheckMessage.bypass:
-                            # download file
-                            inputfile = pyclowder.files.download(self, host, secret_key,
-                                                                 fileid, intermediatefileid, ext)
-                            body['inputfile'] = inputfile
+                    # PREPARE THE FILE FOR PROCESSING
+                    if extractor_type == "FILE":
+                        inputfile = None
+                        try:
+                            if check_result != CheckMessage.bypass:
+                                # download file
+                                inputfile = pyclowder.files.download(self, host, secret_key,
+                                                                     fileid, intermediatefileid, ext)
+                                body['inputfile'] = inputfile
 
-                        if self.process_message:
-                            self.process_message(self, body)
-                    finally:
-                        if inputfile is not None:
-                            try:
-                                os.remove(inputfile)
-                            except OSError:
-                                logger.exception("Error removing download file")
+                            if self.process_message:
+                                self.process_message(self, body)
+                        finally:
+                            if inputfile is not None:
+                                try:
+                                    os.remove(inputfile)
+                                except OSError:
+                                    logger.exception("Error removing download file")
+                    # PREPARE THE DATASET FOR PROCESSING
+                    else:
+                        inputzip = None
+                        filelist = []
+                        try:
+                            if check_result != CheckMessage.bypass:
+                                # download dataset
+                                inputzip = pyclowder.datasets.download(self, host, secret_key,
+                                                                       datasetid)
+                                filelist = pyclowder.utils.extract_zip_contents(inputzip)
+
+                            body['files'] = filelist
+                            if self.process_message:
+                                self.process_message(self, body)
+                        finally:
+                            if inputzip is not None:
+                                try:
+                                    os.remove(inputzip)
+                                except OSError:
+                                    logger.exception("Error removing download zip file")
+                            for f in filelist:
+                                try:
+                                    os.remove(f)
+                                except OSError:
+                                    logger.exception("Error removing dataset file")
             else:
                 self.status_update(fileid=fileid, status="Skipped in check_message")
         except SystemExit as exc:
