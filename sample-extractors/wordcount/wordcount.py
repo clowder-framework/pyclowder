@@ -25,14 +25,12 @@ class WordCount(Extractor):
         logging.getLogger('pyclowder').setLevel(logging.DEBUG)
         logging.getLogger('__main__').setLevel(logging.DEBUG)
 
-    def process_message(self, connector, parameters):
+    def process_message(self, connector, host, secret_key, resource, parameters):
         # Process the file and upload the results
 
         logger = logging.getLogger(__name__)
-        inputfile = parameters['inputfile']
-        host = parameters['host']
-        secret_key = parameters['secretKey']
-        file_id = parameters['fileid']
+        inputfile = resource["local_paths"][0]
+        file_id = resource['id']
 
         # call actual program
         result = subprocess.check_output(['wc', inputfile], stderr=subprocess.STDOUT)

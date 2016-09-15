@@ -17,6 +17,9 @@
   "process": {
     "file": [
       "*"
+    ],
+    "dataset": [
+      "file.added"
     ]
   },
   "external_services": [],

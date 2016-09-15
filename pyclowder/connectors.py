@@ -41,8 +41,8 @@ import time
 import pika
 import requests
 
-import pyclowder.files
-from pyclowder.utils import CheckMessage
+import pyclowder.files, pyclowder.datasets
+from pyclowder.utils import CheckMessage, extract_zip_contents
 
 
 class Connector(object):
@@ -81,38 +81,51 @@ class Connector(object):
 
         # id of file that was added
         fileid = body['id']
-        body['fileid'] = body['id']
         intermediatefileid = body['intermediateId']
         # id of dataset file was added to
         datasetid = body.get('datasetId', '')
-        # name of file that was added (only on file messages, NOT dataset messages)
+        # name of file that was added - only on file messages, NOT dataset messages!
         filename = body.get('filename', '')
         # get & clean clowder connection details
         secret_key = body['secretKey']
         host = body['host']
         if not host.endswith('/'):
             host += '/'
-            body['host'] = host
-        # TODO CATS-583 error with metadata only
         if host == "":
+            # TODO CATS-583 error with metadata only
             return
 
-        # determine what kind of extraction this is (i.e. what to download) and add relevant data to body
+        # determine what to download (if needed) and add relevant data to resource
         # TODO: Can this be improved by simply checking rabbitmq_key of extractor?
         if filename == '':
-            extractor_type = "DATASET"
-            # get dataset details and contents so extractor check_message can evaluate
-            body['dataset_info'] = pyclowder.datasets.get_info(self, host, secret_key, datasetid)
-            body['filelist'] = pyclowder.datasets.get_file_list(self, host, secret_key, datasetid)
+            # DATASET - get dataset details and contents so extractor check_message can evaluate
+            datasetinfo = pyclowder.datasets.get_info(self, host, secret_key, datasetid)
+            filelist = pyclowder.datasets.get_file_list(self, host, secret_key, datasetid)
             # populate filename field with the file that triggered this message
-            for f in body['filelist']:
+            for f in filelist:
                 if f['id'] == fileid:
-                    filename = f['filename']
-                    body['filename'] = filename
+                    latest_file = f['filename']
+                    break
+            rabbitStatusId = datasetid
+            resource = {
+                "type": "dataset",
+                "id": datasetid,
+                "name": datasetinfo["name"],
+                "files": filelist,
+                "latest_file": latest_file,
+                "dataset_info": datasetinfo
+            }
         else:
-            extractor_type = "FILE"
+            # FILE - get extension
             ext = os.path.splitext(filename)[1]
-            body['ext'] = ext
+            rabbitStatusId = fileid
+            resource = {
+                "type": "file",
+                "id": fileid,
+                "intermediateId": intermediatefileid,
+                "name": filename,
+                "file_ext": ext
+            }
 
         # register extractor
         url = "%sapi/extractors" % host
@@ -121,8 +134,8 @@ class Connector(object):
             self.register_extractor("%s?key=%s" % (url, secret_key))
 
         # tell everybody we are starting to process the file
-        # TODO: How to handle these for datasets?
-        self.status_update(fileid=fileid, status="Started processing file")
+        # TODO: How to better handle these for datasets?
+        self.status_update(fileid=rabbitStatusId, status="Started processing file")
 
 
         # checks whether to process the file in this message or not
@@ -130,21 +143,20 @@ class Connector(object):
         try:
             check_result = CheckMessage.download
             if self.check_message:
-                check_result = self.check_message(self, body)
+                check_result = self.check_message(self, host, secret_key, resource, body)
             if check_result:
                 if self.process_message:
                     # PREPARE THE FILE FOR PROCESSING
-                    if extractor_type == "FILE":
+                    if resource["type"] == "file":
                         inputfile = None
                         try:
                             if check_result != CheckMessage.bypass:
                                 # download file
                                 inputfile = pyclowder.files.download(self, host, secret_key,
                                                                      fileid, intermediatefileid, ext)
-                                body['inputfile'] = inputfile
+                                resource['local_paths'] = [inputfile]
 
-                            if self.process_message:
-                                self.process_message(self, body)
+                            self.process_message(self, host, secret_key, resource, body)
                         finally:
                             if inputfile is not None:
                                 try:
@@ -162,9 +174,8 @@ class Connector(object):
                                                                        datasetid)
                                 filelist = pyclowder.utils.extract_zip_contents(inputzip)
 
-                            body['files'] = filelist
-                            if self.process_message:
-                                self.process_message(self, body)
+                            resource['local_paths'] = filelist
+                            self.process_message(self, host, secret_key, resource, body)
                         finally:
                             if inputzip is not None:
                                 try:
@@ -177,32 +188,32 @@ class Connector(object):
                                 except OSError:
                                     logger.exception("Error removing dataset file")
             else:
-                self.status_update(fileid=fileid, status="Skipped in check_message")
+                self.status_update(fileid=rabbitStatusId, status="Skipped in check_message")
         except SystemExit as exc:
             status = "sys.exit : " + exc.message
-            logger.exception("[%s] %s", fileid, status)
-            self.status_update(fileid=fileid, status=status)
+            logger.exception("[%s] %s", rabbitStatusId, status)
+            self.status_update(fileid=rabbitStatusId, status=status)
             raise
         except SystemError as exc:
             status = "system error : " + exc.message
-            logger.exception("[%s] %s", fileid, status)
-            self.status_update(fileid=fileid, status=status)
+            logger.exception("[%s] %s", rabbitStatusId, status)
+            self.status_update(fileid=rabbitStatusId, status=status)
             raise
         except KeyboardInterrupt:
             status = "keyboard interrupt"
             logger.exception("[%s] %s", fileid, status)
-            self.status_update(fileid=fileid, status=status)
+            self.status_update(fileid=rabbitStatusId, status=status)
             raise
         except subprocess.CalledProcessError as exc:
             status = str.format("Error processing [exit code={}]\n{}", exc.returncode, exc.output)
-            logger.exception("[%s] %s", fileid, status)
-            self.status_update(fileid=fileid, status=status)
+            logger.exception("[%s] %s", rabbitStatusId, status)
+            self.status_update(fileid=rabbitStatusId, status=status)
         except Exception as exc:  # pylint: disable=broad-except
             status = "Error processing : " + exc.message
-            logger.exception("[%s] %s", fileid, status)
-            self.status_update(fileid=fileid, status=status)
+            logger.exception("[%s] %s", rabbitStatusId, status)
+            self.status_update(fileid=rabbitStatusId, status=status)
         finally:
-            self.status_update(fileid=fileid, status="Done")
+            self.status_update(fileid=rabbitStatusId, status="Done")
 
     def register_extractor(self, endpoints):
         """Register extractor info with Clowder.

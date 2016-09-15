@@ -114,13 +114,25 @@ class Extractor(object):
                 else:
                     rabbitmq_key = []
                     for key, value in self.extractor_info['process'].iteritems():
-                        for mt in value:
-                            while mt.endswith("/") or mt.endswith("*"):
-                                mt = mt[:-1]
-                            if mt == "":
-                                rabbitmq_key.append("*.%s.#" % key)
-                            else:
-                                rabbitmq_key.append("*.%s.%s.#" % (key, mt.replace("/", ".")))
+                        if key == "dataset":
+                            for mt in value:
+                                while mt.endswith("/") or mt.endswith("*"):
+                                    mt = mt[:-1]
+                                if mt == "":
+                                    rabbitmq_key.append("*.%s.#" % key)
+                                else:
+                                    # *.dataset.file.added should not have a .# at the end
+                                    rabbitmq_key.append("*.%s.%s" % (key, mt.replace("/", ".")))
+                        else:
+                            for mt in value:
+                                while mt.endswith("/") or mt.endswith("*"):
+                                    mt = mt[:-1]
+                                if mt == "":
+                                    rabbitmq_key.append("*.%s.#" % key)
+                                else:
+                                    rabbitmq_key.append("*.%s.%s.#" % (key, mt.replace("/", ".")))
+
+
 
                     rconn = RabbitMQConnector(self.extractor_info,
                                               check_message=self.check_message,
@@ -215,7 +227,7 @@ class Extractor(object):
         return False
 
     # pylint: disable=no-self-use,unused-argument
-    def check_message(self, connector, parameters):
+    def check_message(self, connector, host, secret_key, resource, parameters):
         """Checks to see if the message needs to be processed.
 
         This will return one of the values from CheckMessage:
@@ -232,7 +244,7 @@ class Extractor(object):
         return CheckMessage.download
 
     # pylint: disable=no-self-use,unused-argument
-    def process_message(self, connector, parameters):
+    def process_message(self, connector, host, secret_key, resource, parameters):
         """Process the message and send results back to clowder.
 
         Args:
