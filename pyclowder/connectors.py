@@ -38,7 +38,6 @@ import pickle
 import subprocess
 import sys
 import time
-import zipfile
 
 import pika
 import requests
