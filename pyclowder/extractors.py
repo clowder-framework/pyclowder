@@ -115,8 +115,6 @@ class Extractor(object):
                     rabbitmq_key = []
                     for key, value in self.extractor_info['process'].iteritems():
                         for mt in value:
-                            while mt.endswith("/"):
-                                mt = mt[:-1]
                             # Replace trailing '*' with '#'
                             mt = re.sub('(\*$)', '#', mt)
                             if mt.find('*') > -1:
