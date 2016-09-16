@@ -42,7 +42,7 @@ import pika
 import requests
 
 import pyclowder.files, pyclowder.datasets
-from pyclowder.utils import CheckMessage, extract_zip_contents
+from pyclowder.utils import CheckMessage, StatusMessage, extract_zip_contents
 
 
 class Connector(object):
@@ -134,8 +134,7 @@ class Connector(object):
             self.register_extractor("%s?key=%s" % (url, secret_key))
 
         # tell everybody we are starting to process the file
-        # TODO: How to better handle these for datasets?
-        self.status_update(fileid=rabbitStatusId, status="Started processing file")
+        self.status_update(StatusMessage.start, resource, "Started processing")
 
 
         # checks whether to process the file in this message or not
@@ -188,32 +187,32 @@ class Connector(object):
                                 except OSError:
                                     logger.exception("Error removing dataset file")
             else:
-                self.status_update(fileid=rabbitStatusId, status="Skipped in check_message")
+                self.status_update(StatusMessage.processing, resource, "Skipped in check_message")
         except SystemExit as exc:
             status = "sys.exit : " + exc.message
             logger.exception("[%s] %s", rabbitStatusId, status)
-            self.status_update(fileid=rabbitStatusId, status=status)
+            self.status_update(StatusMessage.error, resource, status)
             raise
         except SystemError as exc:
             status = "system error : " + exc.message
             logger.exception("[%s] %s", rabbitStatusId, status)
-            self.status_update(fileid=rabbitStatusId, status=status)
+            self.status_update(StatusMessage.error, resource, status)
             raise
         except KeyboardInterrupt:
             status = "keyboard interrupt"
             logger.exception("[%s] %s", fileid, status)
-            self.status_update(fileid=rabbitStatusId, status=status)
+            self.status_update(StatusMessage.error, resource, status)
             raise
         except subprocess.CalledProcessError as exc:
             status = str.format("Error processing [exit code={}]\n{}", exc.returncode, exc.output)
             logger.exception("[%s] %s", rabbitStatusId, status)
-            self.status_update(fileid=rabbitStatusId, status=status)
+            self.status_update(StatusMessage.error, resource, status)
         except Exception as exc:  # pylint: disable=broad-except
             status = "Error processing : " + exc.message
             logger.exception("[%s] %s", rabbitStatusId, status)
-            self.status_update(fileid=rabbitStatusId, status=status)
+            self.status_update(StatusMessage.error, resource, status)
         finally:
-            self.status_update(fileid=rabbitStatusId, status="Done")
+            self.status_update(StatusMessage.done, resource, "Done processing")
 
     def register_extractor(self, endpoints):
         """Register extractor info with Clowder.
@@ -247,13 +246,20 @@ class Connector(object):
                     logger.exception('Error in registering extractor: ' + str(exc))
 
     # pylint: disable=no-self-use
-    def status_update(self, status, fileid):
+    def status_update(self, status, resource, message):
         """Sends a status message.
 
         These messages, unlike logger messages, will often be send back to clowder to let
         the instance know the progress of the extractor.
+
+        Keyword arguments:
+        status - START | PROCESSING | DONE | ERROR
+        resource  - descriptor object with {"type", "id"} fields
+        message - contents of the status update
         """
-        logging.getLogger(__name__).info("[%s] : %s", fileid, status)
+        id = resource["id"]
+        msg = "%s: %s" % (status, message)
+        logging.getLogger(__name__).info("[%s] : %s", id, msg)
 
 
 # pylint: disable=too-many-instance-attributes
@@ -372,13 +378,14 @@ class RabbitMQConnector(Connector):
             self.header = None
 
     # def status_update(self, status, msg, resource_type=None, resource_id=None, start_time=None, end_time=None):
-    def status_update(self, status, fileid):
+    def status_update(self, status, resource, message):
         """Send a status message back using RabbitMQ"""
 
-        statusreport = dict()
-        statusreport['file_id'] = fileid
+        statusreport = {}
+        # TODO: Update this to check resource["type"] once Clowder better supports dataset events
+        statusreport['file_id'] = resource["id"]
         statusreport['extractor_id'] = self.extractor_info['name']
-        statusreport['status'] = status
+        statusreport['status'] = "%s: %s" % (status, message)
         statusreport['start'] = time.strftime('%Y-%m-%dT%H:%M:%S')
         properties = pika.BasicProperties(correlation_id=self.header.correlation_id)
         self.channel.basic_publish(exchange='',
@@ -420,7 +427,7 @@ class HPCConnector(Connector):
                 finally:
                     self.logfile = None
 
-    def status_update(self, status, fileid):
+    def status_update(self, status, resource, message):
         """Store notification on log file with update"""
 
         logger = logging.getLogger(__name__)
@@ -429,10 +436,10 @@ class HPCConnector(Connector):
         if self.logfile and os.path.isfile(self.logfile) is True:
             try:
                 with open(self.logfile, 'a') as log:
-                    statusreport = dict()
-                    statusreport['file_id'] = fileid
+                    statusreport = {}
+                    statusreport['file_id'] = resource["id"]
                     statusreport['extractor_id'] = self.extractor_info['name']
-                    statusreport['status'] = status
+                    statusreport['status'] = "%s: %s" % (status, message)
                     statusreport['start'] = time.strftime('%Y-%m-%dT%H:%M:%S')
                     log.write(json.dumps(statusreport) + '\n')
             except:

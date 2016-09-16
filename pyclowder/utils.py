@@ -32,6 +32,19 @@ class CheckMessage(Enum):
     bypass = 2
 
 
+class StatusMessage(Enum):
+    """Value of status to be sent to status_update function.
+
+    Extractors can still define custom content in the message field
+    of that function, but the status itself must be one of these. The
+    full string will be STATUS: MESSAGE.
+    """
+
+    start = "START"
+    processing = "PROCESSING"
+    done = "DONE"
+    error = "ERROR"
+
 def setup_logging(config_info=None):
     """Given config_info setup logging.
 
