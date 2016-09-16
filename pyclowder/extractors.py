@@ -16,7 +16,7 @@ import os
 import sys
 import threading
 import traceback
-
+import re
 import time
 
 from pyclowder.connectors import RabbitMQConnector, HPCConnector
@@ -114,25 +114,18 @@ class Extractor(object):
                 else:
                     rabbitmq_key = []
                     for key, value in self.extractor_info['process'].iteritems():
-                        if key == "dataset":
-                            for mt in value:
-                                while mt.endswith("/") or mt.endswith("*"):
-                                    mt = mt[:-1]
+                        for mt in value:
+                            while mt.endswith("/"):
+                                mt = mt[:-1]
+                            # Replace trailing '*' with '#'
+                            mt = re.sub('(\*$)', '#', mt)
+                            if mt.find('*') > -1:
+                                logger.error("Invalid '*' found in rabbitmq_key: %s" % mt)
+                            else:
                                 if mt == "":
                                     rabbitmq_key.append("*.%s.#" % key)
                                 else:
-                                    # *.dataset.file.added should not have a .# at the end
                                     rabbitmq_key.append("*.%s.%s" % (key, mt.replace("/", ".")))
-                        else:
-                            for mt in value:
-                                while mt.endswith("/") or mt.endswith("*"):
-                                    mt = mt[:-1]
-                                if mt == "":
-                                    rabbitmq_key.append("*.%s.#" % key)
-                                else:
-                                    rabbitmq_key.append("*.%s.%s.#" % (key, mt.replace("/", ".")))
-
-
 
                     rconn = RabbitMQConnector(self.extractor_info,
                                               check_message=self.check_message,
