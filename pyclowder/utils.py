@@ -5,10 +5,12 @@ Amongst these utilities is a simple way to initialize the logging system
 from either a file or the command line.
 """
 
+import datetime
 import json
 import logging
 import logging.config
 import os
+import time
 import zipfile
 
 from enum import Enum
@@ -44,6 +46,16 @@ class StatusMessage(Enum):
     processing = "PROCESSING"
     done = "DONE"
     error = "ERROR"
+
+
+def iso8601time():
+    if time.daylight == 0:
+        tz = str.format('{0:+06.2f}', -float(time.timezone) / 3600).replace('.', ':')
+    else:
+        tz = str.format('{0:+06.2f}', -float(time.altzone) / 3600).replace('.', ':')
+    now = datetime.datetime.now().replace(microsecond=0)
+    return now.isoformat() + tz
+
 
 def setup_logging(config_info=None):
     """Given config_info setup logging.
