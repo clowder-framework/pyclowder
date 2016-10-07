@@ -41,8 +41,9 @@ import time
 import pika
 import requests
 
-import pyclowder.files, pyclowder.datasets
-from pyclowder.utils import CheckMessage, StatusMessage, extract_zip_contents
+import pyclowder.datasets
+import pyclowder.files
+import pyclowder.utils
 
 
 class Connector(object):
@@ -98,10 +99,12 @@ class Connector(object):
         # determine what to download (if needed) and add relevant data to resource
         # TODO: Can this be improved by simply checking rabbitmq_key of extractor?
         if filename == '':
+            ext = ''
             # DATASET - get dataset details and contents so extractor check_message can evaluate
             datasetinfo = pyclowder.datasets.get_info(self, host, secret_key, datasetid)
             filelist = pyclowder.datasets.get_file_list(self, host, secret_key, datasetid)
             # populate filename field with the file that triggered this message
+            latest_file = None
             for f in filelist:
                 if f['id'] == fileid:
                     latest_file = f['filename']
@@ -134,13 +137,13 @@ class Connector(object):
             self.register_extractor("%s?key=%s" % (url, secret_key))
 
         # tell everybody we are starting to process the file
-        self.status_update(StatusMessage.start, resource, "Started processing")
+        self.status_update(pyclowder.utils.StatusMessage.start, resource, "Started processing")
 
 
         # checks whether to process the file in this message or not
         # pylint: disable=too-many-nested-blocks
         try:
-            check_result = CheckMessage.download
+            check_result = pyclowder.utils.CheckMessage.download
             if self.check_message:
                 check_result = self.check_message(self, host, secret_key, resource, body)
             if check_result:
@@ -149,7 +152,7 @@ class Connector(object):
                     if resource["type"] == "file":
                         inputfile = None
                         try:
-                            if check_result != CheckMessage.bypass:
+                            if check_result != pyclowder.utils.CheckMessage.bypass:
                                 # download file
                                 inputfile = pyclowder.files.download(self, host, secret_key,
                                                                      fileid, intermediatefileid, ext)
@@ -167,7 +170,7 @@ class Connector(object):
                         inputzip = None
                         filelist = []
                         try:
-                            if check_result != CheckMessage.bypass:
+                            if check_result != pyclowder.utils.CheckMessage.bypass:
                                 # download dataset
                                 inputzip = pyclowder.datasets.download(self, host, secret_key,
                                                                        datasetid)
@@ -187,32 +190,32 @@ class Connector(object):
                                 except OSError:
                                     logger.exception("Error removing dataset file")
             else:
-                self.status_update(StatusMessage.processing, resource, "Skipped in check_message")
+                self.status_update(pyclowder.utils.StatusMessage.processing, resource, "Skipped in check_message")
         except SystemExit as exc:
             status = "sys.exit : " + exc.message
             logger.exception("[%s] %s", rabbitStatusId, status)
-            self.status_update(StatusMessage.error, resource, status)
+            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
             raise
         except SystemError as exc:
             status = "system error : " + exc.message
             logger.exception("[%s] %s", rabbitStatusId, status)
-            self.status_update(StatusMessage.error, resource, status)
+            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
             raise
         except KeyboardInterrupt:
             status = "keyboard interrupt"
             logger.exception("[%s] %s", fileid, status)
-            self.status_update(StatusMessage.error, resource, status)
+            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
             raise
         except subprocess.CalledProcessError as exc:
             status = str.format("Error processing [exit code={}]\n{}", exc.returncode, exc.output)
             logger.exception("[%s] %s", rabbitStatusId, status)
-            self.status_update(StatusMessage.error, resource, status)
+            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
         except Exception as exc:  # pylint: disable=broad-except
             status = "Error processing : " + exc.message
             logger.exception("[%s] %s", rabbitStatusId, status)
-            self.status_update(StatusMessage.error, resource, status)
+            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
         finally:
-            self.status_update(StatusMessage.done, resource, "Done processing")
+            self.status_update(pyclowder.utils.StatusMessage.done, resource, "Done processing")
 
     def register_extractor(self, endpoints):
         """Register extractor info with Clowder.
@@ -257,9 +260,7 @@ class Connector(object):
         resource  - descriptor object with {"type", "id"} fields
         message - contents of the status update
         """
-        id = resource["id"]
-        msg = "%s: %s" % (status, message)
-        logging.getLogger(__name__).info("[%s] : %s", id, msg)
+        logging.getLogger(__name__).info("[%s] : %s: %s", resource["id"], status, message)
 
 
 # pylint: disable=too-many-instance-attributes
@@ -386,7 +387,7 @@ class RabbitMQConnector(Connector):
         statusreport['file_id'] = resource["id"]
         statusreport['extractor_id'] = self.extractor_info['name']
         statusreport['status'] = "%s: %s" % (status, message)
-        statusreport['start'] = time.strftime('%Y-%m-%dT%H:%M:%S')
+        statusreport['start'] = pyclowder.utils.iso8601time()
         properties = pika.BasicProperties(correlation_id=self.header.correlation_id)
         self.channel.basic_publish(exchange='',
                                    routing_key=self.header.reply_to,
@@ -431,12 +432,12 @@ class HPCConnector(Connector):
         """Store notification on log file with update"""
 
         logger = logging.getLogger(__name__)
-        logger.debug("[%s] : %s", fileid, status)
+        logger.debug("[%s] : %s : %s", resource["id"], status, message)
 
         if self.logfile and os.path.isfile(self.logfile) is True:
             try:
                 with open(self.logfile, 'a') as log:
-                    statusreport = {}
+                    statusreport = dict()
                     statusreport['file_id'] = resource["id"]
                     statusreport['extractor_id'] = self.extractor_info['name']
                     statusreport['status'] = "%s: %s" % (status, message)
