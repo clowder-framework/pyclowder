@@ -8,6 +8,8 @@ import logging
 
 import requests
 
+from pyclowder.utils import StatusMessage
+
 
 # pylint: disable=too-many-arguments
 def upload_preview(connector, host, key, collectionid, previewfile, previewmetadata):
@@ -24,7 +26,7 @@ def upload_preview(connector, host, key, collectionid, previewfile, previewmetad
                     section this preview should be associated with.
     """
 
-    connector.status_update(fileid=collectionid, status="Uploading collection preview.")
+    connector.status_update(StatusMessage.processing, {"type":"collection", "id":collectionid}, "Uploading collection preview.")
 
     logger = logging.getLogger(__name__)
     headers = {'Content-Type': 'application/json'}

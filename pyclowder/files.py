@@ -10,6 +10,8 @@ import tempfile
 
 import requests
 
+from pyclowder.utils import StatusMessage
+
 
 # pylint: disable=too-many-arguments
 def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
@@ -24,7 +26,7 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
     ext -- the file extension, the downloaded file will end with this extension
     """
 
-    connector.status_update(fileid=fileid, status="Downloading file.")
+    connector.status_update(StatusMessage.processing, {"type":"file", "id":fileid}, "Downloading file.")
 
     # TODO: intermediateid doesn't really seem to be used here, can we remove entirely?
     if not intermediatefileid:
@@ -75,7 +77,7 @@ def upload_metadata(connector, host, key, fileid, metadata):
     metadata -- the metadata to be uploaded
     """
 
-    connector.status_update(fileid=fileid, status="Uploading file metadata.")
+    connector.status_update(StatusMessage.processing, {"type":"file", "id":fileid}, "Uploading file metadata.")
 
     headers = {'Content-Type': 'application/json'}
     url = '%sapi/files/%s/metadata.jsonld?key=%s' % (host, fileid, key)
@@ -98,7 +100,7 @@ def upload_preview(connector, host, key, fileid, previewfile, previewmetadata):
                     to indicate the section this preview should be associated with.
     """
 
-    connector.status_update(fileid=fileid, status="Uploading file preview.")
+    connector.status_update(StatusMessage.processing, {"type":"file", "id":fileid}, "Uploading file preview.")
 
     logger = logging.getLogger(__name__)
     headers = {'Content-Type': 'application/json'}
@@ -140,7 +142,7 @@ def upload_tags(connector, host, key, fileid, tags):
     tags -- the tags to be uploaded
     """
 
-    connector.status_update(fileid=fileid, status="Uploading file tags.")
+    connector.status_update(StatusMessage.processing, {"type":"file", "id":fileid}, "Uploading file tags.")
 
     headers = {'Content-Type': 'application/json'}
     url = '%sapi/files/%s/tags?key=%s' % (host, fileid, key)
