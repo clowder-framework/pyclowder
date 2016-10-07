@@ -47,7 +47,7 @@ def upload_tags(connector, host, key, sectionid, tags):
     tags -- the tags to be uploaded
     """
 
-    connector.status_update(StatusMessage.processing, {"type":"section", "id":sectionid}, "Uploading section tags.")
+    connector.status_update(StatusMessage.processing, {"type": "section", "id": sectionid}, "Uploading section tags.")
 
     headers = {'Content-Type': 'application/json'}
     url = '%sapi/sections/%s/tags?key=%s' % (host, sectionid, key)

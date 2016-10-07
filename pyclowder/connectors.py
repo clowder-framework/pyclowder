@@ -139,7 +139,6 @@ class Connector(object):
         # tell everybody we are starting to process the file
         self.status_update(pyclowder.utils.StatusMessage.start, resource, "Started processing")
 
-
         # checks whether to process the file in this message or not
         # pylint: disable=too-many-nested-blocks
         try:

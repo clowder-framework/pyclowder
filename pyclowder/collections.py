@@ -26,7 +26,8 @@ def upload_preview(connector, host, key, collectionid, previewfile, previewmetad
                     section this preview should be associated with.
     """
 
-    connector.status_update(StatusMessage.processing, {"type":"collection", "id":collectionid}, "Uploading collection preview.")
+    connector.status_update(StatusMessage.processing, {"type": "collection", "id": collectionid},
+                            "Uploading collection preview.")
 
     logger = logging.getLogger(__name__)
     headers = {'Content-Type': 'application/json'}

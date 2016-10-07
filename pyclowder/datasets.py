@@ -28,7 +28,7 @@ def create_empty(connector, host, key, datasetname, description):
 
     url = '%sapi/datasets/createempty?key=%s' % (host, key)
 
-    result = requests.post(url, headers={"Content-Type":"application/json"},
+    result = requests.post(url, headers={"Content-Type": "application/json"},
                            data='{"name":"%s", "description":"%s"}' % (datasetname, description),
                            verify=connector.ssl_verify)
     result.raise_for_status()
@@ -49,7 +49,7 @@ def download(connector, host, key, datasetid):
     datasetid -- the file that is currently being processed
     """
 
-    connector.status_update(StatusMessage.processing, {"type":"dataset", "id":datasetid}, "Downloading dataset.")
+    connector.status_update(StatusMessage.processing, {"type": "dataset", "id": datasetid}, "Downloading dataset.")
 
     # fetch dataset zipfile
     url = '%sapi/datasets/%s/download?key=%s' % (host, datasetid, key)
@@ -156,7 +156,8 @@ def upload_metadata(connector, host, key, datasetid, metadata):
     metadata -- the metadata to be uploaded
     """
 
-    connector.status_update(StatusMessage.processing, {"type":"dataset", "id":datasetid}, "Uploading dataset metadata.")
+    connector.status_update(StatusMessage.processing, {"type": "dataset", "id": datasetid},
+                            "Uploading dataset metadata.")
 
     headers = {'Content-Type': 'application/json'}
     url = '%sapi/datasets/%s/metadata.jsonld?key=%s' % (host, datasetid, key)
