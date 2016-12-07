@@ -190,31 +190,37 @@ class Connector(object):
                                     logger.exception("Error removing dataset file")
             else:
                 self.status_update(pyclowder.utils.StatusMessage.processing, resource, "Skipped in check_message")
+
+            self.message_ok(resource)
+
         except SystemExit as exc:
             status = "sys.exit : " + exc.message
             logger.exception("[%s] %s", rabbitStatusId, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
+            self.message_resubmit(resource)
             raise
         except SystemError as exc:
             status = "system error : " + exc.message
             logger.exception("[%s] %s", rabbitStatusId, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
+            self.message_resubmit(resource)
             raise
         except KeyboardInterrupt:
             status = "keyboard interrupt"
             logger.exception("[%s] %s", fileid, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
+            self.message_resubmit(resource)
             raise
         except subprocess.CalledProcessError as exc:
             status = str.format("Error processing [exit code={}]\n{}", exc.returncode, exc.output)
             logger.exception("[%s] %s", rabbitStatusId, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
+            self.message_error(resource)
         except Exception as exc:  # pylint: disable=broad-except
             status = "Error processing : " + exc.message
             logger.exception("[%s] %s", rabbitStatusId, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-        finally:
-            self.status_update(pyclowder.utils.StatusMessage.done, resource, "Done processing")
+            self.message_error(resource)
 
     def register_extractor(self, endpoints):
         """Register extractor info with Clowder.
@@ -261,6 +267,15 @@ class Connector(object):
         """
         logging.getLogger(__name__).info("[%s] : %s: %s", resource["id"], status, message)
 
+    def message_ok(self, resource):
+        self.status_update(pyclowder.utils.StatusMessage.done, resource, "Done processing")
+
+    def message_error(self, resource):
+        self.status_update(pyclowder.utils.StatusMessage.error, resource, "Error processing message")
+
+    def message_resubmit(self, resource):
+        self.status_update(pyclowder.utils.StatusMessage.processing, resource, "Resubmitting message")
+
 
 # pylint: disable=too-many-instance-attributes
 class RabbitMQConnector(Connector):
@@ -301,6 +316,7 @@ class RabbitMQConnector(Connector):
 
         # declare the queue in case it does not exist
         self.channel.queue_declare(queue=self.extractor_info['name'], durable=True)
+        self.channel.queue_declare(queue='error.'+self.extractor_info['name'], durable=True)
 
         # register with an exchange
         if self.rabbitmq_exchange:
@@ -371,7 +387,6 @@ class RabbitMQConnector(Connector):
 
         try:
             self._process_message(json.loads(body))
-            channel.basic_ack(method.delivery_tag)
         finally:
             self.body = None
             self.method = None
@@ -392,6 +407,21 @@ class RabbitMQConnector(Connector):
                                    routing_key=self.header.reply_to,
                                    properties=properties,
                                    body=json.dumps(statusreport))
+
+    def message_ok(self, resource):
+        super(RabbitMQConnector, self).message_ok(resource)
+        self.channel.basic_ack(self.method.delivery_tag)
+
+    def message_error(self, resource):
+        super(RabbitMQConnector, self).message_error(resource)
+        self.channel.basic_publish(exchange='',
+                                   routing_key='error.' + self.extractor_info['name'],
+                                   body=json.dumps(self.body))
+        self.channel.basic_ack(self.method.delivery_tag)
+
+    def message_resubmit(self, resource):
+        super(RabbitMQConnector, self).message_resubmit(resource)
+        self.channel.basic_nack(self.method.delivery_tag)
 
 
 class HPCConnector(Connector):
