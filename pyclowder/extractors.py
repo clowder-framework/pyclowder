@@ -59,6 +59,7 @@ class Extractor(object):
         rabbitmq_uri = os.getenv('RABBITMQ_URI', "amqp://guest:guest@127.0.0.1/%2f")
         rabbitmq_exchange = os.getenv('RABBITMQ_EXCHANGE', "clowder")
         registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
+        mounted_paths = "{}"
 
         # create the actual extractor
         self.parser = argparse.ArgumentParser(description=self.extractor_info['description'])
@@ -79,6 +80,8 @@ class Extractor(object):
                                  help='rabbitMQ URI (default=%s)' % rabbitmq_uri.replace("%", "%%"))
         self.parser.add_argument('--rabbitmqExchange', nargs='?', dest="rabbitmq_exchange", default=rabbitmq_exchange,
                                  help='rabbitMQ exchange (default=%s)' % rabbitmq_exchange)
+        self.parser.add_argument('--mounts', '-m', dest="mounted_paths", default=mounted_paths,
+                                 help="dictionary of {'remote path':'local path'} mount mappings")
         self.parser.add_argument('--sslignore', '-s', dest="sslverify", action='store_false',
                                  help='should SSL certificates be ignores')
         self.parser.add_argument('--version', action='version', version='%(prog)s 1.0')
@@ -130,7 +133,8 @@ class Extractor(object):
                                               process_message=self.process_message,
                                               rabbitmq_uri=self.args.rabbitmq_uri,
                                               rabbitmq_exchange=self.args.rabbitmq_exchange,
-                                              rabbitmq_key=rabbitmq_key)
+                                              rabbitmq_key=rabbitmq_key,
+                                              mounted_paths=json.loads(self.args.mounted_paths))
                     rconn.connect()
                     rconn.register_extractor(self.args.regstration_endpoints)
                     connectors.append(rconn)
@@ -142,7 +146,8 @@ class Extractor(object):
                     hconn = HPCConnector(self.extractor_info,
                                          check_message=self.check_message,
                                          process_message=self.process_message,
-                                         picklefile=self.args.hpc_picklefile)
+                                         picklefile=self.args.hpc_picklefile,
+                                         mounted_paths=json.loads(self.args.mounted_paths))
                     hconn.register_extractor(self.args.regstration_endpoints)
                     connectors.append(hconn)
                     threading.Thread(target=hconn.listen, name="Connector-" + str(connum)).start()

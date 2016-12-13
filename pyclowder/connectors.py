@@ -37,6 +37,7 @@ import os
 import pickle
 import subprocess
 import time
+import tempfile
 
 import pika
 import requests
@@ -125,9 +126,10 @@ class Connector(object):
             resource = {
                 "type": "file",
                 "id": fileid,
-                "intermediateId": intermediatefileid,
+                "intermediate_id": intermediatefileid,
                 "name": filename,
-                "file_ext": ext
+                "file_ext": ext,
+                "parent_dataset_id": datasetid
             }
 
         # register extractor
@@ -145,37 +147,125 @@ class Connector(object):
             check_result = pyclowder.utils.CheckMessage.download
             if self.check_message:
                 check_result = self.check_message(self, host, secret_key, resource, body)
-            if check_result:
+            if check_result != pyclowder.utils.CheckMessage.ignore:
                 if self.process_message:
-                    # PREPARE THE FILE FOR PROCESSING
+
+                    # PREPARE THE FILE FOR PROCESSING ---------------------------------------
                     if resource["type"] == "file":
                         inputfile = None
+                        have_local_file = False
                         try:
                             if check_result != pyclowder.utils.CheckMessage.bypass:
-                                # download file
-                                inputfile = pyclowder.files.download(self, host, secret_key,
-                                                                     fileid, intermediatefileid, ext)
+                                # first check if file is accessible locally
+                                file_path = pyclowder.files.download_info(self, host, secret_key,
+                                                                          resource["id"])['filepath']
+                                for source_path in self.mounted_paths:
+                                    if file_path.startswith(source_path):
+                                        inputfile = file_path.replace(source_path,
+                                                                      self.mounted_paths[source_path])
+                                        have_local_file = True
+                                        break
+
+                                # otherwise download file
+                                if not have_local_file:
+                                    inputfile = pyclowder.files.download(self, host, secret_key, fileid,
+                                                                         intermediatefileid, ext)
                                 resource['local_paths'] = [inputfile]
 
                             self.process_message(self, host, secret_key, resource, body)
                         finally:
-                            if inputfile is not None:
+                            if inputfile is not None and not have_local_file:
                                 try:
                                     os.remove(inputfile)
                                 except OSError:
                                     logger.exception("Error removing download file")
-                    # PREPARE THE DATASET FOR PROCESSING
+
+                    # PREPARE THE DATASET FOR PROCESSING ---------------------------------------
                     else:
                         inputzip = None
-                        filelist = []
                         try:
                             if check_result != pyclowder.utils.CheckMessage.bypass:
-                                # download dataset
-                                inputzip = pyclowder.datasets.download(self, host, secret_key,
-                                                                       datasetid)
-                                filelist = pyclowder.utils.extract_zip_contents(inputzip)
+                                # first check if any files in dataset accessible locally
+                                ds_file_list = pyclowder.datasets.get_file_list(self, host,
+                                                                                secret_key, resource["id"])
+                                located_files = []
+                                missing_files = []
+                                tmp_files_created = []
+                                tmp_dirs_created = []
+                                for dsf in ds_file_list:
+                                    have_local_file = False
+                                    dsf_path = dsf['filepath']
+                                    for source_path in self.mounted_paths:
+                                        if dsf_path.startswith(source_path):
+                                            # Store pointer to local file if found
+                                            have_local_file = True
+                                            inputfile = dsf_path.replace(source_path,
+                                                                         self.mounted_paths[source_path])
+                                            if os.path.exists(inputfile):
+                                                located_files.append(inputfile)
 
-                            resource['local_paths'] = filelist
+                                                # Also download metadata for the file (normally in ds .zip file)
+                                                md = pyclowder.files.download_metadata(self, host, secret_key,
+                                                                                       dsf["id"])
+                                                md_dir = tempfile.mkdtemp(suffix=dsf['id'])
+                                                tmp_dirs_created.append(md_dir)
+                                                md_name = os.path.basename(dsf_path)+"_metadata.json"
+                                                (fd, md_file) = tempfile.mkstemp(suffix=md_name, dir=md_dir)
+                                                with os.fdopen(fd, "w") as tmp_file:
+                                                    tmp_file.write(json.dumps(md))
+                                                located_files.append(md_file)
+                                                tmp_files_created.append(md_file)
+                                                break
+                                    if not have_local_file:
+                                        missing_files.append(dsf)
+
+                                # if some files found locally, check & download any that weren't
+                                if len(located_files) > 0:
+                                    for dsf in missing_files:
+                                        dsf_path = dsf['filepath']
+
+                                        # Download file to temp directory
+                                        file_ext = dsf_path['filename'].split(".")[-1]
+                                        inputfile = pyclowder.files.download(self, host, secret_key, dsf['id'],
+                                                                             dsf['id'], ".%s" % file_ext)
+                                        located_files.append(inputfile)
+                                        tmp_files_created.append(inputfile)
+                                        logger.info("Downloaded file: %s" % inputfile)
+
+                                        # Also download metadata for the file (normally in ds .zip file)
+                                        md = pyclowder.files.download_metadata(self, host, secret_key,
+                                                                               dsf["id"])
+                                        md_dir = tempfile.mkdtemp(suffix=dsf['id'])
+                                        tmp_dirs_created.append(md_dir)
+                                        md_name = os.path.basename(dsf_path)+"_metadata.json"
+                                        (fd, md_file) = tempfile.mkstemp(suffix=md_name, dir=md_dir)
+                                        with os.fdopen(fd, "w") as tmp_file:
+                                            tmp_file.write(json.dumps(md))
+                                        located_files.append(md_file)
+                                        tmp_files_created.append(md_file)
+
+                                    # Lastly need to get dataset metadata (normally in ds .zip file)
+                                    md = pyclowder.datasets.download_metadata(self, host, secret_key,
+                                                                              datasetid)
+                                    md_dir = tempfile.mkdtemp(suffix=datasetid)
+                                    tmp_dirs_created.append(md_dir)
+                                    md_name = "%s_dataset_metadata.json" % datasetid
+                                    (fd, md_file) = tempfile.mkstemp(suffix=md_name, dir=md_dir)
+                                    with os.fdopen(fd, "w") as tmp_file:
+                                        tmp_file.write(json.dumps(md))
+                                    located_files.append(md_file)
+                                    tmp_files_created.append(md_file)
+
+                                    file_paths = located_files
+
+                                # If we didn't find any files locally, download dataset .zip
+                                else:
+                                    inputzip = pyclowder.datasets.download(self, host, secret_key,
+                                                                           datasetid)
+                                    file_paths = pyclowder.utils.extract_zip_contents(inputzip)
+                                    tmp_files_created += file_paths
+
+                            resource['local_paths'] = file_paths
                             self.process_message(self, host, secret_key, resource, body)
                         finally:
                             if inputzip is not None:
@@ -183,11 +273,12 @@ class Connector(object):
                                     os.remove(inputzip)
                                 except OSError:
                                     logger.exception("Error removing download zip file")
-                            for f in filelist:
+                            for tmp_f in tmp_files_created:
                                 try:
-                                    os.remove(f)
+                                    os.remove(tmp_f)
                                 except OSError:
-                                    logger.exception("Error removing dataset file")
+                                    logger.exception("Error removing temporary dataset file")
+
             else:
                 self.status_update(pyclowder.utils.StatusMessage.processing, resource, "Skipped in check_message")
 
@@ -289,11 +380,12 @@ class RabbitMQConnector(Connector):
 
     # pylint: disable=too-many-arguments
     def __init__(self, extractor_info, rabbitmq_uri, rabbitmq_exchange=None, rabbitmq_key=None,
-                 check_message=None, process_message=None, ssl_verify=True):
+                 check_message=None, process_message=None, ssl_verify=True, mounted_paths={}):
         Connector.__init__(self, extractor_info, check_message, process_message, ssl_verify)
         self.rabbitmq_uri = rabbitmq_uri
         self.rabbitmq_exchange = rabbitmq_exchange
         self.rabbitmq_key = rabbitmq_key
+        self.mounted_paths = mounted_paths
         self.channel = None
         self.connection = None
         self.consumer_tag = None
@@ -385,8 +477,11 @@ class RabbitMQConnector(Connector):
         self.method = method
         self.header = header
 
+        json_body = json.loads(body)
+        json_body['routing_key'] = method.encode()[-1]
+
         try:
-            self._process_message(json.loads(body))
+            self._process_message(json_body)
         finally:
             self.body = None
             self.method = None
@@ -429,9 +524,10 @@ class HPCConnector(Connector):
 
     # pylint: disable=too-many-arguments
     def __init__(self, extractor_info, picklefile,
-                 check_message=None, process_message=None, ssl_verify=True):
+                 check_message=None, process_message=None, ssl_verify=True, mounted_paths={}):
         Connector.__init__(self, extractor_info, check_message, process_message, ssl_verify)
         self.picklefile = picklefile
+        self.mounted_paths = mounted_paths
         self.logfile = None
         self.body = None
         self.method = None
