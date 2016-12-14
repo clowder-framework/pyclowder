@@ -327,10 +327,7 @@ class Connector(object):
         logger = logging.getLogger(__name__)
 
         headers = {'Content-Type': 'application/json'}
-        # TODO BUG right now contexts is list of IDs
-        r = dict(self.extractor_info)
-        del r['contexts']
-        data = json.dumps(r)
+        data = self.extractor_info)
 
         for url in endpoints.split(','):
             if url not in Connector.registered_clowder:
