@@ -82,8 +82,6 @@ class Connector(object):
         logger = logging.getLogger(__name__)
 
         message_type = body['routing_key']
-        resource_type = body['resourceType']
-        resource_id = body['resourceId']
 
         # id of file that was added
         fileid = body['id']
@@ -102,7 +100,9 @@ class Connector(object):
             return
 
         # determine what to download (if needed) and add relevant data to resource
-        if message_type.find(".dataset."):
+        if message_type.find(".dataset.") > -1:
+            resource_type = "dataset"
+            resource_id = datasetid
             ext = ''
             datasetinfo = pyclowder.datasets.get_info(self, host, secret_key, datasetid)
             filelist = pyclowder.datasets.get_file_list(self, host, secret_key, datasetid)
@@ -121,7 +121,9 @@ class Connector(object):
                 "dataset_info": datasetinfo
             }
 
-        elif message_type.find(".file."):
+        elif message_type.find(".file.") > -1:
+            resource_type = "file"
+            resource_id = fileid
             ext = os.path.splitext(filename)[1]
             resource = {
                 "type": resource_type,
@@ -133,6 +135,8 @@ class Connector(object):
             }
 
         elif message_type.find("metadata.added") > -1:
+            resource_type = body['resourceType']
+            resource_id = body['resourceId']
             resource = {
                 "type": resource_type,
                 "id": resource_id,
