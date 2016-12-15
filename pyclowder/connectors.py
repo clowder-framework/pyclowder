@@ -327,7 +327,7 @@ class Connector(object):
         logger = logging.getLogger(__name__)
 
         headers = {'Content-Type': 'application/json'}
-        data = self.extractor_info)
+        data = self.extractor_info
 
         for url in endpoints.split(','):
             if url not in Connector.registered_clowder:
