@@ -81,6 +81,10 @@ class Connector(object):
 
         logger = logging.getLogger(__name__)
 
+        message_type = body['routing_key']
+        resource_type = body['resourceType']
+        resource_id = body['resourceId']
+
         # id of file that was added
         fileid = body['id']
         intermediatefileid = body['intermediateId']
@@ -98,10 +102,8 @@ class Connector(object):
             return
 
         # determine what to download (if needed) and add relevant data to resource
-        # TODO: Can this be improved by simply checking rabbitmq_key of extractor?
-        if filename == '':
+        if message_type.find(".dataset."):
             ext = ''
-            # DATASET - get dataset details and contents so extractor check_message can evaluate
             datasetinfo = pyclowder.datasets.get_info(self, host, secret_key, datasetid)
             filelist = pyclowder.datasets.get_file_list(self, host, secret_key, datasetid)
             # populate filename field with the file that triggered this message
@@ -110,26 +112,32 @@ class Connector(object):
                 if f['id'] == fileid:
                     latest_file = f['filename']
                     break
-            rabbitStatusId = datasetid
             resource = {
-                "type": "dataset",
-                "id": datasetid,
+                "type": resource_type,
+                "id": resource_id,
                 "name": datasetinfo["name"],
                 "files": filelist,
                 "latest_file": latest_file,
                 "dataset_info": datasetinfo
             }
-        else:
-            # FILE - get extension
+
+        elif message_type.find(".file."):
             ext = os.path.splitext(filename)[1]
-            rabbitStatusId = fileid
             resource = {
-                "type": "file",
-                "id": fileid,
+                "type": resource_type,
+                "id": resource_id,
                 "intermediate_id": intermediatefileid,
                 "name": filename,
                 "file_ext": ext,
                 "parent_dataset_id": datasetid
+            }
+
+        elif message_type.find("metadata.added") > -1:
+            resource = {
+                "type": resource_type,
+                "id": resource_id,
+                "parent_dataset_id": datasetid,
+                "metadata": body['metadata']
             }
 
         # register extractor
@@ -183,6 +191,9 @@ class Connector(object):
                     # PREPARE THE DATASET FOR PROCESSING ---------------------------------------
                     else:
                         inputzip = None
+                        tmp_files_created = []
+                        tmp_dirs_created = []
+                        file_paths = []
                         try:
                             if check_result != pyclowder.utils.CheckMessage.bypass:
                                 # first check if any files in dataset accessible locally
@@ -190,8 +201,6 @@ class Connector(object):
                                                                                 secret_key, resource["id"])
                                 located_files = []
                                 missing_files = []
-                                tmp_files_created = []
-                                tmp_dirs_created = []
                                 for dsf in ds_file_list:
                                     have_local_file = False
                                     dsf_path = dsf['filepath']
@@ -286,13 +295,13 @@ class Connector(object):
 
         except SystemExit as exc:
             status = "sys.exit : " + exc.message
-            logger.exception("[%s] %s", rabbitStatusId, status)
+            logger.exception("[%s] %s", resource_id, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
             self.message_resubmit(resource)
             raise
         except SystemError as exc:
             status = "system error : " + exc.message
-            logger.exception("[%s] %s", rabbitStatusId, status)
+            logger.exception("[%s] %s", resource_id, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
             self.message_resubmit(resource)
             raise
@@ -304,12 +313,12 @@ class Connector(object):
             raise
         except subprocess.CalledProcessError as exc:
             status = str.format("Error processing [exit code={}]\n{}", exc.returncode, exc.output)
-            logger.exception("[%s] %s", rabbitStatusId, status)
+            logger.exception("[%s] %s", resource_id, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
             self.message_error(resource)
         except Exception as exc:  # pylint: disable=broad-except
             status = "Error processing : " + exc.message
-            logger.exception("[%s] %s", rabbitStatusId, status)
+            logger.exception("[%s] %s", resource_id, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
             self.message_error(resource)
 
