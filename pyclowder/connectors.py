@@ -88,6 +88,12 @@ class Connector(object):
         intermediatefileid = body['intermediateId']
         # id of dataset file was added to
         datasetid = body.get('datasetId', '')
+        # reference to parent of resource (file parent is usually a dataset)
+        if datasetid != '':
+            parent_ref = {"type": "dataset", "id": datasetid}
+        else:
+            # TODO: enhance this for collection and dataset parents
+            parent_ref = {}
         # name of file that was added - only on file messages, NOT dataset messages!
         filename = body.get('filename', '')
         # get & clean clowder connection details
@@ -118,6 +124,7 @@ class Connector(object):
                 "name": datasetinfo["name"],
                 "files": filelist,
                 "latest_file": latest_file,
+                "parent": parent_ref,
                 "dataset_info": datasetinfo
             }
 
@@ -131,7 +138,7 @@ class Connector(object):
                 "intermediate_id": intermediatefileid,
                 "name": filename,
                 "file_ext": ext,
-                "parent_dataset_id": datasetid
+                "parent": parent_ref
             }
 
         elif message_type.find("metadata.added") > -1:
@@ -140,7 +147,7 @@ class Connector(object):
             resource = {
                 "type": resource_type,
                 "id": resource_id,
-                "parent_dataset_id": datasetid,
+                "parent": parent_ref,
                 "metadata": body['metadata']
             }
 
@@ -238,7 +245,7 @@ class Connector(object):
                                         dsf_path = dsf['filepath']
 
                                         # Download file to temp directory
-                                        file_ext = dsf_path['filename'].split(".")[-1]
+                                        file_ext = dsf['filename'].split(".")[-1]
                                         inputfile = pyclowder.files.download(self, host, secret_key, dsf['id'],
                                                                              dsf['id'], ".%s" % file_ext)
                                         located_files.append(inputfile)
