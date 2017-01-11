@@ -76,7 +76,7 @@ def download_metadata(connector, host, key, datasetid, extractor=None):
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
 
-    filterstring = "" if extractor is None else "?extractor=%s" % extractor
+    filterstring = "" if extractor is None else "&extractor=%s" % extractor
     url = '%sapi/datasets/%s/metadata.jsonld?key=%s%s' % (host, datasetid, key, filterstring)
 
     # fetch data
@@ -136,7 +136,7 @@ def remove_metadata(connector, host, key, datasetid, extractor=None):
                     !!! ALL JSON-LD METADATA WILL BE REMOVED IF NO extractor PROVIDED !!!
     """
 
-    filterstring = "" if extractor is None else "?extractor=%s" % extractor
+    filterstring = "" if extractor is None else "&extractor=%s" % extractor
     url = '%sapi/datasets/%s/metadata.jsonld?key=%s%s' % (host, datasetid, key, filterstring)
 
     # fetch data
