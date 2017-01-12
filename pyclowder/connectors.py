@@ -176,8 +176,7 @@ class Connector(object):
                         try:
                             if check_result != pyclowder.utils.CheckMessage.bypass:
                                 # first check if file is accessible locally
-                                file_metadata = pyclowder.files.download_info(self, host, secret_key,
-                                                                          resource["id"])
+                                file_metadata = pyclowder.files.download_info(self, host, secret_key, resource["id"])
                                 if 'filepath' in file_metadata:
                                     file_path = file_metadata['filepath']
                                     for source_path in self.mounted_paths:
