@@ -105,9 +105,27 @@ class Connector(object):
             # TODO CATS-583 error with metadata only
             return
 
+        # determine resource type
+        default_resource_type = "file"
+        if   message_type.find(".dataset.") > -1: resource_type = "dataset"
+        elif message_type.find(".file.") > -1: resource_type = "file"
+        elif message_type.find("metadata.added") > -1: resource_type = "metadata"
+        elif message_type == extractor_name_key:
+            # This was a manually submitted extraction, so we'll base type on first configured routing key
+            # TODO: Figure out better way
+            extractor_name_key = "extractors."+self.extractor_info['name']
+            routing_keys = self.get_routing_keys()
+            if len(routing_keys) > 0:
+                if   routing_keys[0].find(".dataset.") > -1: resource_type = "dataset"
+                elif routing_keys[0].find(".file.") > -1: resource_type = "file"
+                elif routing_keys[0].find("metadata.added") > -1: resource_type = "metadata"
+                else: resource_type = default_resource_type
+            else: resource_type = default_resource_type
+        else:
+            resource_type = default_resource_type
+
         # determine what to download (if needed) and add relevant data to resource
-        if message_type.find(".dataset.") > -1:
-            resource_type = "dataset"
+        if resource_type == "dataset":
             resource_id = datasetid
             ext = ''
             datasetinfo = pyclowder.datasets.get_info(self, host, secret_key, datasetid)
@@ -119,7 +137,7 @@ class Connector(object):
                     latest_file = f['filename']
                     break
             resource = {
-                "type": resource_type,
+                "type": "dataset",
                 "id": resource_id,
                 "name": datasetinfo["name"],
                 "files": filelist,
@@ -128,12 +146,11 @@ class Connector(object):
                 "dataset_info": datasetinfo
             }
 
-        elif message_type.find(".file.") > -1:
-            resource_type = "file"
+        elif resource_type == "file":
             resource_id = fileid
             ext = os.path.splitext(filename)[1]
             resource = {
-                "type": resource_type,
+                "type": "file",
                 "id": resource_id,
                 "intermediate_id": intermediatefileid,
                 "name": filename,
@@ -141,11 +158,10 @@ class Connector(object):
                 "parent": parent_ref
             }
 
-        elif message_type.find("metadata.added") > -1:
-            resource_type = body['resourceType']
+        elif resource_type == "metadata":
             resource_id = body['resourceId']
             resource = {
-                "type": resource_type,
+                "type": body['resourceType'],
                 "id": resource_id,
                 "parent": parent_ref,
                 "metadata": body['metadata']

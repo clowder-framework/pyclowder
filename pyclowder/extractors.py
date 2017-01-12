@@ -115,18 +115,7 @@ class Extractor(object):
                 if 'rabbitmq_uri' not in self.args:
                     logger.error("Missing URI for RabbitMQ")
                 else:
-                    rabbitmq_key = []
-                    for key, value in self.extractor_info['process'].iteritems():
-                        for mt in value:
-                            # Replace trailing '*' with '#'
-                            mt = re.sub('(\*$)', '#', mt)
-                            if mt.find('*') > -1:
-                                logger.error("Invalid '*' found in rabbitmq_key: %s" % mt)
-                            else:
-                                if mt == "":
-                                    rabbitmq_key.append("*.%s.#" % key)
-                                else:
-                                    rabbitmq_key.append("*.%s.%s" % (key, mt.replace("/", ".")))
+                    rabbitmq_key = self.get_routing_keys()
 
                     rconn = RabbitMQConnector(self.extractor_info,
                                               check_message=self.check_message,
@@ -207,6 +196,26 @@ class Extractor(object):
             },
             'content': content
         }
+
+    def get_routing_keys(self):
+        """Generate list of routing keys based on extractor_info "process" field.
+
+        This will return a list of key strings.
+        """
+        rabbitmq_key = []
+        for key, value in self.extractor_info['process'].iteritems():
+            for mt in value:
+                # Replace trailing '*' with '#'
+                mt = re.sub('(\*$)', '#', mt)
+                if mt.find('*') > -1:
+                    logger.error("Invalid '*' found in rabbitmq_key: %s" % mt)
+                else:
+                    if mt == "":
+                        rabbitmq_key.append("*.%s.#" % key)
+                    else:
+                        rabbitmq_key.append("*.%s.%s" % (key, mt.replace("/", ".")))
+
+        return rabbitmq_key
 
     def _check_key(self, key, obj):
         if key in obj:
