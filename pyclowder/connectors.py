@@ -308,19 +308,28 @@ class Connector(object):
             status = "sys.exit : " + exc.message
             logger.exception("[%s] %s", resource_id, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            self.message_resubmit(resource)
+            if self.body['retry_count'] < 10:
+                self.message_resubmit(resource)
+            else:
+                self.message_error(resource)
             raise
         except SystemError as exc:
             status = "system error : " + exc.message
             logger.exception("[%s] %s", resource_id, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            self.message_resubmit(resource)
+            if self.body['retry_count'] < 10:
+                self.message_resubmit(resource)
+            else:
+                self.message_error(resource)
             raise
         except KeyboardInterrupt:
             status = "keyboard interrupt"
             logger.exception("[%s] %s", fileid, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            self.message_resubmit(resource)
+            if self.body['retry_count'] < 10:
+                self.message_resubmit(resource)
+            else:
+                self.message_error(resource)
             raise
         except subprocess.CalledProcessError as exc:
             status = str.format("Error processing [exit code={}]\n{}", exc.returncode, exc.output)
@@ -383,6 +392,10 @@ class Connector(object):
 
     def message_resubmit(self, resource):
         self.status_update(pyclowder.utils.StatusMessage.processing, resource, "Resubmitting message")
+        if 'retry_count' in self.body:
+            self.body['retry_count'] += 1
+        else:
+            self.body['retry_count'] = 1
 
 
 # pylint: disable=too-many-instance-attributes
@@ -526,14 +539,21 @@ class RabbitMQConnector(Connector):
 
     def message_error(self, resource):
         super(RabbitMQConnector, self).message_error(resource)
+        properties = pika.BasicProperties(delivery_mode=2)
         self.channel.basic_publish(exchange='',
                                    routing_key='error.' + self.extractor_info['name'],
+                                   properties=properties,
                                    body=json.dumps(self.body))
         self.channel.basic_ack(self.method.delivery_tag)
 
     def message_resubmit(self, resource):
         super(RabbitMQConnector, self).message_resubmit(resource)
-        self.channel.basic_nack(self.method.delivery_tag)
+        properties = pika.BasicProperties(delivery_mode=2)
+        self.channel.basic_publish(exchange='',
+                                   routing_key=self.extractor_info['name'],
+                                   properties=properties,
+                                   body=json.dumps(self.body))
+        self.channel.basic_ack(self.method.delivery_tag)
 
 
 class HPCConnector(Connector):
