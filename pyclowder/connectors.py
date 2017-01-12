@@ -107,20 +107,28 @@ class Connector(object):
 
         # determine resource type
         default_resource_type = "file"
-        if   message_type.find(".dataset.") > -1: resource_type = "dataset"
-        elif message_type.find(".file.") > -1: resource_type = "file"
-        elif message_type.find("metadata.added") > -1: resource_type = "metadata"
+        if   message_type.find(".dataset.") > -1:
+            resource_type = "dataset"
+        elif message_type.find(".file.") > -1:
+            resource_type = "file"
+        elif message_type.find("metadata.added") > -1:
+            resource_type = "metadata"
         elif message_type == extractor_name_key:
             # This was a manually submitted extraction, so we'll base type on first configured routing key
             # TODO: Figure out better way
             extractor_name_key = "extractors."+self.extractor_info['name']
             routing_keys = self.get_routing_keys()
             if len(routing_keys) > 0:
-                if   routing_keys[0].find(".dataset.") > -1: resource_type = "dataset"
-                elif routing_keys[0].find(".file.") > -1: resource_type = "file"
-                elif routing_keys[0].find("metadata.added") > -1: resource_type = "metadata"
-                else: resource_type = default_resource_type
-            else: resource_type = default_resource_type
+                if   routing_keys[0].find(".dataset.") > -1:
+                    resource_type = "dataset"
+                elif routing_keys[0].find(".file.") > -1:
+                    resource_type = "file"
+                elif routing_keys[0].find("metadata.added") > -1:
+                    resource_type = "metadata"
+                else:
+                    resource_type = default_resource_type
+            else:
+                resource_type = default_resource_type
         else:
             resource_type = default_resource_type
 
