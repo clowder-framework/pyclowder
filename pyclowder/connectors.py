@@ -82,6 +82,7 @@ class Connector(object):
         logger = logging.getLogger(__name__)
 
         message_type = body['routing_key']
+        retry_count = 0 if 'retry_count' not in body else body['retry_count']
 
         # id of file that was added
         fileid = body['id']
@@ -308,8 +309,8 @@ class Connector(object):
             status = "sys.exit : " + exc.message
             logger.exception("[%s] %s", resource_id, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            if self.body['retry_count'] < 10:
-                self.message_resubmit(resource)
+            if retry_count < 10:
+                self.message_resubmit(resource, retry_count+1)
             else:
                 self.message_error(resource)
             raise
@@ -317,8 +318,8 @@ class Connector(object):
             status = "system error : " + exc.message
             logger.exception("[%s] %s", resource_id, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            if self.body['retry_count'] < 10:
-                self.message_resubmit(resource)
+            if retry_count < 10:
+                self.message_resubmit(resource, retry_count+1)
             else:
                 self.message_error(resource)
             raise
@@ -326,8 +327,8 @@ class Connector(object):
             status = "keyboard interrupt"
             logger.exception("[%s] %s", fileid, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            if self.body['retry_count'] < 10:
-                self.message_resubmit(resource)
+            if retry_count < 10:
+                self.message_resubmit(resource, retry_count+1)
             else:
                 self.message_error(resource)
             raise
@@ -390,12 +391,9 @@ class Connector(object):
     def message_error(self, resource):
         self.status_update(pyclowder.utils.StatusMessage.error, resource, "Error processing message")
 
-    def message_resubmit(self, resource):
-        self.status_update(pyclowder.utils.StatusMessage.processing, resource, "Resubmitting message")
-        if 'retry_count' in self.body:
-            self.body['retry_count'] += 1
-        else:
-            self.body['retry_count'] = 1
+    def message_resubmit(self, resource, retry_count):
+        self.status_update(pyclowder.utils.StatusMessage.processing, resource, "Resubmitting message (attempt #%s)"
+                           % retry_count)
 
 
 # pylint: disable=too-many-instance-attributes
@@ -546,13 +544,15 @@ class RabbitMQConnector(Connector):
                                    body=json.dumps(self.body))
         self.channel.basic_ack(self.method.delivery_tag)
 
-    def message_resubmit(self, resource):
-        super(RabbitMQConnector, self).message_resubmit(resource)
+    def message_resubmit(self, resource, retry_count):
+        super(RabbitMQConnector, self).message_resubmit(resource, retry_count)
         properties = pika.BasicProperties(delivery_mode=2)
+        jbody = json.loads(self.body)
+        jbody['retry_count'] = retry_count
         self.channel.basic_publish(exchange='',
                                    routing_key=self.extractor_info['name'],
                                    properties=properties,
-                                   body=json.dumps(self.body))
+                                   body=json.dumps(jbody))
         self.channel.basic_ack(self.method.delivery_tag)
 
 
