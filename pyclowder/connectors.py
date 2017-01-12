@@ -106,14 +106,13 @@ class Connector(object):
             return
 
         # determine resource type
-        extractor_name_key = "extractors."+self.extractor_info['name']
-        if   message_type.find(".dataset.") > -1:
+        if message_type.find(".dataset.") > -1:
             resource_type = "dataset"
         elif message_type.find(".file.") > -1:
             resource_type = "file"
         elif message_type.find("metadata.added") > -1:
             resource_type = "metadata"
-        elif message_type == extractor_name_key:
+        elif message_type == "extractors."+self.extractor_info['name']:
             # This was a manually submitted extraction
             if datasetid == fileid:
                 resource_type = "dataset"
