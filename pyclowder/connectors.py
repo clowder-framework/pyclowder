@@ -176,14 +176,16 @@ class Connector(object):
                         try:
                             if check_result != pyclowder.utils.CheckMessage.bypass:
                                 # first check if file is accessible locally
-                                file_path = pyclowder.files.download_info(self, host, secret_key,
-                                                                          resource["id"])['filepath']
-                                for source_path in self.mounted_paths:
-                                    if file_path.startswith(source_path):
-                                        inputfile = file_path.replace(source_path,
-                                                                      self.mounted_paths[source_path])
-                                        have_local_file = True
-                                        break
+                                file_metadata = pyclowder.files.download_info(self, host, secret_key,
+                                                                          resource["id"])
+                                if 'filepath' in file_metadata:
+                                    file_path = file_metadata['filepath']
+                                    for source_path in self.mounted_paths:
+                                        if file_path.startswith(source_path):
+                                            inputfile = file_path.replace(source_path,
+                                                                          self.mounted_paths[source_path])
+                                            have_local_file = True
+                                            break
 
                                 # otherwise download file
                                 if not have_local_file:
@@ -214,28 +216,29 @@ class Connector(object):
                                 missing_files = []
                                 for dsf in ds_file_list:
                                     have_local_file = False
-                                    dsf_path = dsf['filepath']
-                                    for source_path in self.mounted_paths:
-                                        if dsf_path.startswith(source_path):
-                                            # Store pointer to local file if found
-                                            have_local_file = True
-                                            inputfile = dsf_path.replace(source_path,
-                                                                         self.mounted_paths[source_path])
-                                            if os.path.exists(inputfile):
-                                                located_files.append(inputfile)
+                                    if 'filepath' in dsf:
+                                        dsf_path = dsf['filepath']
+                                        for source_path in self.mounted_paths:
+                                            if dsf_path.startswith(source_path):
+                                                # Store pointer to local file if found
+                                                have_local_file = True
+                                                inputfile = dsf_path.replace(source_path,
+                                                                             self.mounted_paths[source_path])
+                                                if os.path.exists(inputfile):
+                                                    located_files.append(inputfile)
 
-                                                # Also download metadata for the file (normally in ds .zip file)
-                                                md = pyclowder.files.download_metadata(self, host, secret_key,
-                                                                                       dsf["id"])
-                                                md_dir = tempfile.mkdtemp(suffix=dsf['id'])
-                                                tmp_dirs_created.append(md_dir)
-                                                md_name = os.path.basename(dsf_path)+"_metadata.json"
-                                                (fd, md_file) = tempfile.mkstemp(suffix=md_name, dir=md_dir)
-                                                with os.fdopen(fd, "w") as tmp_file:
-                                                    tmp_file.write(json.dumps(md))
-                                                located_files.append(md_file)
-                                                tmp_files_created.append(md_file)
-                                                break
+                                                    # Also download metadata for the file (normally in ds .zip file)
+                                                    md = pyclowder.files.download_metadata(self, host, secret_key,
+                                                                                           dsf["id"])
+                                                    md_dir = tempfile.mkdtemp(suffix=dsf['id'])
+                                                    tmp_dirs_created.append(md_dir)
+                                                    md_name = os.path.basename(dsf_path)+"_metadata.json"
+                                                    (fd, md_file) = tempfile.mkstemp(suffix=md_name, dir=md_dir)
+                                                    with os.fdopen(fd, "w") as tmp_file:
+                                                        tmp_file.write(json.dumps(md))
+                                                    located_files.append(md_file)
+                                                    tmp_files_created.append(md_file)
+                                                    break
                                     if not have_local_file:
                                         missing_files.append(dsf)
 
