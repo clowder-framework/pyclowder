@@ -462,9 +462,6 @@ class RabbitMQConnector(Connector):
             self.channel.queue_bind(queue=self.extractor_info['name'],
                                     exchange=self.rabbitmq_exchange,
                                     routing_key="extractors." + self.extractor_info['name'])
-            self.channel.queue_bind(queue='error.'+self.extractor_info['name'],
-                                    exchange=self.rabbitmq_exchange,
-                                    routing_key="error.extractors." + self.extractor_info['name'])
 
     def listen(self):
         """Listen for messages coming from RabbitMQ"""
@@ -540,7 +537,7 @@ class RabbitMQConnector(Connector):
         statusreport['status'] = "%s: %s" % (status, message)
         statusreport['start'] = pyclowder.utils.iso8601time()
         properties = pika.BasicProperties(correlation_id=self.header.correlation_id)
-        self.channel.basic_publish(exchange=self.rabbitmq_exchange,
+        self.channel.basic_publish(exchange='',
                                    routing_key=self.header.reply_to,
                                    properties=properties,
                                    body=json.dumps(statusreport))
@@ -552,8 +549,8 @@ class RabbitMQConnector(Connector):
     def message_error(self, resource):
         super(RabbitMQConnector, self).message_error(resource)
         properties = pika.BasicProperties(delivery_mode=2)
-        self.channel.basic_publish(exchange=self.rabbitmq_exchange,
-                                   routing_key='error.extractors.' + self.extractor_info['name'],
+        self.channel.basic_publish(exchange='',
+                                   routing_key='error.' + self.extractor_info['name'],
                                    properties=properties,
                                    body=self.body)
         self.channel.basic_ack(self.method.delivery_tag)
@@ -563,8 +560,8 @@ class RabbitMQConnector(Connector):
         properties = pika.BasicProperties(delivery_mode=2, reply_to=self.header.reply_to)
         jbody = json.loads(self.body)
         jbody['retry_count'] = retry_count
-        self.channel.basic_publish(exchange=self.rabbitmq_exchange,
-                                   routing_key='extractors.'+self.extractor_info['name'],
+        self.channel.basic_publish(exchange='',
+                                   routing_key=self.extractor_info['name'],
                                    properties=properties,
                                    body=json.dumps(jbody))
         self.channel.basic_ack(self.method.delivery_tag)
