@@ -159,9 +159,7 @@ class Extractor(object):
         try:
             while connectors:
                 time.sleep(1)
-                for conn in list(connectors):
-                    if conn.alive():
-                        connectors.remove(conn)
+                connectors = filter(lambda x: x.alive(), connectors)
         except KeyboardInterrupt:
             pass
         except BaseException:
