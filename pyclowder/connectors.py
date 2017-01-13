@@ -164,6 +164,9 @@ class Connector(object):
         # checks whether to process the file in this message or not
         # pylint: disable=too-many-nested-blocks
         try:
+            logging.getLogger(__name__).info("big ol' try loop")
+            logging.getLogger(__name__).info(retry_count)
+
             check_result = pyclowder.utils.CheckMessage.download
             if self.check_message:
                 check_result = self.check_message(self, host, secret_key, resource, body)
@@ -322,7 +325,6 @@ class Connector(object):
                 self.message_resubmit(resource, retry_count+1)
             else:
                 self.message_error(resource)
-            raise
         except KeyboardInterrupt:
             status = "keyboard interrupt"
             logger.exception("[%s] %s", fileid, status)
@@ -526,7 +528,6 @@ class RabbitMQConnector(Connector):
         statusreport['status'] = "%s: %s" % (status, message)
         statusreport['start'] = pyclowder.utils.iso8601time()
         properties = pika.BasicProperties(correlation_id=self.header.correlation_id)
-        self.channel.basic_publish(exchange='',
                                    routing_key=self.header.reply_to,
                                    properties=properties,
                                    body=json.dumps(statusreport))
@@ -538,7 +539,6 @@ class RabbitMQConnector(Connector):
     def message_error(self, resource):
         super(RabbitMQConnector, self).message_error(resource)
         properties = pika.BasicProperties(delivery_mode=2)
-        self.channel.basic_publish(exchange='',
                                    routing_key='error.' + self.extractor_info['name'],
                                    properties=properties,
                                    body=json.dumps(self.body))
@@ -546,11 +546,8 @@ class RabbitMQConnector(Connector):
 
     def message_resubmit(self, resource, retry_count):
         super(RabbitMQConnector, self).message_resubmit(resource, retry_count)
-        properties = pika.BasicProperties(delivery_mode=2)
         jbody = json.loads(self.body)
         jbody['retry_count'] = retry_count
-        self.channel.basic_publish(exchange='',
-                                   routing_key=self.extractor_info['name'],
                                    properties=properties,
                                    body=json.dumps(jbody))
         self.channel.basic_ack(self.method.delivery_tag)
