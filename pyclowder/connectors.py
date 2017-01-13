@@ -506,7 +506,7 @@ class RabbitMQConnector(Connector):
             self.channel.stop_consuming(self.consumer_tag)
 
     def alive(self):
-        return self.connection != None
+        return self.connection is not None
 
     def on_message(self, channel, method, header, body):
         """When the message is received this will call the generic _process_message in
@@ -605,7 +605,7 @@ class HPCConnector(Connector):
                     self.logfile = None
 
     def alive(self):
-        return self.logfile != None
+        return self.logfile is not None
 
     def status_update(self, status, resource, message):
         """Store notification on log file with update"""
