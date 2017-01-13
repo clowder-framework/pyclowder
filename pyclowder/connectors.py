@@ -70,6 +70,10 @@ class Connector(object):
          """
         pass
 
+    def alive(self):
+        """Return whether connection is still alive or not."""
+        return True
+
     # pylint: disable=too-many-branches,too-many-statements
     def _process_message(self, body):
         """The actual processing of the message.
@@ -82,6 +86,7 @@ class Connector(object):
         logger = logging.getLogger(__name__)
 
         message_type = body['routing_key']
+        retry_count = 0 if 'retry_count' not in body else body['retry_count']
 
         # id of file that was added
         fileid = body['id']
@@ -322,20 +327,28 @@ class Connector(object):
             status = "sys.exit : " + exc.message
             logger.exception("[%s] %s", resource_id, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            self.message_resubmit(resource)
-            raise
-        except SystemError as exc:
-            status = "system error : " + exc.message
-            logger.exception("[%s] %s", resource_id, status)
-            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            self.message_resubmit(resource)
+            self.message_resubmit(resource, retry_count)
             raise
         except KeyboardInterrupt:
             status = "keyboard interrupt"
             logger.exception("[%s] %s", fileid, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            self.message_resubmit(resource)
+            self.message_resubmit(resource, retry_count)
             raise
+        except GeneratorExit:
+            status = "generator exit"
+            logger.exception("[%s] %s", fileid, status)
+            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
+            self.message_resubmit(resource, retry_count)
+            raise
+        except StandardError as exc:
+            status = "standard error : " + exc.message
+            logger.exception("[%s] %s", resource_id, status)
+            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
+            if retry_count < 10:
+                self.message_resubmit(resource, retry_count+1)
+            else:
+                self.message_error(resource)
         except subprocess.CalledProcessError as exc:
             status = str.format("Error processing [exit code={}]\n{}", exc.returncode, exc.output)
             logger.exception("[%s] %s", resource_id, status)
@@ -395,8 +408,9 @@ class Connector(object):
     def message_error(self, resource):
         self.status_update(pyclowder.utils.StatusMessage.error, resource, "Error processing message")
 
-    def message_resubmit(self, resource):
-        self.status_update(pyclowder.utils.StatusMessage.processing, resource, "Resubmitting message")
+    def message_resubmit(self, resource, retry_count):
+        self.status_update(pyclowder.utils.StatusMessage.processing, resource, "Resubmitting message (attempt #%s)"
+                           % retry_count)
 
 
 # pylint: disable=too-many-instance-attributes
@@ -480,7 +494,11 @@ class RabbitMQConnector(Connector):
             # pylint: disable=protected-access
             while self.channel and self.channel._consumer_infos:
                 self.channel.connection.process_data_events(time_limit=1)  # 1 second
+        except SystemExit:
+            raise
         except KeyboardInterrupt:
+            raise
+        except GeneratorExit:
             raise
         except Exception:  # pylint: disable=broad-except
             logging.getLogger(__name__).exception("Error while consuming messages.")
@@ -495,7 +513,11 @@ class RabbitMQConnector(Connector):
 
     def stop(self):
         """Tell the connector to stop listening for messages."""
-        self.channel.stop_consuming(self.consumer_tag)
+        if self.channel:
+            self.channel.stop_consuming(self.consumer_tag)
+
+    def alive(self):
+        return self.connection is not None
 
     def on_message(self, channel, method, header, body):
         """When the message is received this will call the generic _process_message in
@@ -540,14 +562,23 @@ class RabbitMQConnector(Connector):
 
     def message_error(self, resource):
         super(RabbitMQConnector, self).message_error(resource)
+        properties = pika.BasicProperties(delivery_mode=2)
         self.channel.basic_publish(exchange='',
                                    routing_key='error.' + self.extractor_info['name'],
-                                   body=json.dumps(self.body))
+                                   properties=properties,
+                                   body=self.body)
         self.channel.basic_ack(self.method.delivery_tag)
 
-    def message_resubmit(self, resource):
-        super(RabbitMQConnector, self).message_resubmit(resource)
-        self.channel.basic_nack(self.method.delivery_tag)
+    def message_resubmit(self, resource, retry_count):
+        super(RabbitMQConnector, self).message_resubmit(resource, retry_count)
+        properties = pika.BasicProperties(delivery_mode=2, reply_to=self.header.reply_to)
+        jbody = json.loads(self.body)
+        jbody['retry_count'] = retry_count
+        self.channel.basic_publish(exchange='',
+                                   routing_key=self.extractor_info['name'],
+                                   properties=properties,
+                                   body=json.dumps(jbody))
+        self.channel.basic_ack(self.method.delivery_tag)
 
 
 class HPCConnector(Connector):
@@ -583,6 +614,9 @@ class HPCConnector(Connector):
                         self._process_message(body)
                 finally:
                     self.logfile = None
+
+    def alive(self):
+        return self.logfile is not None
 
     def status_update(self, status, resource, message):
         """Store notification on log file with update"""
