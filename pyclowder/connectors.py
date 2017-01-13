@@ -168,9 +168,6 @@ class Connector(object):
         # checks whether to process the file in this message or not
         # pylint: disable=too-many-nested-blocks
         try:
-            logging.getLogger(__name__).info("big ol' try loop")
-            logging.getLogger(__name__).info(retry_count)
-
             check_result = pyclowder.utils.CheckMessage.download
             if self.check_message:
                 check_result = self.check_message(self, host, secret_key, resource, body)
