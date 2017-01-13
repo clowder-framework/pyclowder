@@ -161,7 +161,7 @@ class Extractor(object):
                 time.sleep(1)
                 for conn in list(connectors):
                     if conn.alive():
-                        connectors.pop(conn)
+                        connectors.remove(conn)
         except KeyboardInterrupt:
             pass
         except BaseException:
