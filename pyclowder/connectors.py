@@ -530,7 +530,7 @@ class RabbitMQConnector(Connector):
 
         # Hold off on handling the new message if there's already a header from active processing
         if self.header:
-            self.channel.basic_nack(self.method.delivery_tag)
+            channel.basic_nack(method.delivery_tag)
             return
 
         # store arguments
@@ -544,7 +544,7 @@ class RabbitMQConnector(Connector):
         try:
             worker = threading.Thread(self._process_message(json_body))
             while worker.isAlive():
-                self.channel.process_data_events(time_limit=1)
+                channel.process_data_events(time_limit=1)
         finally:
             self.body = None
             self.method = None
