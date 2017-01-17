@@ -530,23 +530,24 @@ class RabbitMQConnector(Connector):
         # Hold off on handling the new message if there's already a header from active processing
         if self.header:
             self.channel.basic_nack(self.method.delivery_tag)
-        else:
-            # store arguments
-            self.body = body
-            self.method = method
-            self.header = header
+            return
 
-            json_body = json.loads(body)
-            json_body['routing_key'] = method.encode()[-1]
+        # store arguments
+        self.body = body
+        self.method = method
+        self.header = header
 
-            try:
-                worker = new Thread(self._process_message(json_body))
-                while worker.isAlive():
-                    self.channel.process_data_events(time_limit=1)
-            finally:
-                self.body = None
-                self.method = None
-                self.header = None
+        json_body = json.loads(body)
+        json_body['routing_key'] = method.encode()[-1]
+
+        try:
+            worker = new Thread(self._process_message(json_body))
+            while worker.isAlive():
+                self.channel.process_data_events(time_limit=1)
+        finally:
+            self.body = None
+            self.method = None
+            self.header = None
 
     # def status_update(self, status, msg, resource_type=None, resource_id=None, start_time=None, end_time=None):
     def status_update(self, status, resource, message):
