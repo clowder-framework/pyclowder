@@ -38,6 +38,7 @@ import pickle
 import subprocess
 import time
 import tempfile
+import threading
 
 import pika
 import requests
@@ -541,7 +542,7 @@ class RabbitMQConnector(Connector):
         json_body['routing_key'] = method.encode()[-1]
 
         try:
-            worker = new Thread(self._process_message(json_body))
+            worker = threading.Thread(self._process_message(json_body))
             while worker.isAlive():
                 self.channel.process_data_events(time_limit=1)
         finally:
