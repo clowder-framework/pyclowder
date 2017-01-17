@@ -496,7 +496,7 @@ class RabbitMQConnector(Connector):
         try:
             # pylint: disable=protected-access
             while self.channel and self.channel._consumer_infos:
-                self.channel.connection.process_data_events(time_limit=10)  # 1 second
+                self.channel.connection.process_data_events(time_limit=1)  # 1 second
         except SystemExit:
             raise
         except KeyboardInterrupt:
