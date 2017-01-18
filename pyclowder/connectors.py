@@ -632,9 +632,6 @@ class RabbitMQHandler(Connector):
         self.thread = threading.Thread(target=self._process_message, args=(json_body,))
         self.thread.start()
 
-    def register_extractor(self, endpoints):
-        pass
-
     def status_update(self, status, resource, message):
         self.messages.append({
             "type": "status",
