@@ -505,8 +505,6 @@ class RabbitMQConnector(Connector):
                         self.worker.messages.remove(msg)
                     if self.worker.thread and not self.worker.thread.isAlive():
                         self.worker = None
-
-
         except SystemExit:
             raise
         except KeyboardInterrupt:
