@@ -57,11 +57,15 @@ class Connector(object):
 
     registered_clowder = list()
 
-    def __init__(self, extractor_info, check_message=None, process_message=None, ssl_verify=True):
+    def __init__(self, extractor_info, check_message=None, process_message=None, ssl_verify=True, mounted_paths=None):
         self.extractor_info = extractor_info
         self.check_message = check_message
         self.process_message = process_message
         self.ssl_verify = ssl_verify
+        if mounted_paths is None:
+            self.mounted_paths = {}
+        else:
+            self.mounted_paths = mounted_paths
 
     def listen(self):
         """Listen for incoming messages.
@@ -428,19 +432,14 @@ class RabbitMQConnector(Connector):
 
     # pylint: disable=too-many-arguments
     def __init__(self, extractor_info, rabbitmq_uri, rabbitmq_exchange=None, rabbitmq_key=None,
-                 check_message=None, process_message=None, ssl_verify=True, mounted_paths={}):
-        # TODO: mounted paths at connector level
-        Connector.__init__(self, extractor_info, check_message, process_message, ssl_verify)
+                 check_message=None, process_message=None, ssl_verify=True, mounted_paths=None):
+        Connector.__init__(self, extractor_info, check_message, process_message, ssl_verify, mounted_paths)
         self.rabbitmq_uri = rabbitmq_uri
         self.rabbitmq_exchange = rabbitmq_exchange
         self.rabbitmq_key = rabbitmq_key
-        self.mounted_paths = mounted_paths
         self.channel = None
         self.connection = None
         self.consumer_tag = None
-        self.body = None
-        self.method = None
-        self.header = None
         self.worker = None
 
     def connect(self):
@@ -500,9 +499,7 @@ class RabbitMQConnector(Connector):
             while self.channel and self.channel._consumer_infos:
                 self.channel.connection.process_data_events(time_limit=1)  # 1 second
                 if self.worker:
-                    for msg in list(self.worker.messages):
-                        self.handle_queued_message(msg)
-                        self.worker.messages.remove(msg)
+                    self.worker.process_messages(self.channel)
                     if self.worker.thread and not self.worker.thread.isAlive():
                         self.worker = None
         except SystemExit:
@@ -536,66 +533,12 @@ class RabbitMQConnector(Connector):
         or there is an exception (except for SystemExit and SystemError exceptions).
         """
 
-        # store arguments for use in status_update and message_ok
-        self.method = method
-        self.header = header
-
         json_body = json.loads(body)
         json_body['routing_key'] = method.encode()[-1]
 
         self.worker = RabbitMQHandler(self.extractor_info, self.check_message, self.process_message,
                                       self.ssl_verify, self.mounted_paths, method, header, body)
         self.worker.start_thread(json_body)
-
-    def status_update(self, status, resource, message):
-        """Send a status message back using RabbitMQ"""
-
-        statusreport = {}
-        # TODO: Update this to check resource["type"] once Clowder better supports dataset events
-        statusreport['file_id'] = resource["id"]
-        statusreport['extractor_id'] = self.extractor_info['name']
-        statusreport['status'] = "%s: %s" % (status, message)
-        statusreport['start'] = pyclowder.utils.iso8601time()
-        properties = pika.BasicProperties(correlation_id=self.header.correlation_id)
-        self.channel.basic_publish(exchange='',
-                                   routing_key=self.header.reply_to,
-                                   properties=properties,
-                                   body=json.dumps(statusreport))
-
-    def message_ok(self, resource):
-        super(RabbitMQConnector, self).message_ok(resource)
-        self.channel.basic_ack(self.method.delivery_tag)
-
-    def message_error(self, resource):
-        super(RabbitMQConnector, self).message_error(resource)
-        properties = pika.BasicProperties(delivery_mode=2)
-        self.channel.basic_publish(exchange='',
-                                   routing_key='error.' + self.extractor_info['name'],
-                                   properties=properties,
-                                   body=self.body)
-        self.channel.basic_ack(self.method.delivery_tag)
-
-    def message_resubmit(self, resource, retry_count):
-        super(RabbitMQConnector, self).message_resubmit(resource, retry_count)
-        properties = pika.BasicProperties(delivery_mode=2, reply_to=self.header.reply_to)
-        jbody = json.loads(self.body)
-        jbody['retry_count'] = retry_count
-        self.channel.basic_publish(exchange='',
-                                   routing_key=self.extractor_info['name'],
-                                   properties=properties,
-                                   body=json.dumps(jbody))
-        self.channel.basic_ack(self.method.delivery_tag)
-
-    def handle_queued_message(self, msg):
-        """Process any messages generated by worker thread."""
-        if msg["type"] == "status":
-            self.status_update(msg["status"], msg["resource"], msg["message"])
-        elif msg["type"] == "ok":
-            self.message_ok(msg["resource"])
-        elif msg["type"] == "error":
-            self.message_error(msg["resource"])
-        elif msg["type"] == "resubmit":
-            self.message_resubmit(msg["resource"], msg["retry_count"])
 
 
 class RabbitMQHandler(Connector):
@@ -606,9 +549,8 @@ class RabbitMQHandler(Connector):
     """
 
     def __init__(self, extractor_info, check_message=None, process_message=None, ssl_verify=True,
-                 mounted_paths={}, method=None, header=None, body=None):
-        Connector.__init__(self, extractor_info, check_message, process_message, ssl_verify)
-        self.mounted_paths = mounted_paths
+                 mounted_paths=None, method=None, header=None, body=None):
+        Connector.__init__(self, extractor_info, check_message, process_message, ssl_verify, mounted_paths)
         self.method = method
         self.header = header
         self.body = body
@@ -630,32 +572,65 @@ class RabbitMQHandler(Connector):
         self.thread = threading.Thread(target=self._process_message, args=(json_body,))
         self.thread.start()
 
+    def process_messages(self, channel):
+        while self.messages:
+            msg = self.messages.pop()
+
+            if msg["type"] == 'status':
+                properties = pika.BasicProperties(delivery_mode=2, correlation_id=self.header.correlation_id)
+                channel.basic_publish(exchange='',
+                                      routing_key=self.header.reply_to,
+                                      properties=properties,
+                                      body=json.dumps(msg['status']))
+                self.status_update(msg['status'], msg['resource'], msg['message'])
+
+            elif msg["type"] == 'ok':
+                channel.basic_ack(self.method.delivery_tag)
+
+            elif msg["type"] == 'error':
+                properties = pika.BasicProperties(delivery_mode=2)
+                channel.basic_publish(exchange='',
+                                      routing_key='error.' + self.extractor_info['name'],
+                                      properties=properties,
+                                      body=self.body)
+                channel.basic_ack(self.method.delivery_tag)
+
+            elif msg["type"] == 'resubmit':
+                retry_count = msg['retry_count']
+                queue = self.extractor_info['name']
+                properties = pika.BasicProperties(delivery_mode=2, reply_to=self.header.reply_to)
+                jbody = json.loads(self.body)
+                jbody['retry_count'] = retry_count
+                if 'exchange' not in jbody and self.method.exchange:
+                    jbody['exchange'] = self.method.exchange
+                if 'routing_key' not in jbody and self.method.routing_key and self.method.routing_key != queue:
+                    jbody['routing_key'] = self.method.routing_key
+                channel.basic_publish(exchange='',
+                                      routing_key=queue,
+                                      properties=properties,
+                                      body=json.dumps(jbody))
+                channel.basic_ack(self.method.delivery_tag)
+
     def status_update(self, status, resource, message):
-        self.messages.append({
-            "type": "status",
-            "resource": resource,
-            "status": status,
-            "message": message
-        })
+        status_report = dict()
+        # TODO: Update this to check resource["type"] once Clowder better supports dataset events
+        status_report['file_id'] = resource["id"]
+        status_report['extractor_id'] = self.extractor_info['name']
+        status_report['status'] = "%s: %s" % (status, message)
+        status_report['start'] = pyclowder.utils.iso8601time()
+        self.messages.append({"type": "status", "status": status_report})
 
     def message_ok(self, resource):
-        self.messages.append({
-            "type": "ok",
-            "resource": resource
-        })
+        super(RabbitMQHandler, self).message_ok(resource)
+        self.messages.append({"type": "ok"})
 
     def message_error(self, resource):
-        self.messages.append({
-            "type": "error",
-            "resource": resource
-        })
+        super(RabbitMQHandler, self).message_error(resource)
+        self.messages.append({"type": "error"})
 
     def message_resubmit(self, resource, retry_count):
-        self.messages.append({
-            "type": "resubmit",
-            "resource": resource,
-            "retry_count": retry_count
-        })
+        super(RabbitMQHandler, self).message_resubmit(resource, retry_count)
+        self.messages.append({"type": "resubmit", "retry_count": retry_count})
 
 
 class HPCConnector(Connector):
@@ -663,14 +638,10 @@ class HPCConnector(Connector):
 
     # pylint: disable=too-many-arguments
     def __init__(self, extractor_info, picklefile,
-                 check_message=None, process_message=None, ssl_verify=True, mounted_paths={}):
-        Connector.__init__(self, extractor_info, check_message, process_message, ssl_verify)
+                 check_message=None, process_message=None, ssl_verify=True, mounted_paths=None):
+        Connector.__init__(self, extractor_info, check_message, process_message, ssl_verify, mounted_paths)
         self.picklefile = picklefile
-        self.mounted_paths = mounted_paths
         self.logfile = None
-        self.body = None
-        self.method = None
-        self.header = None
 
     def listen(self):
         """Reads the picklefile, sets up the logfile and call _process_message."""
