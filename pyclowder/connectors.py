@@ -582,7 +582,6 @@ class RabbitMQHandler(Connector):
                                       routing_key=self.header.reply_to,
                                       properties=properties,
                                       body=json.dumps(msg['status']))
-                self.status_update(msg['status'], msg['resource'], msg['message'])
 
             elif msg["type"] == 'ok':
                 channel.basic_ack(self.method.delivery_tag)
