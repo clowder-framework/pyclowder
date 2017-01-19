@@ -349,7 +349,7 @@ class Connector(object):
             self.message_resubmit(resource, retry_count)
             raise
         except StandardError as exc:
-            status = "standard error : " + exc.message
+            status = "standard error : " + str(exc.message)
             logger.exception("[%s] %s", resource_id, status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
             if retry_count < 10:
@@ -612,6 +612,7 @@ class RabbitMQHandler(Connector):
                 channel.basic_ack(self.method.delivery_tag)
 
     def status_update(self, status, resource, message):
+        super(RabbitMQHandler, self).status_update(status, resource, message)
         status_report = dict()
         # TODO: Update this to check resource["type"] once Clowder better supports dataset events
         status_report['file_id'] = resource["id"]
