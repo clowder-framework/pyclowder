@@ -618,7 +618,10 @@ class RabbitMQHandler(Connector):
         status_report['extractor_id'] = self.extractor_info['name']
         status_report['status'] = "%s: %s" % (status, message)
         status_report['start'] = pyclowder.utils.iso8601time()
-        self.messages.append({"type": "status", "status": status_report})
+        self.messages.append({"type": "status",
+                              "status": status_report,
+                              "resource": resource,
+                              "message": message})
 
     def message_ok(self, resource):
         super(RabbitMQHandler, self).message_ok(resource)
