@@ -534,7 +534,8 @@ class RabbitMQConnector(Connector):
         """
 
         json_body = json.loads(body)
-        json_body['routing_key'] = method.encode()[-1]
+        if 'routing_key' not in json_body and method.routing_key:
+            json_body['routing_key'] = method.routing_key
 
         self.worker = RabbitMQHandler(self.extractor_info, self.check_message, self.process_message,
                                       self.ssl_verify, self.mounted_paths, method, header, body)
