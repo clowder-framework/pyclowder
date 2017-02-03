@@ -5,8 +5,7 @@
 # PUSH    : set to push to push, anthing else not to push. If not set
 #           the program will push if master or develop.
 # PROJECT : the project to add to the image, default is NCSA
-# VERSION : the list of tags to use, if not set this will be based on
-#           the branch name.
+# VERSION : the list of tags to use, if not set this will be 2
 
 #DEBUG=echo
 
@@ -17,18 +16,9 @@ RM=${RM:-"rm"}
 
 # find out version and if we should push
 BRANCH="$(git rev-parse --abbrev-ref HEAD)"
-VERSION=${VERSION:-""}
-if [ "$VERSION" = "" ]; then
-  VERSION="$(git tag --points-at HEAD)"
-  if [ "$BRANCH" = "master" ]; then
-    PUSH=${PUSH:-"push"}
-    VERSION="${VERSION} 2"
-  else
-    PUSH=${PUSH:-""}
-  fi
-  if [ "$VERSION" = "" ]; then
-    VERSION="${BRANCH}"
-  fi
+VERSION=${VERSION:-"2"}
+if [ "$BRANCH" = "master" ]; then
+  PUSH=${PUSH:-"push"}
 else
   PUSH=${PUSH:-""}
 fi
@@ -60,11 +50,7 @@ create() {
       ${DEBUG} docker tag $$ ${2}:${v}
     else
       for p in ${PROJECT}; do
-        if [ "$p" = "ncsa" ]; then
-          NAME="clowder-$2"
-        else
-          NAME=$2
-        fi
+        NAME=$2
         ${DEBUG} docker tag $$ ${p}/${NAME}:${v}
         if [ "$PUSH" = "push" ]; then
           ${DEBUG} docker push ${p}/${NAME}:${v}
@@ -80,11 +66,7 @@ create() {
       LATEST="$LATEST ${2}:latest"
     else
       for p in ${PROJECT}; do
-        if [ "$p" = "ncsa" ]; then
-          NAME="clowder-$2"
-        else
-          NAME=$2
-        fi
+        NAME=$2
         ${DEBUG} docker tag $$ ${p}/${NAME}:latest
         LATEST="$LATEST ${p}/${NAME}:latest"
       done
