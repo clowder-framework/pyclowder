@@ -114,8 +114,8 @@ def create_datapoint(connector, host, key, streamid, geom, starttime, endtime, p
     url = '%sapi/geostreams/datapoints?key=%s' % (host, key)
 
     result = requests.post(url, headers={'Content-type': 'application/json'},
-                      data=json.dumps(body),
-                      verify=connector.ssl_verify)
+                           data=json.dumps(body),
+                           verify=connector.ssl_verify)
     result.raise_for_status()
 
     dpid = result.json()['id']
