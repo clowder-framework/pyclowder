@@ -124,6 +124,84 @@ def create_datapoint(connector, host, key, streamid, geom, starttime, endtime, p
     return dpid
 
 
+def get_sensor_by_name(connector, host, key, sensorname):
+    """Get sensor by name from Geostreams, or return None.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    sensorname -- name of sensor to search for
+    """
+
+    logger = logging.getLogger(__name__)
+
+    url = "%sapi/geostreams/sensors?sensor_name=%s&key=%s" % (host, sensorname, key)
+
+    result = requests.get(url)
+    result.raise_for_status()
+
+    for sens in r.json():
+        if 'name' in sens and sens['name'] == sensorname:
+            logger.debug("found sensor '%s' = [%s]" % (sensorname, sens['id']))
+            return sens
+
+    return None
+
+
+def get_sensors_by_circle(connector, host, key, lon, lat, radius=0):
+    """Get sensor by coordinate from Geostreams, or return None.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    lon -- longitude of point
+    lat -- latitude of point
+    radius -- distance in meters around point to search
+    """
+
+    logger = logging.getLogger(__name__)
+
+    url = "%sapi/geostreams/sensors?geocode=%s,%s,%s&key=%s" % (host, lat, lon, radius, key)
+
+    result = requests.get(url)
+    result.raise_for_status()
+
+    # Return first sensor
+    jbody = r.json()
+    if len(jbody) > 0:
+        return jbody
+    else:
+        return None
+
+
+def get_sensors_by_polygon(connector, host, key, coord_list):
+    """Get sensor by coordinate from Geostreams, or return None.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    coord_list -- list of (lon/lat) coordinate pairs forming polygon vertices
+    """
+
+    logger = logging.getLogger(__name__)
+
+    coord_strings = [str(i) for i in coord_list]
+    url = "%sapi/geostreams/sensors?geocode=%s&key=%s" % (host, ','.join(coord_strings), key)
+
+    result = requests.get(url)
+    result.raise_for_status()
+
+    # Return first sensor
+    jbody = r.json()
+    if len(jbody) > 0:
+        return jbody
+    else:
+        return None
+
+
 def get_stream_by_name(connector, host, key, streamname):
     """Get stream by name from Geostreams, or return None.
 
@@ -149,26 +227,52 @@ def get_stream_by_name(connector, host, key, streamname):
     return None
 
 
-def get_sensor_by_name(connector, host, key, sensorname):
-    """Get sensor by name from Geostreams, or return None.
+def get_streams_by_circle(connector, host, key, lon, lat, radius=0):
+    """Get stream by coordinate from Geostreams, or return None.
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
     host -- the clowder host, including http and port, should end with a /
     key -- the secret key to login to clowder
-    sensorname -- name of sensor to search for
+    lon -- longitude of point
+    lat -- latitude of point
+    radius -- distance in meters around point to search
     """
 
     logger = logging.getLogger(__name__)
 
-    url = "%sapi/geostreams/sensors?sensor_name=%s&key=%s" % (host, sensorname, key)
+    url = "%sapi/geostreams/stream?geocode=%s,%s,%s&key=%s" % (host, lat, lon, radius, key)
 
     result = requests.get(url)
     result.raise_for_status()
 
-    for sens in r.json():
-        if 'name' in sens and sens['name'] == sensorname:
-            logger.debug("found sensor '%s' = [%s]" % (sensorname, sens['id']))
-            return sens
+    jbody = r.json()
+    if len(jbody) > 0:
+        return jbody
+    else:
+        return None
 
-    return None
+
+def get_streams_by_polygon(connector, host, key, coord_list):
+    """Get stream by coordinate from Geostreams, or return None.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    coord_list -- list of (lon/lat) coordinate pairs forming polygon vertices
+    """
+
+    logger = logging.getLogger(__name__)
+
+    coord_strings = [str(i) for i in coord_list]
+    url = "%sapi/geostreams/stream?geocode=%s&key=%s" % (host, ','.join(coord_strings), key)
+
+    result = requests.get(url)
+    result.raise_for_status()
+
+    jbody = r.json()
+    if len(jbody) > 0:
+        return jbody
+    else:
+        return None
