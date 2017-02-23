@@ -2,13 +2,55 @@
 
 This module provides simple wrappers around the clowder Collections API
 """
-
 import json
 import logging
-
 import requests
-
 from pyclowder.utils import StatusMessage
+
+
+def create_empty(connector, host, key, collectionname, description, parentid=None, spaceid=None):
+    """Create a new collection in Clowder.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    collectionname -- name of new dataset to create
+    description -- description of new dataset
+    parentid -- id of parent collection
+    spaceid -- id of the space to add dataset to
+    """
+
+    logger = logging.getLogger(__name__)
+
+    if parentid:
+        if (spaceid):
+            url = '%sapi/collections/newCollectionWithParent?key=%s' % (host, key)
+            result = requests.post(url, headers={"Content-Type": "application/json"},
+                                   data={"name": collectionname, "description": description, "parentId": [parentid],
+                                   "space": spaceid}, verify=connector.ssl_verify)
+        else:
+            url = '%sapi/collections/newCollectionWithParent?key=%s' % (host, key)
+            result = requests.post(url, headers={"Content-Type": "application/json"},
+                                   data={"name": collectionname, "description": description, "parentId": [parentid]},
+                                   verify=connector.ssl_verify)
+    else:
+        if (spaceid):
+            url = '%sapi/collections?key=%s' % (host, key)
+            result = requests.post(url, headers={"Content-Type": "application/json"},
+                                   data={"name": collectionname, "description": description, "space": spaceid},
+                                   verify=connector.ssl_verify)
+        else:
+            url = '%sapi/collections?key=%s' % (host, key)
+            result = requests.post(url, headers={"Content-Type": "application/json"},
+                                   data={"name": collectionname, "description": description},
+                                   verify=connector.ssl_verify)
+    result.raise_for_status()
+
+    collectionid = result.json()['id']
+    logger.debug("collection id = [%s]", collectionid)
+
+    return collectionid
 
 
 # pylint: disable=too-many-arguments

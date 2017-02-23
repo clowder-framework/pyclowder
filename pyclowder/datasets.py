@@ -2,18 +2,15 @@
 
 This module provides simple wrappers around the clowder Datasets API
 """
-
 import json
 import logging
 import os
 import tempfile
-
 import requests
-
 from pyclowder.utils import StatusMessage
 
 
-def create_empty(connector, host, key, datasetname, description):
+def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
     """Create a new dataset in Clowder.
 
     Keyword arguments:
@@ -22,15 +19,33 @@ def create_empty(connector, host, key, datasetname, description):
     key -- the secret key to login to clowder
     datasetname -- name of new dataset to create
     description -- description of new dataset
+    parentid -- id of parent collection
+    spaceid -- id of the space to add dataset to
     """
 
     logger = logging.getLogger(__name__)
 
     url = '%sapi/datasets/createempty?key=%s' % (host, key)
 
-    result = requests.post(url, headers={"Content-Type": "application/json"},
-                           data='{"name":"%s", "description":"%s"}' % (datasetname, description),
-                           verify=connector.ssl_verify)
+    if parentid:
+        if spaceid:
+            result = requests.post(url, headers={"Content-Type": "application/json"},
+                                   data={"name": datasetname, "description": description, "collection": [parentid],
+                                   "space": [spaceid]}, verify=connector.ssl_verify)
+        else:
+            result = requests.post(url, headers={"Content-Type": "application/json"},
+                                   data={"name": datasetname, "description": description, "collection": [parentid]},
+                                   verify=connector.ssl_verify)
+    else:
+        if spaceid:
+            result = requests.post(url, headers={"Content-Type": "application/json"},
+                                   data={"name": datasetname, "description": description, "space": [spaceid]},
+                                   verify=connector.ssl_verify)
+        else:
+            result = requests.post(url, headers={"Content-Type": "application/json"},
+                                   data={"name": datasetname, "description": description},
+                                   verify=connector.ssl_verify)
+
     result.raise_for_status()
 
     datasetid = result.json()['id']
