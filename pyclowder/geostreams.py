@@ -169,7 +169,7 @@ def get_sensors_by_circle(connector, host, key, lon, lat, radius=0):
     result.raise_for_status()
 
     # Return first sensor
-    jbody = r.json()
+    jbody = result.json()
     if len(jbody) > 0:
         return jbody
     else:
@@ -195,7 +195,7 @@ def get_sensors_by_polygon(connector, host, key, coord_list):
     result.raise_for_status()
 
     # Return first sensor
-    jbody = r.json()
+    jbody = result.json()
     if len(jbody) > 0:
         return jbody
     else:
@@ -219,7 +219,7 @@ def get_stream_by_name(connector, host, key, streamname):
     result = requests.get(url)
     result.raise_for_status()
 
-    for strm in r.json():
+    for strm in result.json():
         if 'name' in strm and strm['name'] == streamname:
             logger.debug("found stream '%s' = [%s]" % (streamname, strm['id']))
             return strm
@@ -246,7 +246,7 @@ def get_streams_by_circle(connector, host, key, lon, lat, radius=0):
     result = requests.get(url)
     result.raise_for_status()
 
-    jbody = r.json()
+    jbody = result.json()
     if len(jbody) > 0:
         return jbody
     else:
@@ -271,7 +271,7 @@ def get_streams_by_polygon(connector, host, key, coord_list):
     result = requests.get(url)
     result.raise_for_status()
 
-    jbody = r.json()
+    jbody = result.json()
     if len(jbody) > 0:
         return jbody
     else:
