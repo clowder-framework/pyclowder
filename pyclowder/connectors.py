@@ -310,6 +310,7 @@ class Connector(object):
                                                                            datasetid)
                                     file_paths = pyclowder.utils.extract_zip_contents(inputzip)
                                     tmp_files_created += file_paths
+                                    tmp_files_created.append(inputzip)
 
                             resource['local_paths'] = file_paths
                             self.process_message(self, host, secret_key, resource, body)
@@ -324,6 +325,11 @@ class Connector(object):
                                     os.remove(tmp_f)
                                 except OSError:
                                     logger.exception("Error removing temporary dataset file")
+                            for tmp_d in tmp_dirs_created:
+                                try:
+                                    os.rmdir(tmp_d)
+                                except OSError:
+                                    logger.exception("Error removing temporary dataset directory")
 
             else:
                 self.status_update(pyclowder.utils.StatusMessage.processing, resource, "Skipped in check_message")
