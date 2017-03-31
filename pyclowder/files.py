@@ -109,7 +109,7 @@ def submit_extraction(connector, host, key, fileid, extractorname):
     url = "%sapi/files/%s/extractions?key=%s" % (host, fileid, key)
 
     result = requests.get(url,
-                          headers={'Content-Type':'application/json'},
+                          headers={'Content-Type': 'application/json'},
                           data=json.dumps({"extractor": extractorname}),
                           verify=connector.ssl_verify)
     result.raise_for_status()
