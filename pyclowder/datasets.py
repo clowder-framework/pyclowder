@@ -160,6 +160,28 @@ def remove_metadata(connector, host, key, datasetid, extractor=None):
     result.raise_for_status()
 
 
+def submit_extraction(connector, host, key, datasetid, extractorname):
+    """Submit dataset for extraction by given extractor.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    datasetid -- the dataset UUID to submit
+    extractorname -- registered name of extractor to trigger
+    """
+
+    url = "%sapi/datasets/%s/extractions?key=%s" % (host, datasetid, key)
+
+    result = requests.get(url,
+                          headers={'Content-Type':'application/json'},
+                          data=json.dumps({"extractor": extractorname}),
+                          verify=connector.ssl_verify)
+    result.raise_for_status()
+
+    return result.response_code
+
+
 def upload_metadata(connector, host, key, datasetid, metadata):
     """Upload dataset JSON-LD metadata to Clowder.
 
