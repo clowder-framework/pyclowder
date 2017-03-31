@@ -95,6 +95,28 @@ def download_metadata(connector, host, key, fileid, extractor=None):
     return result.json()
 
 
+def submit_extraction(connector, host, key, fileid, extractorname):
+    """Submit file for extraction by given extractor.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    fileid -- the file UUID to submit
+    extractorname -- registered name of extractor to trigger
+    """
+
+    url = "%sapi/files/%s/extractions?key=%s" % (host, fileid, key)
+
+    result = requests.get(url,
+                          headers={'Content-Type':'application/json'},
+                          data=json.dumps({"extractor": extractorname}),
+                          verify=connector.ssl_verify)
+    result.raise_for_status()
+
+    return result.response_code
+
+
 def upload_metadata(connector, host, key, fileid, metadata):
     """Upload file JSON-LD metadata to Clowder.
 
