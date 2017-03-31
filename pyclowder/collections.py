@@ -53,6 +53,25 @@ def create_empty(connector, host, key, collectionname, description, parentid=Non
     return collectionid
 
 
+def get_datasets(connector, host, key, collectionid):
+    """Get list of datasets in collection by UUID.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    datasetid -- the collection to get datasets of
+    """
+
+    url = "%sapi/collections/%s/datasets?key=%s" % (host, collectionid, key)
+
+    result = requests.get(url,
+                          verify=connector.ssl_verify)
+    result.raise_for_status()
+
+    return json.loads(result.text)
+
+
 # pylint: disable=too-many-arguments
 def upload_preview(connector, host, key, collectionid, previewfile, previewmetadata):
     """Upload preview to Clowder.
