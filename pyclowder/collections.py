@@ -28,23 +28,23 @@ def create_empty(connector, host, key, collectionname, description, parentid=Non
             url = '%sapi/collections/newCollectionWithParent?key=%s' % (host, key)
             result = requests.post(url, headers={"Content-Type": "application/json"},
                                    data={"name": collectionname, "description": description, "parentId": [parentid],
-                                   "space": spaceid}, verify=connector.ssl_verify)
+                                   "space": spaceid}, verify=connector.ssl_verify if connector else True)
         else:
             url = '%sapi/collections/newCollectionWithParent?key=%s' % (host, key)
             result = requests.post(url, headers={"Content-Type": "application/json"},
                                    data={"name": collectionname, "description": description, "parentId": [parentid]},
-                                   verify=connector.ssl_verify)
+                                   verify=connector.ssl_verify if connector else True)
     else:
         if (spaceid):
             url = '%sapi/collections?key=%s' % (host, key)
             result = requests.post(url, headers={"Content-Type": "application/json"},
                                    data={"name": collectionname, "description": description, "space": spaceid},
-                                   verify=connector.ssl_verify)
+                                   verify=connector.ssl_verify if connector else True)
         else:
             url = '%sapi/collections?key=%s' % (host, key)
             result = requests.post(url, headers={"Content-Type": "application/json"},
                                    data={"name": collectionname, "description": description},
-                                   verify=connector.ssl_verify)
+                                   verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     collectionid = result.json()['id']
@@ -78,7 +78,7 @@ def upload_preview(connector, host, key, collectionid, previewfile, previewmetad
     url = '%sapi/previews?key=%s' % (host, key)
     with open(previewfile, 'rb') as filebytes:
         result = requests.post(url, files={"File": filebytes},
-                               verify=connector.ssl_verify)
+                               verify=connector.ssl_verify if connector else True)
         result.raise_for_status()
     previewid = result.json()['id']
     logger.debug("preview id = [%s]", previewid)
@@ -87,14 +87,14 @@ def upload_preview(connector, host, key, collectionid, previewfile, previewmetad
     if collectionid and not (previewmetadata and previewmetadata['section_id']):
         url = '%sapi/collections/%s/previews/%s?key=%s' % (host, collectionid, previewid, key)
         result = requests.post(url, headers=headers, data=json.dumps({}),
-                               verify=connector.ssl_verify)
+                               verify=connector.ssl_verify if connector else True)
         result.raise_for_status()
 
     # associate metadata with preview
     if previewmetadata is not None:
         url = '%sapi/previews/%s/metadata?key=%s' % (host, previewid, key)
         result = requests.post(url, headers=headers, data=json.dumps(previewmetadata),
-                               verify=connector.ssl_verify)
+                               verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     return previewid
