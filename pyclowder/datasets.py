@@ -179,7 +179,7 @@ def submit_extraction(connector, host, key, datasetid, extractorname):
                           verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
-    return result.response_code
+    return result.status_code
 
 
 def upload_metadata(connector, host, key, datasetid, metadata):
