@@ -27,7 +27,7 @@ def upload(connector, host, key, sectiondata):
     # upload section
     url = '%sapi/sections?key=%s' % (host, key)
     result = requests.post(url, headers=headers, data=json.dumps(sectiondata),
-                           verify=connector.ssl_verify)
+                           verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     sectionid = result.json()['id']
@@ -52,5 +52,5 @@ def upload_tags(connector, host, key, sectionid, tags):
     headers = {'Content-Type': 'application/json'}
     url = '%sapi/sections/%s/tags?key=%s' % (host, sectionid, key)
     result = requests.post(url, headers=headers, data=json.dumps(tags),
-                           verify=connector.ssl_verify)
+                           verify=connector.ssl_verify if connector else True)
     result.raise_for_status()

@@ -41,7 +41,7 @@ def create_sensor(connector, host, key, sensorname, geom, type, region):
 
     result = requests.post(url, headers={'Content-type': 'application/json'},
                            data=json.dumps(body),
-                           verify=connector.ssl_verify)
+                           verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     sensorid = result.json()['id']
@@ -77,7 +77,7 @@ def create_stream(connector, host, key, streamname, sensorid, geom, properties={
 
     result = requests.post(url, headers={'Content-type': 'application/json'},
                            data=json.dumps(body),
-                           verify=connector.ssl_verify)
+                           verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     streamid = result.json()['id']
@@ -115,7 +115,7 @@ def create_datapoint(connector, host, key, streamid, geom, starttime, endtime, p
 
     result = requests.post(url, headers={'Content-type': 'application/json'},
                            data=json.dumps(body),
-                           verify=connector.ssl_verify)
+                           verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     dpid = result.json()['id']
@@ -138,7 +138,8 @@ def get_sensor_by_name(connector, host, key, sensorname):
 
     url = "%sapi/geostreams/sensors?sensor_name=%s&key=%s" % (host, sensorname, key)
 
-    result = requests.get(url)
+    result = requests.get(url,
+                          verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     for sens in r.json():
@@ -165,7 +166,8 @@ def get_sensors_by_circle(connector, host, key, lon, lat, radius=0):
 
     url = "%sapi/geostreams/sensors?geocode=%s,%s,%s&key=%s" % (host, lat, lon, radius, key)
 
-    result = requests.get(url)
+    result = requests.get(url,
+                          verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     # Return first sensor
@@ -191,7 +193,8 @@ def get_sensors_by_polygon(connector, host, key, coord_list):
     coord_strings = [str(i) for i in coord_list]
     url = "%sapi/geostreams/sensors?geocode=%s&key=%s" % (host, ','.join(coord_strings), key)
 
-    result = requests.get(url)
+    result = requests.get(url,
+                          verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     # Return first sensor
@@ -216,7 +219,8 @@ def get_stream_by_name(connector, host, key, streamname):
 
     url = "%sapi/geostreams/streams?stream_name=%s&key=%s" % (host, streamname, key)
 
-    result = requests.get(url)
+    result = requests.get(url,
+                          verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     for strm in result.json():
@@ -243,7 +247,8 @@ def get_streams_by_circle(connector, host, key, lon, lat, radius=0):
 
     url = "%sapi/geostreams/stream?geocode=%s,%s,%s&key=%s" % (host, lat, lon, radius, key)
 
-    result = requests.get(url)
+    result = requests.get(url,
+                          verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     jbody = result.json()
@@ -268,7 +273,8 @@ def get_streams_by_polygon(connector, host, key, coord_list):
     coord_strings = [str(i) for i in coord_list]
     url = "%sapi/geostreams/stream?geocode=%s&key=%s" % (host, ','.join(coord_strings), key)
 
-    result = requests.get(url)
+    result = requests.get(url,
+                          verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     jbody = result.json()

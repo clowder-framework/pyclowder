@@ -42,7 +42,7 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
         intermediatefileid = fileid
 
     url = '%sapi/files/%s?key=%s' % (host, intermediatefileid, key)
-    result = requests.get(url, stream=True, verify=connector.ssl_verify)
+    result = requests.get(url, stream=True, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
@@ -67,7 +67,7 @@ def download_info(connector, host, key, fileid):
 
     # fetch data
     result = requests.get(url, stream=True,
-                          verify=connector.ssl_verify)
+                          verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     return result.json()
@@ -89,7 +89,7 @@ def download_metadata(connector, host, key, fileid, extractor=None):
 
     # fetch data
     result = requests.get(url, stream=True,
-                          verify=connector.ssl_verify)
+                          verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     return result.json()
@@ -133,7 +133,7 @@ def upload_metadata(connector, host, key, fileid, metadata):
     headers = {'Content-Type': 'application/json'}
     url = '%sapi/files/%s/metadata.jsonld?key=%s' % (host, fileid, key)
     result = requests.post(url, headers=headers, data=json.dumps(metadata),
-                           verify=connector.ssl_verify)
+                           verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
 
@@ -160,7 +160,7 @@ def upload_preview(connector, host, key, fileid, previewfile, previewmetadata):
     url = '%sapi/previews?key=%s' % (host, key)
     with open(previewfile, 'rb') as filebytes:
         result = requests.post(url, files={"File": filebytes},
-                               verify=connector.ssl_verify)
+                               verify=connector.ssl_verify if connector else True)
         result.raise_for_status()
     previewid = result.json()['id']
     logger.debug("preview id = [%s]", previewid)
@@ -169,14 +169,14 @@ def upload_preview(connector, host, key, fileid, previewfile, previewmetadata):
     if fileid and not (previewmetadata and previewmetadata['section_id']):
         url = '%sapi/files/%s/previews/%s?key=%s' % (host, fileid, previewid, key)
         result = requests.post(url, headers=headers, data=json.dumps({}),
-                               verify=connector.ssl_verify)
+                               verify=connector.ssl_verify if connector else True)
         result.raise_for_status()
 
     # associate metadata with preview
     if previewmetadata is not None:
         url = '%sapi/previews/%s/metadata?key=%s' % (host, previewid, key)
         result = requests.post(url, headers=headers, data=json.dumps(previewmetadata),
-                               verify=connector.ssl_verify)
+                               verify=connector.ssl_verify if connector else True)
         result.raise_for_status()
 
     return previewid
@@ -198,7 +198,7 @@ def upload_tags(connector, host, key, fileid, tags):
     headers = {'Content-Type': 'application/json'}
     url = '%sapi/files/%s/tags?key=%s' % (host, fileid, key)
     result = requests.post(url, headers=headers, data=json.dumps(tags),
-                           verify=connector.ssl_verify)
+                           verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
 
@@ -219,7 +219,7 @@ def upload_thumbnail(connector, host, key, fileid, thumbnail):
     # upload preview
     with open(thumbnail, 'rb') as inputfile:
         result = requests.post(url, files={"File": inputfile},
-                               verify=connector.ssl_verify)
+                               verify=connector.ssl_verify if connector else True)
         result.raise_for_status()
     thumbnailid = result.json()['id']
     logger.debug("thumbnail id = [%s]", thumbnailid)
@@ -229,7 +229,7 @@ def upload_thumbnail(connector, host, key, fileid, thumbnail):
         headers = {'Content-Type': 'application/json'}
         url = host + 'api/files/' + fileid + '/thumbnails/' + thumbnailid + '?key=' + key
         result = requests.post(url, headers=headers, data=json.dumps({}),
-                               verify=connector.ssl_verify)
+                               verify=connector.ssl_verify if connector else True)
         result.raise_for_status()
 
     return thumbnailid
@@ -256,7 +256,7 @@ def upload_to_dataset(connector, host, key, datasetid, filepath):
 
     if os.path.exists(filepath):
         result = requests.post(url, files={"File": open(filepath, 'rb')},
-                               verify=connector.ssl_verify)
+                               verify=connector.ssl_verify if connector else True)
         result.raise_for_status()
 
         uploadedfileid = result.json()['id']
@@ -293,7 +293,7 @@ def _upload_to_dataset_local(connector, host, key, datasetid, filepath):
             ("file", '{"path":"%s"}' % filepath)
         ])
         result = requests.post(url, data=content, headers={'Content-Type': header},
-                               verify=connector.ssl_verify)
+                               verify=connector.ssl_verify if connector else True)
         result.raise_for_status()
 
         uploadedfileid = result.json()['id']
