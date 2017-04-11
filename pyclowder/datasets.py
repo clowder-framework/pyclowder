@@ -174,9 +174,9 @@ def submit_extraction(connector, host, key, datasetid, extractorname):
     url = "%sapi/datasets/%s/extractions?key=%s" % (host, datasetid, key)
 
     result = requests.post(url,
-                          headers={'Content-Type': 'application/json'},
-                          data=json.dumps({"extractor": extractorname}),
-                          verify=connector.ssl_verify if connector else True)
+                           headers={'Content-Type': 'application/json'},
+                           data=json.dumps({"extractor": extractorname}),
+                           verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     return result.status_code
