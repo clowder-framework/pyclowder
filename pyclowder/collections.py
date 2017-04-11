@@ -66,7 +66,7 @@ def get_datasets(connector, host, key, collectionid):
     url = "%sapi/collections/%s/datasets?key=%s" % (host, collectionid, key)
 
     result = requests.get(url,
-                          verify=connector.ssl_verify)
+                          verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     return json.loads(result.text)
