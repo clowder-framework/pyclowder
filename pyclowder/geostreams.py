@@ -142,7 +142,7 @@ def get_sensor_by_name(connector, host, key, sensorname):
                           verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
-    for sens in r.json():
+    for sens in result.json():
         if 'name' in sens and sens['name'] == sensorname:
             logger.debug("found sensor '%s' = [%s]" % (sensorname, sens['id']))
             return sens
