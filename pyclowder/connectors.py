@@ -394,7 +394,7 @@ class Connector(object):
                 Connector.registered_clowder.append(url)
                 try:
                     result = requests.post(url.strip(), headers=headers,
-                                           data=data,
+                                           data=json.dumps(data),
                                            verify=self.ssl_verify)
                     result.raise_for_status()
                     logger.debug("Registering extractor with %s : %s", url, result.text)
