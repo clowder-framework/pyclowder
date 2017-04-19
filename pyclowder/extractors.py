@@ -99,6 +99,14 @@ class Extractor(object):
         if 'sslverify' in self.args:
             self.ssl_verify = self.args.sslverify
 
+        # if logging config is a url, download the file
+        if self.args.logging.startswith("http://") or self.args.logging.startswith("https://"):
+            conf = requests.get(self.args.logging)
+            with open("logging.json", "wb") as conf_file:
+                for chunk in conf.iter_content(chunk_size=1024):
+                    conf_file.write(chunk)
+            self.args.logging = "logging.json"
+
         # start logging system
         setup_logging(self.args.logging)
 
