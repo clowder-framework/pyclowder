@@ -78,8 +78,6 @@ def setup_logging(config_info=None):
     """
     # if logging config is a url, download the file
 
-
-
     if config_info:
         temp_file = None
         if config_info.startswith("http://") or config_info.startswith("https://"):
