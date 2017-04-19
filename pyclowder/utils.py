@@ -12,6 +12,8 @@ import logging.config
 import os
 import time
 import zipfile
+import tempfile
+import requests
 
 from enum import Enum
 
@@ -74,7 +76,21 @@ def setup_logging(config_info=None):
         config_info (string): either a file on disk or a json string that
             has the logging configuration as json.
     """
+    # if logging config is a url, download the file
+
+
+
     if config_info:
+        temp_file = None
+        if config_info.startswith("http://") or config_info.startswith("https://"):
+            r = requests.get(config_info)
+            r.raise_for_status()
+            (temp_file, abs_path) = tempfile.mkstemp()
+            with os.fdopen(temp_file, "w") as tmp:
+                for chunk in r.iter_content(chunk_size=1024):
+                    tmp.write(chunk)
+            config_info = temp_file
+
         if os.path.isfile(config_info):
             if config_info.endswith('.yml'):
                 with open(config_info, 'r') as configfile:
@@ -89,6 +105,9 @@ def setup_logging(config_info=None):
         else:
             config = json.load(config_info)
             logging.config.dictConfig(config)
+
+        if temp_file:
+            os.remove(temp_file)
     else:
         logging.basicConfig(format='%(asctime)-15s [%(threadName)-15s] %(levelname)-7s :'
                                    ' %(name)s - %(message)s',
