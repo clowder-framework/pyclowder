@@ -59,6 +59,7 @@ class Extractor(object):
         rabbitmq_uri = os.getenv('RABBITMQ_URI', "amqp://guest:guest@127.0.0.1/%2f")
         rabbitmq_exchange = os.getenv('RABBITMQ_EXCHANGE', "clowder")
         registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
+        logging_config = os.getenv("LOGGING")
         mounted_paths = "{}"
 
         # create the actual extractor
@@ -66,8 +67,8 @@ class Extractor(object):
         self.parser.add_argument('--connector', '-c', type=str, nargs='?', default="RabbitMQ",
                                  choices=["RabbitMQ", "HPC"],
                                  help='connector to use (default=RabbitMQ)')
-        self.parser.add_argument('--logging', '-l', nargs='?', default=None,
-                                 help='file or logging coonfiguration (default=None)')
+        self.parser.add_argument('--logging', '-l', nargs='?', default=logging_config,
+                                 help='file or url or logging coonfiguration (default=None)')
         self.parser.add_argument('--num', '-n', type=int, nargs='?', default=1,
                                  help='number of parallel instances (default=1)')
         self.parser.add_argument('--pickle', type=file, nargs='*', dest="hpc_picklefile",
