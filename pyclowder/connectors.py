@@ -122,7 +122,7 @@ class Connector(object):
             resource_type = "file"
         elif message_type.find("metadata.added") > -1:
             resource_type = "metadata"
-        elif message_type.endswith("extractors."+self.extractor_info['name']):
+        elif message_type.endswith(self.extractor_info['name']):
             # This was a manually submitted extraction
             if datasetid == fileid:
                 resource_type = "dataset"
