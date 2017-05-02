@@ -581,7 +581,7 @@ class RabbitMQHandler(Connector):
 
     def process_messages(self, channel):
         while self.messages:
-            msg = self.messages.pop()
+            msg = self.messages.pop(0)
 
             if msg["type"] == 'status':
                 properties = pika.BasicProperties(delivery_mode=2, correlation_id=self.header.correlation_id)
