@@ -60,7 +60,7 @@ class Extractor(object):
         rabbitmq_exchange = os.getenv('RABBITMQ_EXCHANGE', "clowder")
         registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
         logging_config = os.getenv("LOGGING")
-        mounted_paths = "{}"
+        mounted_paths = os.getenv("MOUNTED_PATHS", "{}")
 
         # create the actual extractor
         self.parser = argparse.ArgumentParser(description=self.extractor_info['description'])
