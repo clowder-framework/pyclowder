@@ -122,12 +122,19 @@ class Connector(object):
             resource_type = "file"
         elif message_type.find("metadata.added") > -1:
             resource_type = "metadata"
-        elif message_type.endswith(self.extractor_info['name']):
+        elif message_type == "extractors."+self.extractor_info['name']:
             # This was a manually submitted extraction
             if datasetid == fileid:
                 resource_type = "dataset"
             else:
                 resource_type = "file"
+        elif message_type.endswith(self.extractor_info['name']):
+            # This was migrated from another queue (e.g. error queue) so use extractor default
+            for key, value in self.extractor_info['process'].iteritems():
+                if key == "dataset":
+                    resource_type = "dataset"
+                else:
+                    resource_type = "file"
         else:
             # This will be default value
             resource_type = "file"
