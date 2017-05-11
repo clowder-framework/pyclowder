@@ -136,8 +136,13 @@ class Connector(object):
         if resource_type == "dataset":
             resource_id = datasetid
             ext = ''
-            datasetinfo = pyclowder.datasets.get_info(self, host, secret_key, datasetid)
-            filelist = pyclowder.datasets.get_file_list(self, host, secret_key, datasetid)
+            try:
+                datasetinfo = pyclowder.datasets.get_info(self, host, secret_key, datasetid)
+                filelist = pyclowder.datasets.get_file_list(self, host, secret_key, datasetid)
+            except:
+                logger.exception("Error downloading dataset %s preprocess information." % datasetid)
+                return
+
             # populate filename field with the file that triggered this message
             latest_file = None
             for f in filelist:
