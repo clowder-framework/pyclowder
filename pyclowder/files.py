@@ -46,11 +46,14 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
     result.raise_for_status()
 
     (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
-    with os.fdopen(inputfile, "w") as outputfile:
-        for chunk in result.iter_content(chunk_size=10*1024):
-            outputfile.write(chunk)
-
-    return inputfilename
+    try:
+        with os.fdopen(inputfile, "w") as outputfile:
+            for chunk in result.iter_content(chunk_size=10*1024):
+                outputfile.write(chunk)
+        return inputfilename
+    except:
+        os.remove(inputfilename)
+        raise
 
 
 def download_info(connector, host, key, fileid):
