@@ -584,17 +584,18 @@ class RabbitMQHandler(Connector):
             msg = self.messages.pop(0)
 
             if msg["type"] == 'status':
-                properties = pika.BasicProperties(delivery_mode=2, correlation_id=self.header.correlation_id)
-                channel.basic_publish(exchange='',
-                                      routing_key=self.header.reply_to,
-                                      properties=properties,
-                                      body=json.dumps(msg['status']))
+                if self.header.reply_to:
+                    properties = pika.BasicProperties(delivery_mode=2, correlation_id=self.header.correlation_id)
+                    channel.basic_publish(exchange='',
+                                          routing_key=self.header.reply_to,
+                                          properties=properties,
+                                          body=json.dumps(msg['status']))
 
             elif msg["type"] == 'ok':
                 channel.basic_ack(self.method.delivery_tag)
 
             elif msg["type"] == 'error':
-                properties = pika.BasicProperties(delivery_mode=2)
+                properties = pika.BasicProperties(delivery_mode=2, reply_to=self.header.reply_to)
                 channel.basic_publish(exchange='',
                                       routing_key='error.' + self.extractor_info['name'],
                                       properties=properties,
