@@ -122,12 +122,19 @@ class Connector(object):
             resource_type = "file"
         elif message_type.find("metadata.added") > -1:
             resource_type = "metadata"
-        elif message_type.endswith(self.extractor_info['name']):
+        elif message_type == "extractors."+self.extractor_info['name']:
             # This was a manually submitted extraction
             if datasetid == fileid:
                 resource_type = "dataset"
             else:
                 resource_type = "file"
+        elif message_type.endswith(self.extractor_info['name']):
+            # This was migrated from another queue (e.g. error queue) so use extractor default
+            for key, value in self.extractor_info['process'].iteritems():
+                if key == "dataset":
+                    resource_type = "dataset"
+                else:
+                    resource_type = "file"
         else:
             # This will be default value
             resource_type = "file"
@@ -136,8 +143,21 @@ class Connector(object):
         if resource_type == "dataset":
             resource_id = datasetid
             ext = ''
-            datasetinfo = pyclowder.datasets.get_info(self, host, secret_key, datasetid)
-            filelist = pyclowder.datasets.get_file_list(self, host, secret_key, datasetid)
+            try:
+                datasetinfo = pyclowder.datasets.get_info(self, host, secret_key, datasetid)
+                filelist = pyclowder.datasets.get_file_list(self, host, secret_key, datasetid)
+            except:
+                msg = "[%s] : Error downloading dataset preprocess information." % datasetid
+                logger.exception(msg)
+                # Can't create full resource object but can provide essential details for status_update
+                resource = {
+                    "type": "dataset",
+                    "id": resource_id
+                }
+                self.status_update(pyclowder.utils.StatusMessage.error, resource, msg)
+                self.message_error(resource)
+                return
+
             # populate filename field with the file that triggered this message
             latest_file = None
             for f in filelist:
