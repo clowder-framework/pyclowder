@@ -42,8 +42,7 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
         intermediatefileid = fileid
 
     url = '%sapi/files/%s?key=%s' % (host, intermediatefileid, key)
-    result = requests.get(url, stream=True, verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
+    result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
 
     (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
     try:
@@ -69,9 +68,7 @@ def download_info(connector, host, key, fileid):
     url = '%sapi/files/%s/metadata?key=%s' % (host, fileid, key)
 
     # fetch data
-    result = requests.get(url, stream=True,
-                          verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
+    result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
 
     return result.json()
 
@@ -91,9 +88,7 @@ def download_metadata(connector, host, key, fileid, extractor=None):
     url = '%sapi/files/%s/metadata.jsonld?key=%s%s' % (host, fileid, key, filterstring)
 
     # fetch data
-    result = requests.get(url, stream=True,
-                          verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
+    result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
 
     return result.json()
 
@@ -111,11 +106,10 @@ def submit_extraction(connector, host, key, fileid, extractorname):
 
     url = "%sapi/files/%s/extractions?key=%s" % (host, fileid, key)
 
-    result = requests.get(url,
+    result = connector.get(url,
                           headers={'Content-Type': 'application/json'},
                           data=json.dumps({"extractor": extractorname}),
                           verify=connector.ssl_verify)
-    result.raise_for_status()
 
     return result.response_code
 
