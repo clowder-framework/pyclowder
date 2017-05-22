@@ -445,6 +445,70 @@ class Connector(object):
         self.status_update(pyclowder.utils.StatusMessage.processing, resource, "Resubmitting message (attempt #%s)"
                            % retry_count)
 
+    def get(self, url, params=None, raise_status=True, **kwargs):
+        """
+        This methods wraps the Python requests GET method
+        :param url: URl to use in GET request
+        :param params: (optional) GET request parameters
+        :param raise_status: (optional) If set to True, call raise_for_status. Default is True.
+        :param kwargs: List of other optional arguments to pass to GET call
+        :return: Response of the GET request
+        """
+
+        response = requests.get(url, params=params, **kwargs)
+        if raise_status:
+            response.raise_for_status()
+
+        return response
+
+    def post(self, url, data=None, json=None, raise_status=True, **kwargs):
+        """
+        This methods wraps the Python requests POST method
+        :param url: URl to use in POST request
+        :param data: (optional) data (Dictionary, bytes, or file-like object) to send in the body of POST request
+        :param json: (optional) json data to send with POST request
+        :param raise_status: (optional) If set to True, call raise_for_status. Default is True.
+        :param kwargs: List of other optional arguments to pass to POST call
+        :return: Response of the POST request
+        """
+
+        response = requests.post(url, data=data, json=json, **kwargs)
+        if raise_status:
+            response.raise_for_status()
+
+        return response
+
+    def put(self, url, data=None, raise_status=True, **kwargs):
+        """
+        This methods wraps the Python requests PUT method
+        :param url: URl to use in PUT request
+        :param data: (optional) data to send with PUT request
+        :param raise_status: (optional) If set to True, call raise_for_status. Default is True.
+        :param kwargs: List of other optional arguments to pass to PUT call
+        :return: Response of the PUT request
+        """
+
+        response = requests.put(url, data=data, **kwargs)
+        if raise_status:
+            response.raise_for_status()
+
+        return response
+
+    def delete(self, url, raise_status=True, **kwargs):
+        """
+        This methods wraps the Python requests DELETE method
+        :param url: URl to use in DELETE request
+        :param raise_status: (optional) If set to True, call raise_for_status. Default is True.
+        :param kwargs: List of other optional arguments to pass to DELETE call
+        :return: Response of the DELETE request
+        """
+
+        response = requests.delete(url, **kwargs)
+        if raise_status:
+            response.raise_for_status()
+
+        return response
+
 
 # pylint: disable=too-many-instance-attributes
 class RabbitMQConnector(Connector):
