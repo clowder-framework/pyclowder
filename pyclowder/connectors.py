@@ -539,11 +539,19 @@ class RabbitMQConnector(Connector):
         finally:
             logging.getLogger(__name__).info("Stopped listening for messages.")
             if self.channel:
-                self.channel.close()
-                self.channel = None
+                try:
+                    self.channel.close()
+                except Exception:
+                    logging.getLogger(__name__).exception("Error while closing channel.")
+                finally:
+                    self.channel = None
             if self.connection:
-                self.connection.close()
-                self.connection = None
+                try:
+                    self.connection.close()
+                except Exception:
+                    logging.getLogger(__name__).exception("Error while closing connection.")
+                finally:
+                    self.connection = None
 
     def stop(self):
         """Tell the connector to stop listening for messages."""
