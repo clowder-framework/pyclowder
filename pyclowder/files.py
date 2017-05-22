@@ -111,7 +111,7 @@ def submit_extraction(connector, host, key, fileid, extractorname):
                           data=json.dumps({"extractor": extractorname}),
                           verify=connector.ssl_verify)
 
-    return result.response_code
+    return result.status_code
 
 
 def upload_metadata(connector, host, key, fileid, metadata):
