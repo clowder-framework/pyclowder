@@ -91,7 +91,8 @@ class Extractor(object):
         self.parser.add_argument('--input-file-path', '-ifp', dest="input_file_path", default=input_file_path,
                                  help="Full path to local input file to be processed (used by Big Data feature)")
         self.parser.add_argument('--output-file-path', '-ofp', dest="output_file_path", default=output_file_path,
-                                 help="Full path to local output JSON file to store metadata (used by Big Data feature)")
+                                 help="Full path to local output JSON file to store metadata "
+                                      "(used by Big Data feature)")
         self.parser.add_argument('--sslignore', '-s', dest="sslverify", action='store_false',
                                  help='should SSL certificates be ignores')
         self.parser.add_argument('--version', action='version', version='%(prog)s 1.0')
