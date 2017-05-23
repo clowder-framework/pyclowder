@@ -852,7 +852,7 @@ class LocalConnector(Connector):
             # If output file path is not set
             if self.output_file_path is None or self.output_file_path == "":
                 # Create json filename from the input filename
-                json_filename = os.path.splitext(self.input_file_path)[0] + extension
+                json_filename = self.input_file_path + extension
             else:
                 json_filename = str(self.output_file_path)
                 if not json_filename.endswith(extension):
