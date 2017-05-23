@@ -5,7 +5,7 @@ to create extractors.
 
 One of the most interesting aspects of Clowder is the ability to extract metadata from any file. This ability is
 created using extractors. To make it easy to create these extractors in python we have created a module called clowder.
-Besides wrapping often used api calls in convinient python calls, we have also added some code to make it easy to
+Besides wrapping often used api calls in convenient python calls, we have also added some code to make it easy to
 create new extractors.
 
 ## Example Extractor
@@ -39,7 +39,7 @@ class WordCount(Extractor):
         # parse command line and load default logging configuration
         self.setup()
 
-        # setup logging for the exctractor
+        # setup logging for the extractor
         logging.getLogger('pyclowder').setLevel(logging.DEBUG)
         logging.getLogger('__main__').setLevel(logging.DEBUG)
 
@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
 ## Initialization
 
-To create a new extracor you should create a new class based on clowder.Extractor. The extractor should call the super
+To create a new extractor you should create a new class based on clowder.Extractor. The extractor should call the super
 method from the constructor. This super method will try and load the extractor_info.json, in this file it will find
 the extractor name, description as well as the key how to register. The init method will also create a command line
 parser that the user can extend. Once the command line arguments are parsed you can call setup, which will initialize
@@ -94,7 +94,7 @@ class WordCount(Extractor):
         # parse command line and load default logging configuration
         self.setup()
 
-        # setup logging for the exctractor
+        # setup logging for the extractor
         logging.getLogger('pyclowder').setLevel(logging.DEBUG)
         logging.getLogger('__main__').setLevel(logging.DEBUG)
 ```
@@ -115,7 +115,7 @@ should return one of the values in CheckMessage.
 ```
 
 If you want to send JSON-LD back as metadata you can use the convenience function get_metadata. This will take the
-information from the contexts field in extractor_info.json and create a metadta document. It will also do some simple
+information from the contexts field in extractor_info.json and create a metadata document. It will also do some simple
 checks and print a warning if information is in the content that is not part of the context.
 
 ## Starting the Extractor
@@ -147,17 +147,28 @@ Once all pickle files are processed the extractor will stop. The pickle file is 
 argument, the logfile that is being monitored to send feedback back to clowder. This connector takes a single argument
 (which can be list):
 
-* picklefile [REQUIRED] : a single file, or list of files that are the pickled messsages to be processed.
+* picklefile [REQUIRED] : a single file, or list of files that are the pickled messages to be processed.
+
+## LocalConnector
+
+The Local connector will execute an extractor as a standalone program. This can be used to process files that are 
+present in a local hard drive. After extracting the metadata, it stores the generated metadata in an output file in the 
+local drive. This connector takes two arguments:
+
+* --input-file-path [REQUIRED] : Full path of the local input file that needs to be processed.
+* --output-file-path [OPTIONAL] : Full path of the output file (.json) to store the generated metadata. If no output 
+file path is provided, it will create a new file with the name <input_file_with_extension>.json in the same directory 
+as that of the input file.
 
 # Clowder API wrappers
 
-Besides code to create extractors there are also functins that wrap the clowder API. They are broken up into modules
+Besides code to create extractors there are also functions that wrap the clowder API. They are broken up into modules
 that map to the routes endpoint of clowder, for example /api/files/:id/download will be in the clowder.files package.
 
 ## utils
 
 The clowder.utils package contains some utility functions that should make it easier to create new code that works as
-an extractor or code that interacts with clowder. One of these functions is setup_logging, which will initalize the
+an extractor or code that interacts with clowder. One of these functions is setup_logging, which will initialize the
 logging system for you. The logging function takes a single argument that can be None. The argument is either a pointer
 to a file that is read with the configuration options.
 
