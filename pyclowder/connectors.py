@@ -39,6 +39,7 @@ import subprocess
 import time
 import tempfile
 import threading
+import errno
 
 import pika
 import requests
@@ -461,18 +462,18 @@ class Connector(object):
 
         return response
 
-    def post(self, url, data=None, json=None, raise_status=True, **kwargs):
+    def post(self, url, data=None, json_data=None, raise_status=True, **kwargs):
         """
         This methods wraps the Python requests POST method
         :param url: URl to use in POST request
         :param data: (optional) data (Dictionary, bytes, or file-like object) to send in the body of POST request
-        :param json: (optional) json data to send with POST request
+        :param json_data: (optional) json data to send with POST request
         :param raise_status: (optional) If set to True, call raise_for_status. Default is True.
         :param kwargs: List of other optional arguments to pass to POST call
         :return: Response of the POST request
         """
 
-        response = requests.post(url, data=data, json=json, **kwargs)
+        response = requests.post(url, data=data, json=json_data, **kwargs)
         if raise_status:
             response.raise_for_status()
 
@@ -778,3 +779,103 @@ class HPCConnector(Connector):
             except:
                 logger.exception("Error: unable to write extractor status to log file")
                 raise
+
+
+class LocalConnector(Connector):
+    """
+    Class that will handle processing of files locally. Needed for Big Data support.
+
+    This will get the file to be processed from environment variables
+
+    """
+
+    def __init__(self, extractor_info, input_file_path, process_message=None, output_file_path=None):
+        super(LocalConnector, self).__init__(extractor_info, process_message=process_message)
+        self.input_file_path = input_file_path
+        self.output_file_path = output_file_path
+        self.completed_processing = False
+
+    def listen(self):
+        local_parameters = dict()
+        local_parameters["inputfile"] = self.input_file_path
+        local_parameters["outputfile"] = self.output_file_path
+
+        # Set other parameters to emtpy string
+        local_parameters["fileid"] = ""
+        local_parameters["id"] = ""
+        local_parameters["host"] = ""
+        local_parameters["intermediateId"] = ""
+        local_parameters["fileSize"] = ""
+        local_parameters["flags"] = ""
+        local_parameters["filename"] = ""
+        local_parameters["logfile"] = ""
+        local_parameters["datasetId"] = ""
+        local_parameters["secretKey"] = ""
+        local_parameters["routing_key"] = ""
+        local_parameters["routing_key"] = ""
+
+        ext = os.path.splitext(self.input_file_path)[1]
+        resource = {
+            "type": "file",
+            "id": "",
+            "intermediate_id": "",
+            "name": self.input_file_path,
+            "file_ext": ext,
+            "parent": dict(),
+            "local_paths": [self.input_file_path]
+        }
+
+        # TODO: Call _process_message by generating pseudo JSON responses from get method
+        self.process_message(self, "", "", resource, local_parameters)
+        self.completed_processing = True
+
+    def alive(self):
+        return not self.completed_processing
+
+    def stop(self):
+        pass
+
+    def get(self, url, params=None, raise_status=True, **kwargs):
+        logging.getLogger(__name__).debug("GET: " + url)
+        return None
+
+    def post(self, url, data=None, json_data=None, raise_status=True, **kwargs):
+
+        logging.getLogger(__name__).debug("POST: " + url)
+        # Handle metadata POST endpoints
+        if url.find("/technicalmetadatajson") != -1 or url.find("/metadata.jsonld") != -1:
+
+            json_metadata_formatted_string = json.dumps(json.loads(data), indent=4, sort_keys=True)
+            logging.getLogger(__name__).debug(json_metadata_formatted_string)
+            extension = ".json"
+
+            # If output file path is not set
+            if self.output_file_path is None or self.output_file_path == "":
+                # Create json filename from the input filename
+                json_filename = os.path.splitext(self.input_file_path)[0] + extension
+            else:
+                json_filename = str(self.output_file_path)
+                if not json_filename.endswith(extension):
+                    json_filename += extension
+
+            # Checking permissions using EAFP (Easier to Ask for Forgiveness than Permission) technique
+            try:
+                json_file = open(json_filename, "w")
+            except IOError as e:
+                if e.errno == errno.EACCES:
+                    logging.getLogger(__name__).exception(
+                        "You do not have enough permissions to create the output file " + json_filename)
+                else:
+                    raise
+            else:
+                with json_file:
+                    json_file.write(json_metadata_formatted_string)
+                    logging.getLogger(__name__).debug("Metadata output file path: " + json_filename)
+
+    def put(self, url, data=None, raise_status=True, **kwargs):
+        logging.getLogger(__name__).debug("PUT: " + url)
+        return None
+
+    def delete(self, url, raise_status=True, **kwargs):
+        logging.getLogger(__name__).debug("DELETE: " + url)
+        return None

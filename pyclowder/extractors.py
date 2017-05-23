@@ -19,7 +19,7 @@ import traceback
 import re
 import time
 
-from pyclowder.connectors import RabbitMQConnector, HPCConnector
+from pyclowder.connectors import RabbitMQConnector, HPCConnector, LocalConnector
 from pyclowder.utils import CheckMessage, setup_logging
 
 
@@ -61,11 +61,16 @@ class Extractor(object):
         registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
         logging_config = os.getenv("LOGGING")
         mounted_paths = os.getenv("MOUNTED_PATHS", "{}")
+        input_file_path = os.getenv("INPUT_FILE_PATH")
+        output_file_path = os.getenv("OUTPUT_FILE_PATH")
+        connector_default = "RabbitMQ"
+        if os.getenv('LOCAL_PROCESSING', "False").lower() == "true":
+            connector_default = "Local"
 
         # create the actual extractor
         self.parser = argparse.ArgumentParser(description=self.extractor_info['description'])
-        self.parser.add_argument('--connector', '-c', type=str, nargs='?', default="RabbitMQ",
-                                 choices=["RabbitMQ", "HPC"],
+        self.parser.add_argument('--connector', '-c', type=str, nargs='?', default=connector_default,
+                                 choices=["RabbitMQ", "HPC", "Local"],
                                  help='connector to use (default=RabbitMQ)')
         self.parser.add_argument('--logging', '-l', nargs='?', default=logging_config,
                                  help='file or url or logging coonfiguration (default=None)')
@@ -83,6 +88,10 @@ class Extractor(object):
                                  help='rabbitMQ exchange (default=%s)' % rabbitmq_exchange)
         self.parser.add_argument('--mounts', '-m', dest="mounted_paths", default=mounted_paths,
                                  help="dictionary of {'remote path':'local path'} mount mappings")
+        self.parser.add_argument('--input-file-path', '-ifp', dest="input_file_path", default=input_file_path,
+                                 help="Full path to local input file to be processed (used by Big Data feature)")
+        self.parser.add_argument('--output-file-path', '-ofp', dest="output_file_path", default=output_file_path,
+                                 help="Full path to local output JSON file to store metadata (used by Big Data feature)")
         self.parser.add_argument('--sslignore', '-s', dest="sslverify", action='store_false',
                                  help='should SSL certificates be ignores')
         self.parser.add_argument('--version', action='version', version='%(prog)s 1.0')
@@ -152,6 +161,19 @@ class Extractor(object):
                     hconn.register_extractor(self.args.regstration_endpoints)
                     connectors.append(hconn)
                     threading.Thread(target=hconn.listen, name="Connector-" + str(connum)).start()
+            elif self.args.connector == "Local":
+
+                if self.args.input_file_path is None:
+                    logger.error("Environment variable INPUT_FILE_PATH or parameter --input-file-path is not set. "
+                                 "Please try again after setting one of these")
+                elif not os.path.isfile(self.args.input_file_path):
+                    logger.error("Local input file is not a regular file. Please check the path.")
+                else:
+                    local_connector = LocalConnector(self.extractor_info, self.args.input_file_path,
+                                                     process_message=self.process_message,
+                                                     output_file_path=self.args.output_file_path)
+                    connectors.append(local_connector)
+                    threading.Thread(target=local_connector.listen, name="Connector-" + str(connum)).start()
             else:
                 logger.error("Could not create instance of %s connector.", self.args.connector)
                 sys.exit(-1)
