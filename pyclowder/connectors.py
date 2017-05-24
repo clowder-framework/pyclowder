@@ -812,7 +812,6 @@ class LocalConnector(Connector):
         local_parameters["datasetId"] = ""
         local_parameters["secretKey"] = ""
         local_parameters["routing_key"] = ""
-        local_parameters["routing_key"] = ""
 
         ext = os.path.splitext(self.input_file_path)[1]
         resource = {
@@ -825,7 +824,7 @@ class LocalConnector(Connector):
             "local_paths": [self.input_file_path]
         }
 
-        # TODO: Call _process_message by generating pseudo JSON responses from get method
+        # TODO: BD-1638 Call _process_message by generating pseudo JSON responses from get method
         self.process_message(self, "", "", resource, local_parameters)
         self.completed_processing = True
 
