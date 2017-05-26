@@ -604,11 +604,19 @@ class RabbitMQConnector(Connector):
         finally:
             logging.getLogger(__name__).info("Stopped listening for messages.")
             if self.channel:
-                self.channel.close()
-                self.channel = None
+                try:
+                    self.channel.close()
+                except Exception:
+                    logging.getLogger(__name__).exception("Error while closing channel.")
+                finally:
+                    self.channel = None
             if self.connection:
-                self.connection.close()
-                self.connection = None
+                try:
+                    self.connection.close()
+                except Exception:
+                    logging.getLogger(__name__).exception("Error while closing connection.")
+                finally:
+                    self.connection = None
 
     def stop(self):
         """Tell the connector to stop listening for messages."""
@@ -669,17 +677,18 @@ class RabbitMQHandler(Connector):
             msg = self.messages.pop(0)
 
             if msg["type"] == 'status':
-                properties = pika.BasicProperties(delivery_mode=2, correlation_id=self.header.correlation_id)
-                channel.basic_publish(exchange='',
-                                      routing_key=self.header.reply_to,
-                                      properties=properties,
-                                      body=json.dumps(msg['status']))
+                if self.header.reply_to:
+                    properties = pika.BasicProperties(delivery_mode=2, correlation_id=self.header.correlation_id)
+                    channel.basic_publish(exchange='',
+                                          routing_key=self.header.reply_to,
+                                          properties=properties,
+                                          body=json.dumps(msg['status']))
 
             elif msg["type"] == 'ok':
                 channel.basic_ack(self.method.delivery_tag)
 
             elif msg["type"] == 'error':
-                properties = pika.BasicProperties(delivery_mode=2)
+                properties = pika.BasicProperties(delivery_mode=2, reply_to=self.header.reply_to)
                 channel.basic_publish(exchange='',
                                       routing_key='error.' + self.extractor_info['name'],
                                       properties=properties,
