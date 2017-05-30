@@ -810,17 +810,17 @@ class LocalConnector(Connector):
         local_parameters["outputfile"] = self.output_file_path
 
         # Set other parameters to emtpy string
-        local_parameters["fileid"] = ""
-        local_parameters["id"] = ""
-        local_parameters["host"] = ""
-        local_parameters["intermediateId"] = ""
-        local_parameters["fileSize"] = ""
-        local_parameters["flags"] = ""
-        local_parameters["filename"] = ""
-        local_parameters["logfile"] = ""
-        local_parameters["datasetId"] = ""
-        local_parameters["secretKey"] = ""
-        local_parameters["routing_key"] = ""
+        local_parameters["fileid"] = None
+        local_parameters["id"] = None
+        local_parameters["host"] = None
+        local_parameters["intermediateId"] = None
+        local_parameters["fileSize"] = None
+        local_parameters["flags"] = None
+        local_parameters["filename"] = None
+        local_parameters["logfile"] = None
+        local_parameters["datasetId"] = None
+        local_parameters["secretKey"] = None
+        local_parameters["routing_key"] = None
 
         ext = os.path.splitext(self.input_file_path)[1]
         resource = {
