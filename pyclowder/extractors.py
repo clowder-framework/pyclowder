@@ -96,6 +96,8 @@ class Extractor(object):
         self.parser.add_argument('--sslignore', '-s', dest="sslverify", action='store_false',
                                  help='should SSL certificates be ignores')
         self.parser.add_argument('--version', action='version', version='%(prog)s 1.0')
+        self.parser.add_argument('--no-bind', dest="nobind", action='store_true',
+                                 help='instance will bind itself to RabbitMQ by name but NOT file type')
 
     def setup(self):
         """Parse command line arguments and so some setup
@@ -127,17 +129,18 @@ class Extractor(object):
                     logger.error("Missing URI for RabbitMQ")
                 else:
                     rabbitmq_key = []
-                    for key, value in self.extractor_info['process'].iteritems():
-                        for mt in value:
-                            # Replace trailing '*' with '#'
-                            mt = re.sub('(\*$)', '#', mt)
-                            if mt.find('*') > -1:
-                                logger.error("Invalid '*' found in rabbitmq_key: %s" % mt)
-                            else:
-                                if mt == "":
-                                    rabbitmq_key.append("*.%s.#" % key)
+                    if not self.args.nobind:
+                        for key, value in self.extractor_info['process'].iteritems():
+                            for mt in value:
+                                # Replace trailing '*' with '#'
+                                mt = re.sub('(\*$)', '#', mt)
+                                if mt.find('*') > -1:
+                                    logger.error("Invalid '*' found in rabbitmq_key: %s" % mt)
                                 else:
-                                    rabbitmq_key.append("*.%s.%s" % (key, mt.replace("/", ".")))
+                                    if mt == "":
+                                        rabbitmq_key.append("*.%s.#" % key)
+                                    else:
+                                        rabbitmq_key.append("*.%s.%s" % (key, mt.replace("/", ".")))
 
                     rconn = RabbitMQConnector(self.extractor_info,
                                               check_message=self.check_message,

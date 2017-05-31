@@ -124,6 +124,19 @@ Once the extractor is configured, you can start it using the start method. Based
 will configure the connectors and start listening/processing messages. The code will only return when the connector
 is finished.
 
+**Using --no-bind**
+By default, an extractor will bind itself to RabbitMQ queue using both its own name and any file/dataset types listed in
+extractor_info.json. This will allow the extractor to be triggered by Clowder events, or directly using its own name.
+
+The --no-bind flag will force the instance of the extractor you are starting to skip binding by the file type(s) in
+extractor_info.json, and instead bind only by extractor name. Assuming no other instances overwrite this binding, your
+extractor instance will then only be triggered via manual or direct messages (i.e. using extractor name), and not by
+upload events in Clowder.
+
+Note however that if any other instances of the extractor are running on the same RabbitMQ queue without --no-bind, 
+they will still bind by file type as normal regardless of previously existing instances with --no-bind, so use caution
+when running multiple instances of one extractor while using --no-bind.
+
 # Connectors
 
 The system has two connectors defined by default. The connectors are used to star the extractors. The connector will
