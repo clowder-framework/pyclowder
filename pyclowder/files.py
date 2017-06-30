@@ -11,7 +11,8 @@ import tempfile
 import requests
 from urllib3.filepost import encode_multipart_formdata
 
-import pyclowder.datasets
+from pyclowder.datasets import get_file_list
+from pyclowder.collections import get_datasets
 from pyclowder.utils import StatusMessage
 
 # Some sources of urllib3 support warning suppression, but not all
@@ -113,6 +114,52 @@ def submit_extraction(connector, host, key, fileid, extractorname):
                             verify=connector.ssl_verify if connector else True)
 
     return result.json()
+
+
+def submit_extractions_by_dataset(connector, host, key, datasetid, extractorname, ext=False):
+    """Manually trigger an extraction on all files in a dataset.
+
+        This will iterate through all files in the given dataset and submit them to
+        the provided extractor. Does not operate recursively if there are nested datasets.
+
+        Keyword arguments:
+        connector -- connector information, used to get missing parameters and send status updates
+        host -- the clowder host, including http and port, should end with a /
+        key -- the secret key to login to clowder
+        datasetid -- the dataset UUID to submit
+        extractorname -- registered name of extractor to trigger
+        ext -- extension to filter. e.g. 'tif' will only submit TIFF files for extraction.
+    """
+
+    filelist = get_file_list(connector, host, key, datasetid)
+
+    for f in filelist:
+        # Only submit files that end with given extension, if specified
+        if ext and not f['filename'].endswith(ext):
+            continue
+
+        submit_extraction(connector, host, key, f['id'], extractorname)
+
+
+def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, ext=False):
+    """Manually trigger an extraction on all files in a collection.
+
+        This will iterate through all datasets in the given collection and submit them to
+        the submit_extractions_by_dataset(). Does not operate recursively if there are nested collections.
+
+        Keyword arguments:
+        connector -- connector information, used to get missing parameters and send status updates
+        host -- the clowder host, including http and port, should end with a /
+        key -- the secret key to login to clowder
+        collectionid -- the collection UUID to submit
+        extractorname -- registered name of extractor to trigger
+        ext -- extension to filter. e.g. 'tif' will only submit TIFF files for extraction.
+    """
+
+    dslist = get_datasets(connector, host, key, collectionid)
+
+    for ds in dslist:
+        submit_extractions_by_dataset(connector, host, key, ds['id'], extractorname, ext)
 
 
 def upload_metadata(connector, host, key, fileid, metadata):
@@ -218,7 +265,7 @@ def upload_thumbnail(connector, host, key, fileid, thumbnail):
     if fileid:
         headers = {'Content-Type': 'application/json'}
         url = host + 'api/files/' + fileid + '/thumbnails/' + thumbnailid + '?key=' + key
-        result = connector.post(url, headers=headers, data=json.dumps({}),
+        connector.post(url, headers=headers, data=json.dumps({}),
                                 verify=connector.ssl_verify if connector else True)
 
     return thumbnailid
@@ -239,11 +286,11 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
     logger = logging.getLogger(__name__)
 
     if check_duplicate:
-        ds_files = pyclowder.datasets.get_file_list(connector, host, key, datasetid)
-        found_output_in_dataset = False
+        ds_files = get_file_list(connector, host, key, datasetid)
         for f in ds_files:
             if f['filename'] == os.path.basename(filepath):
                 logger.debug("found %s in dataset %s; not re-uploading" % (f['filename'], datasetid))
+                return None
 
     for source_path in connector.mounted_paths:
         if filepath.startswith(connector.mounted_paths[source_path]):

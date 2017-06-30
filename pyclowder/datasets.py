@@ -7,6 +7,8 @@ import logging
 import os
 import tempfile
 import requests
+
+from pyclowder.collections import get_datasets
 from pyclowder.utils import StatusMessage
 
 
@@ -131,7 +133,7 @@ def get_file_list(connector, host, key, datasetid):
     datasetid -- the dataset to get filelist of
     """
 
-    url = "%sapi/datasets/%s/listFiles?key=%s" % (host, datasetid, key)
+    url = "%sapi/datasets/%s/files?key=%s" % (host, datasetid, key)
 
     result = requests.get(url, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
@@ -180,6 +182,26 @@ def submit_extraction(connector, host, key, datasetid, extractorname):
     result.raise_for_status()
 
     return result.status_code
+
+
+def submit_extractions_by_collection(connector, host, key, collectionid, extractorname):
+    """Manually trigger an extraction on all datasets in a collection.
+
+        This will iterate through all datasets in the given collection and submit them to
+        the provided extractor. Does not operate recursively if there are nested collections.
+
+        Keyword arguments:
+        connector -- connector information, used to get missing parameters and send status updates
+        host -- the clowder host, including http and port, should end with a /
+        key -- the secret key to login to clowder
+        datasetid -- the dataset UUID to submit
+        extractorname -- registered name of extractor to trigger
+    """
+
+    dslist = get_datasets(connector, host, key, collectionid)
+
+    for ds in dslist:
+        submit_extraction(connector, host, key, ds['id'], extractorname)
 
 
 def upload_metadata(connector, host, key, datasetid, metadata):
