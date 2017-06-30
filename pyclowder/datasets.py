@@ -2,13 +2,14 @@
 
 This module provides simple wrappers around the clowder Datasets API
 """
+
 import json
 import logging
 import os
 import tempfile
 import requests
 
-from pyclowder.collections import get_datasets
+from pyclowder.collections import get_datasets, get_child_collections
 from pyclowder.utils import StatusMessage
 
 
@@ -184,7 +185,7 @@ def submit_extraction(connector, host, key, datasetid, extractorname):
     return result.status_code
 
 
-def submit_extractions_by_collection(connector, host, key, collectionid, extractorname):
+def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, recursive=True):
     """Manually trigger an extraction on all datasets in a collection.
 
         This will iterate through all datasets in the given collection and submit them to
@@ -202,6 +203,11 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
 
     for ds in dslist:
         submit_extraction(connector, host, key, ds['id'], extractorname)
+
+    if recursive:
+        childcolls = get_child_collections(connector, host, key, collectionid)s
+        for coll in childcolls:
+            submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, recursive)
 
 
 def upload_metadata(connector, host, key, datasetid, metadata):

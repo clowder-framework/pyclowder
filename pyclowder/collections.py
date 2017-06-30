@@ -2,9 +2,11 @@
 
 This module provides simple wrappers around the clowder Collections API
 """
+
 import json
 import logging
 import requests
+
 from pyclowder.utils import StatusMessage
 
 
@@ -51,6 +53,25 @@ def create_empty(connector, host, key, collectionname, description, parentid=Non
     logger.debug("collection id = [%s]", collectionid)
 
     return collectionid
+
+
+def get_child_collections(connector, host, key, collectionid):
+    """Get list of child collections in collection by UUID.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    collectionid -- the collection to get children of
+    """
+
+    url = "%sapi/collections/%s/getChildCollections?key=%s" % (host, collectionid, key)
+
+    result = requests.get(url,
+                          verify=connector.ssl_verify if connector else True)
+    result.raise_for_status()
+
+    return json.loads(result.text)
 
 
 def get_datasets(connector, host, key, collectionid):
