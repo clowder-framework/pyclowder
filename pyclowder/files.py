@@ -265,8 +265,7 @@ def upload_thumbnail(connector, host, key, fileid, thumbnail):
     if fileid:
         headers = {'Content-Type': 'application/json'}
         url = host + 'api/files/' + fileid + '/thumbnails/' + thumbnailid + '?key=' + key
-        connector.post(url, headers=headers, data=json.dumps({}),
-                                verify=connector.ssl_verify if connector else True)
+        connector.post(url, headers=headers, data=json.dumps({}), verify=connector.ssl_verify if connector else True)
 
     return thumbnailid
 
