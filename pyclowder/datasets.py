@@ -205,7 +205,7 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
         submit_extraction(connector, host, key, ds['id'], extractorname)
 
     if recursive:
-        childcolls = get_child_collections(connector, host, key, collectionid)s
+        childcolls = get_child_collections(connector, host, key, collectionid)
         for coll in childcolls:
             submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, recursive)
 
