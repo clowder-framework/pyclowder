@@ -189,7 +189,7 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
     """Manually trigger an extraction on all datasets in a collection.
 
         This will iterate through all datasets in the given collection and submit them to
-        the provided extractor. Does not operate recursively if there are nested collections.
+        the provided extractor.
 
         Keyword arguments:
         connector -- connector information, used to get missing parameters and send status updates
@@ -197,6 +197,7 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
         key -- the secret key to login to clowder
         datasetid -- the dataset UUID to submit
         extractorname -- registered name of extractor to trigger
+        recursive -- whether to also submit child collection datasets recursively (defaults to True)
     """
 
     dslist = get_datasets(connector, host, key, collectionid)

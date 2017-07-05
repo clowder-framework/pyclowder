@@ -12,7 +12,7 @@ import requests
 from urllib3.filepost import encode_multipart_formdata
 
 from pyclowder.datasets import get_file_list
-from pyclowder.collections import get_datasets
+from pyclowder.collections import get_datasets, get_child_collections
 from pyclowder.utils import StatusMessage
 
 # Some sources of urllib3 support warning suppression, but not all
@@ -120,7 +120,7 @@ def submit_extractions_by_dataset(connector, host, key, datasetid, extractorname
     """Manually trigger an extraction on all files in a dataset.
 
         This will iterate through all files in the given dataset and submit them to
-        the provided extractor. Does not operate recursively if there are nested datasets.
+        the provided extractor.
 
         Keyword arguments:
         connector -- connector information, used to get missing parameters and send status updates
@@ -141,7 +141,7 @@ def submit_extractions_by_dataset(connector, host, key, datasetid, extractorname
         submit_extraction(connector, host, key, f['id'], extractorname)
 
 
-def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, ext=False):
+def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, ext=False, recursive=True):
     """Manually trigger an extraction on all files in a collection.
 
         This will iterate through all datasets in the given collection and submit them to
@@ -153,13 +153,19 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
         key -- the secret key to login to clowder
         collectionid -- the collection UUID to submit
         extractorname -- registered name of extractor to trigger
-        ext -- extension to filter. e.g. 'tif' will only submit TIFF files for extraction.
+        ext -- extension to filter. e.g. 'tif' will only submit TIFF files for extraction
+        recursive -- whether to also submit child collection files recursively (defaults to True)
     """
 
     dslist = get_datasets(connector, host, key, collectionid)
 
     for ds in dslist:
         submit_extractions_by_dataset(connector, host, key, ds['id'], extractorname, ext)
+
+    if recursive:
+        childcolls = get_child_collections(connector, host, key, collectionid)
+        for coll in childcolls:
+            submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, recursive)
 
 
 def upload_metadata(connector, host, key, fileid, metadata):
