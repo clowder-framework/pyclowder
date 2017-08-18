@@ -29,23 +29,26 @@ def create_empty(connector, host, key, collectionname, description, parentid=Non
         if (spaceid):
             url = '%sapi/collections/newCollectionWithParent?key=%s' % (host, key)
             result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data={"name": collectionname, "description": description, "parentId": [parentid],
-                                   "space": spaceid}, verify=connector.ssl_verify if connector else True)
+                                   data=json.dumps({"name": collectionname, "description": description,
+                                                    "parentId": [parentid], "space": spaceid}),
+                                   verify=connector.ssl_verify if connector else True)
         else:
             url = '%sapi/collections/newCollectionWithParent?key=%s' % (host, key)
             result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data={"name": collectionname, "description": description, "parentId": [parentid]},
+                                   data=json.dumps({"name": collectionname, "description": description,
+                                                    "parentId": [parentid]}),
                                    verify=connector.ssl_verify if connector else True)
     else:
         if (spaceid):
             url = '%sapi/collections?key=%s' % (host, key)
             result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data={"name": collectionname, "description": description, "space": spaceid},
+                                   data=json.dumps({"name": collectionname, "description": description,
+                                                    "space": spaceid}),
                                    verify=connector.ssl_verify if connector else True)
         else:
             url = '%sapi/collections?key=%s' % (host, key)
             result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data={"name": collectionname, "description": description},
+                                   data=json.dumps({"name": collectionname, "description": description}),
                                    verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 

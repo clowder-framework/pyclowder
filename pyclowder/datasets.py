@@ -33,20 +33,23 @@ def create_empty(connector, host, key, datasetname, description, parentid=None, 
     if parentid:
         if spaceid:
             result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data={"name": datasetname, "description": description, "collection": [parentid],
-                                   "space": [spaceid]}, verify=connector.ssl_verify if connector else True)
+                                   data=json.dumps({"name": datasetname, "description": description,
+                                                    "collection": [parentid], "space": [spaceid]}),
+                                   verify=connector.ssl_verify if connector else True)
         else:
             result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data={"name": datasetname, "description": description, "collection": [parentid]},
+                                   data=json.dumps({"name": datasetname, "description": description,
+                                                    "collection": [parentid]}),
                                    verify=connector.ssl_verify if connector else True)
     else:
         if spaceid:
             result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data={"name": datasetname, "description": description, "space": [spaceid]},
+                                   data=json.dumps({"name": datasetname, "description": description,
+                                                    "space": [spaceid]}),
                                    verify=connector.ssl_verify if connector else True)
         else:
             result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data={"name": datasetname, "description": description},
+                                   data=json.dumps({"name": datasetname, "description": description}),
                                    verify=connector.ssl_verify if connector else True)
 
     result.raise_for_status()
