@@ -196,6 +196,7 @@ class Connector(object):
         elif resource_type == "metadata":
             return {
                 "type": "metadata",
+                "id": body['resourceId'],
                 "parent": {"type": body['resourceType'],
                            "id": body['resourceId']},
                 "metadata": body['metadata']
