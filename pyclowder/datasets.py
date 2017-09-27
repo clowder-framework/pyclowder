@@ -7,11 +7,13 @@ import json
 import logging
 import os
 import tempfile
+
 import requests
 
+from pyclowder.client import ClowderClient
 from pyclowder.collections import get_datasets, get_child_collections
 from pyclowder.utils import StatusMessage
-from pyclowder.client import ClowderClient
+
 
 def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
     """Create a new dataset in Clowder.
@@ -80,7 +82,7 @@ def download(connector, host, key, datasetid):
 
     (filedescriptor, zipfile) = tempfile.mkstemp(suffix=".zip")
     with os.fdopen(filedescriptor, "w") as outfile:
-        for chunk in result.iter_content(chunk_size=10*1024):
+        for chunk in result.iter_content(chunk_size=10 * 1024):
             outfile.write(chunk)
 
     return zipfile
@@ -239,6 +241,7 @@ class DatasetsApi(object):
     """
         API to manage the REST CRUD endpoints for datasets.
     """
+
     def __init__(self, client=None, host=None, key=None, username=None, password=None):
         """Set client if provided otherwise create new one"""
         if client:
