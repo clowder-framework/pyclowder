@@ -4,6 +4,15 @@ PyClowder package
 Submodules
 ----------
 
+pyclowder.client module
+-----------------------
+
+.. automodule:: pyclowder.client
+        :members:
+        :undoc-members:
+        :show-inheritance:
+
+
 pyclowder.collections module
 ----------------------------
 
