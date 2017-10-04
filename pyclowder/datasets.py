@@ -9,7 +9,7 @@ import os
 import tempfile
 import requests
 
-from pyclowder.collections import get_datasets, get_child_collections
+from pyclowder.collections import get_datasets, get_child_collections, delete as delete_collection
 from pyclowder.utils import StatusMessage
 
 
@@ -58,6 +58,47 @@ def create_empty(connector, host, key, datasetname, description, parentid=None, 
     logger.debug("dataset id = [%s]", datasetid)
 
     return datasetid
+
+
+def delete(connector, host, key, datasetid):
+    """Delete dataset from Clowder.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    datasetid -- the dataset to delete
+    """
+    url = "%sapi/datasets/%s" % (host, datasetid)
+
+    result = requests.delete(url, verify=connector.ssl_verify if connector else True)
+    result.raise_for_status()
+
+    return json.loads(result.text)
+
+
+def delete_by_collection(connector, host, key, collectionid, recursive=True, delete_colls=False):
+    """Delete datasets from Clowder by iterating through collection.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    collectionid -- the collection to walk
+    recursive -- whether to also iterate across child collections
+    delete_colls -- whether to also delete collections containing the datasets
+    """
+    dslist = get_datasets(connector, host, key, collectionid)
+    for ds in dslist:
+        delete(connector, host, key, ds['id'])
+
+    if recursive:
+        childcolls = get_child_collections(connector, host, key, collectionid)
+        for coll in childcolls:
+            delete_by_collection(connector, host, key, coll['id'], recursive, delete_colls)
+
+    if delete_colls:
+        delete_collection(connector, host, key, collectionid)
 
 
 def download(connector, host, key, datasetid):

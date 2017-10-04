@@ -58,6 +58,15 @@ def create_empty(connector, host, key, collectionname, description, parentid=Non
     return collectionid
 
 
+def delete(connector, host, key, collectionid):
+    url = "%sapi/collections/%s" % (host, collectionid)
+
+    result = requests.delete(url, verify=connector.ssl_verify if connector else True)
+    result.raise_for_status()
+
+    return json.loads(result.text)
+
+
 def get_child_collections(connector, host, key, collectionid):
     """Get list of child collections in collection by UUID.
 
