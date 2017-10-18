@@ -56,6 +56,8 @@ class Extractor(object):
 
         # read values from environment variables, otherwise use defaults
         # this is the specific setup for the extractor
+        # use RABBITMQ_QUEUE env to overwrite extractor's queue name
+        self.extractor_info['name'] = os.getenv('RABBITMQ_QUEUE', self.extractor_info['name'])
         rabbitmq_uri = os.getenv('RABBITMQ_URI', "amqp://guest:guest@127.0.0.1/%2f")
         rabbitmq_exchange = os.getenv('RABBITMQ_EXCHANGE', "clowder")
         registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
