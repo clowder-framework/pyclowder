@@ -165,7 +165,7 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
     if recursive:
         childcolls = get_child_collections(connector, host, key, collectionid)
         for coll in childcolls:
-            submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, recursive)
+            submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, ext, recursive)
 
 
 def upload_metadata(connector, host, key, fileid, metadata):
