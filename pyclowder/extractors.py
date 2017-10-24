@@ -58,6 +58,7 @@ class Extractor(object):
         # this is the specific setup for the extractor
         # use RABBITMQ_QUEUE env to overwrite extractor's queue name
         self.extractor_info['name'] = os.getenv('RABBITMQ_QUEUE', self.extractor_info['name'])
+        rabbitmq_queuename = self.extractor_info['name']
         rabbitmq_uri = os.getenv('RABBITMQ_URI', "amqp://guest:guest@127.0.0.1/%2f")
         rabbitmq_exchange = os.getenv('RABBITMQ_EXCHANGE', "clowder")
         registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
@@ -86,6 +87,9 @@ class Extractor(object):
                                  help='Clowder registration URL (default=%s)' % registration_endpoints)
         self.parser.add_argument('--rabbitmqURI', nargs='?', dest='rabbitmq_uri', default=rabbitmq_uri,
                                  help='rabbitMQ URI (default=%s)' % rabbitmq_uri.replace("%", "%%"))
+        self.parser.add_argument('--rabbitmqQUEUE', nargs='?', dest='rabbitmq_queuename',
+                                 default=rabbitmq_queuename,
+                                 help='rabbitMQ queue name (default=%s)' % rabbitmq_queuename)
         self.parser.add_argument('--rabbitmqExchange', nargs='?', dest="rabbitmq_exchange", default=rabbitmq_exchange,
                                  help='rabbitMQ exchange (default=%s)' % rabbitmq_exchange)
         self.parser.add_argument('--mounts', '-m', dest="mounted_paths", default=mounted_paths,
