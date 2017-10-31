@@ -54,3 +54,23 @@ def upload_tags(connector, host, key, sectionid, tags):
     result = requests.post(url, headers=headers, data=json.dumps(tags),
                            verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
+
+
+def upload_description(connector, host, key, sectionid, description):
+    """Upload description to a section.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    sectionid -- the section that is currently being processed
+    description -- the description to be uploaded
+    """
+
+    connector.status_update(StatusMessage.processing, {"type": "section", "id": sectionid}, "Uploading section description.")
+
+    headers = {'Content-Type': 'application/json'}
+    url = '%sapi/sections/%s/description?key=%s' % (host, sectionid, key)
+    result = requests.post(url, headers=headers, data=json.dumps(description),
+                           verify=connector.ssl_verify if connector else True)
+    result.raise_for_status()
