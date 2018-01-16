@@ -8,6 +8,15 @@ created using extractors. To make it easy to create these extractors in python w
 Besides wrapping often used api calls in convenient python calls, we have also added some code to make it easy to
 create new extractors.
 
+## Setup
+
+Install pyClowder2 on your system:
+
+```
+pip install -r requirements.txt
+python setup.py install
+```
+
 ## Example Extractor
 
 Following is an example of the WordCount extractor. This example will allow the user to specify from the command line
