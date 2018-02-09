@@ -1,6 +1,6 @@
 #!/bin/sh
 
-DEBUG=echo
+#DEBUG=echo
 
 # build docker container
 ${DEBUG} docker build  --tag clowder/pyclowder:2 .
