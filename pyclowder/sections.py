@@ -67,7 +67,8 @@ def upload_description(connector, host, key, sectionid, description):
     description -- the description to be uploaded
     """
 
-    connector.status_update(StatusMessage.processing, {"type": "section", "id": sectionid}, "Uploading section description.")
+    connector.status_update(StatusMessage.processing, {"type": "section", "id": sectionid},
+                            "Uploading section description.")
 
     headers = {'Content-Type': 'application/json'}
     url = '%sapi/sections/%s/description?key=%s' % (host, sectionid, key)
