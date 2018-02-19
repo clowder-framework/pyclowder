@@ -156,6 +156,17 @@ class CollectionsApi(object):
             self.client = ClowderClient(host=host, key=key, username=username, password=password)
 
     def create(self, name, description, parent_id, space_id):
+        """Create a new collection in Clowder.
+
+        Keyword arguments:
+        connector -- connector information, used to get missing parameters and send status updates
+        host -- the clowder host, including http and port, should end with a /
+        key -- the secret key to login to clowder
+        collectionname -- name of new dataset to create
+        description -- description of new dataset
+        parentid -- id of parent collection
+        spaceid -- id of the space to add dataset to
+        """
 
         if parent_id:
             if space_id:
@@ -195,4 +206,9 @@ class CollectionsApi(object):
         return collection_id
 
     def get_all_collections(self):
+        """
+        Get All Collections in Clowder
+
+        :return: List of collections in Clowder
+        """
         return self.client.get("/collections")
