@@ -10,11 +10,17 @@ create new extractors.
 
 ## Setup
 
-Install pyClowder2 on your system:
+Install pyClowder2 on your system by cloning this repo:
 
 ```
+git clone https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder2.git
+cd pyclowder2
 pip install -r requirements.txt
 python setup.py install
+```
+or directly from Bitbucket:
+```
+pip install -r https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/pyclowder2/raw/requirements.txt git+https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder2.git
 ```
 
 ## Example Extractor
