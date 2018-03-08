@@ -1,6 +1,8 @@
 from setuptools import setup, find_packages
 
+
 def description():
+    """Return description in Restructure Text format."""
 
     with open('description.rst') as f:
         return f.read()
