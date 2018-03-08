@@ -15,7 +15,7 @@ setup(name='pyclowder',
       author_email='kooper@illinois.edu',
 
       url='clowder.ncsa.illinois.edu',
-      project_urls = {
+      project_urls={
         'Source': 'https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder2.git',
       },
 
