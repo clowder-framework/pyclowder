@@ -242,13 +242,13 @@ class DatasetsApi(object):
         API to manage the REST CRUD endpoints for datasets.
     """
 
-    def __init__(self, client=None, host=None, key=None, 
+    def __init__(self, client=None, host=None, key=None,
                  username=None, password=None):
         """Set client if provided otherwise create new one"""
         if client:
             self.client = client
         else:
-            self.client = ClowderClient(host=host, key=key, 
+            self.client = ClowderClient(host=host, key=key,
                                         username=username, password=password)
 
     def datasets_get(self):

@@ -1,8 +1,9 @@
 from setuptools import setup, find_packages
 
 def description():
+
     with open('description.rst') as f:
-         return f.read()
+        return f.read()
 
 
 setup(name='pyclowder',
@@ -10,8 +11,8 @@ setup(name='pyclowder',
       packages=find_packages(),
       description='TERRA-REF utility library',
       long_description=description(),
-      #author='Max Burnette',
-      #author_email='mburnet2@illinois.edu',
+      author='Rob Kooper',
+      author_email='kooper@illinois.edu',
 
       url='clowder.ncsa.illinois.edu',
       project_urls = {
