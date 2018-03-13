@@ -4,7 +4,7 @@ to allow researchers to build customized catalogs in the clouds
 to help you manage research data.
 
 Installation
--------
+------------
 
 The easiest way install pyclowder is using pip and pulling from PyPI.
 Use the following command to install::

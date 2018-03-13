@@ -9,7 +9,7 @@ def description():
 
 
 setup(name='pyclowder',
-      version='2.0.0',
+      version='2.0.2',
       packages=find_packages(),
       description='Python SDK for the Clowder Data Management System',
       long_description=description(),
