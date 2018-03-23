@@ -1,5 +1,6 @@
 {
     "title": "Python wrappers for use with the Clowder system", 
+    "description": "This library makes it easier to interact with clowder and to create extractors as well as code that will interact with clowder. The library will encapsulate the calls to the REST API. For extractors the library will provide the developer with an easy to extend framework to create new extractors.",
     "creators": [
         {
             "affiliation": "National Center for Supercomputing Applications",
@@ -42,12 +43,5 @@
         "python",
         "clowder"
     ],
-    "grants": [
-        {
-            "title": "Brown Dog",
-            "code": "1261582",
-            "funder": "NSF",
-            "program": "DATANET"
-        }
-    ]
+    "notes": "Development is supported by Brown Dog (NSF #1261582)"
 }
