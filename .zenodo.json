@@ -1,4 +1,5 @@
 {
+    "title": "Python wrappers for use with the Clowder system", 
     "creators": [
         {
             "affiliation": "National Center for Supercomputing Applications",
@@ -33,15 +34,20 @@
             "name": "Ward Poelmans"
         }
     ],
-    "references": [
+    "upload_type": "software",
+    "license": "NCSA",
+    "access_right": "open",
+    "keywords": [
+        "json",
+        "python",
+        "clowder"
     ],
-    "notes": "",
-    "resource_type": {
-        "title": "Software",
-        "type": "software"
-    },
-    "license": {
-        "id": "NCSA"
-    },
-    "access_right": "open"
+    "grants": [
+        {
+            "title": "Brown Dog",
+            "code": "1261582",
+            "funder": "NSF",
+            "program": "DATANET",
+        }
+    ], 
 }
