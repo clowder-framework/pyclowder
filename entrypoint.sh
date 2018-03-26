@@ -21,7 +21,6 @@ if [ "$1" = 'extractor' ]; then
         echo "Main script specified does not exist."
         exit -1
     fi
-    chmod 755 "${MAIN_SCRIPT}"
 
     # check to make sure rabbitmq is up
     if [ "${RABBITMQ_PORT_5672_TCP_ADDR}" != "" ]; then
@@ -35,7 +34,7 @@ if [ "$1" = 'extractor' ]; then
     fi
 
     # launch extractor and see what happens
-    exec "./${MAIN_SCRIPT}"
+    exec "python ./${MAIN_SCRIPT}"
 fi
 
 exec "$@"

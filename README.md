@@ -202,4 +202,24 @@ an extractor or code that interacts with clowder. One of these functions is setu
 logging system for you. The logging function takes a single argument that can be None. The argument is either a pointer
 to a file that is read with the configuration options.
 
-# files
+## files
+
+# Dockerfile
+
+We recommend using the pyclowder:onbuild to easily convert your extractor into a docker container. If you build the
+extractor as commented above, you will only need the following Dockerfile
+
+```
+FROM clowder/pyclowder:onbuild
+
+ENV MAIN_SCRIPT="wordcount.py"
+```
+
+The main piece is the MAIN_SCRIPT which should point to the python file that holds your main function.
+
+If you need additional packages installed, you will need a file called packages.apt with in this file a list of all
+packages that need to be installed. The docker build process will use this file to install those pacakges first in
+the docker container.
+
+If you need any python packages installed you will need to create file called requiremenets.txt. If this file exists
+the docker build process will use `pip install -r requirements.txt` to install these packages.

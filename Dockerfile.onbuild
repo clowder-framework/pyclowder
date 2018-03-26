@@ -1,10 +1,7 @@
 FROM clowder/pyclowder:2
 
-# copy all files
-ONBUILD ADD . /home/clowder/
-
 # install any packages
-#ONBUILD COPY packages.apt /home/clowder/
+ONBUILD COPY packages.* Dockerfile /home/clowder/
 ONBUILD RUN if [ -e packages.apt ]; then \
                 apt-get -q -q update \
                 && xargs apt-get -y install --no-install-recommends < packages.apt \
@@ -12,10 +9,13 @@ ONBUILD RUN if [ -e packages.apt ]; then \
             fi
 
 # install any python packages
-#ONBUILD COPY requirements.txt /home/clowder/
+ONBUILD COPY requirements.txt* Dockerfile /home/clowder/
 ONBUILD RUN if [ -e requirements.txt ]; then \
                 pip install --no-cache-dir -r requirements.txt; \
             fi
+
+# copy all files
+ONBUILD ADD . /home/clowder/
 
 # switch to user clowder last minute
 ONBUILD USER clowder

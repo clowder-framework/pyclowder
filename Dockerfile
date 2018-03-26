@@ -1,5 +1,4 @@
 FROM ubuntu:16.04
-MAINTAINER Rob Kooper <kooper@illinois.edu>
 
 # environment variables
 ENV RABBITMQ_URI="" \
