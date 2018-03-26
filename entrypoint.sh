@@ -34,7 +34,7 @@ if [ "$1" = 'extractor' ]; then
     fi
 
     # launch extractor and see what happens
-    exec "python ./${MAIN_SCRIPT}"
+    exec python "./${MAIN_SCRIPT}"
 fi
 
 exec "$@"
