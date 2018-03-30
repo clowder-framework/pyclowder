@@ -1,77 +1,58 @@
 """Clowder API
 
-This module provides simple wrappers around the clowder Datasets API
+This module provides simple wrappers around the clowder Sections API
 """
 
 import json
-import logging
-
-import requests
-
-from pyclowder.utils import StatusMessage
+from client import ClowderClient
 
 
+@deprecated
 def upload(connector, host, key, sectiondata):
-    """Upload section to Clowder.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    sectiondata -- section data to send
-    """
-
-    logger = logging.getLogger(__name__)
-    headers = {'Content-Type': 'application/json'}
-
-    # upload section
-    url = '%sapi/sections?key=%s' % (host, key)
-    result = requests.post(url, headers=headers, data=json.dumps(sectiondata),
-                           verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    sectionid = result.json()['id']
-    logger.debug("section id = [%s]", sectionid)
-
-    return sectionid
-
-
+    client = SectionsApi(host=host, key=key)
+    return client.upload(sectiondata)
+@deprecated
 def upload_tags(connector, host, key, sectionid, tags):
-    """Upload section tag to Clowder.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    sectionid -- the section that is currently being processed
-    tags -- the tags to be uploaded
-    """
-
-    connector.status_update(StatusMessage.processing, {"type": "section", "id": sectionid}, "Uploading section tags.")
-
-    headers = {'Content-Type': 'application/json'}
-    url = '%sapi/sections/%s/tags?key=%s' % (host, sectionid, key)
-    result = requests.post(url, headers=headers, data=json.dumps(tags),
-                           verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-
+    client = SectionsApi(host=host, key=key)
+    return client.add_tags(sectionid, tags)
+@deprecated
 def upload_description(connector, host, key, sectionid, description):
-    """Upload description to a section.
+    client = SectionsApi(host=host, key=key)
+    return client.add_description(sectionid, description)
 
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    sectionid -- the section that is currently being processed
-    description -- the description to be uploaded
+
+class SectionsApi(object):
+    """
+        API to manage the REST CRUD endpoints for sections.
     """
 
-    connector.status_update(StatusMessage.processing, {"type": "section", "id": sectionid},
-                            "Uploading section description.")
+    def __init__(self, client=None, host=None, key=None, username=None, password=None):
+        """Set client if provided otherwise create new one"""
 
-    headers = {'Content-Type': 'application/json'}
-    url = '%sapi/sections/%s/description?key=%s' % (host, sectionid, key)
-    result = requests.post(url, headers=headers, data=json.dumps(description),
-                           verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
+        if client:
+            self.api_client = client
+        else:
+            self.client = ClowderClient(host=host, key=key, username=username, password=password)
+
+
+    def add_description(self, section_id, description):
+        """Upload description to a section."""
+
+        self.client.post("sections/%s/description" % section_id, json.dumps(description))
+
+
+    def add_tags(self, section_id, tags):
+        """Upload section tag."""
+
+        self.client.post("sections/%s/tags" % section_id, json.dumps(tags))
+
+
+    def upload(self, section_data):
+        """Upload section to Clowder.
+
+        Keyword arguments:
+        section_data -- section data to send
+        """
+
+        section = self.client.post("sections", section_data)
+        return section['id']

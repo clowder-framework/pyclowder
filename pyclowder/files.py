@@ -123,7 +123,7 @@ class FilesApi(object):
         tags -- the tags to be uploaded
         """
 
-        self.client.post("files/%s/tags", json.dumps(tags))
+        self.client.post("files/%s/tags" % file_id, json.dumps(tags))
 
 
     def add_thumbnail(self, file_id, thumbnail):
