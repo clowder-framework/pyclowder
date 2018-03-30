@@ -89,6 +89,7 @@ class CollectionsApi(object):
         else:
             self.client = ClowderClient(host=host, key=key, username=username, password=password)
 
+
     def create(self, name, description="", parent_id=None, space_id=None):
         """Create a new collection in Clowder.
 
@@ -121,6 +122,7 @@ class CollectionsApi(object):
 
         return collection_id
 
+
     def delete(self, collection_id):
         """Delete a collection from Clowder.
 
@@ -130,10 +132,12 @@ class CollectionsApi(object):
 
         return self.client.delete("collections/%s" % collection_id)
 
+
     def get_all_collections(self):
         """Get all Collections in Clowder."""
 
         return self.client.get("/collections")
+
 
     def get_child_collections(self, collection_id):
         """List child collections of a collection.
@@ -144,6 +148,7 @@ class CollectionsApi(object):
 
         return self.client.get("collections/%s/getChildCollections" % collection_id)
 
+
     def get_datasets(self, collection_id):
         """Get list of datasets in a collection.
 
@@ -152,6 +157,7 @@ class CollectionsApi(object):
         """
 
         return self.client.get("collections/%s/datasets" % collection_id)
+
 
     def upload_preview(self, collection_id, preview_file, preview_metadata):
         """Upload a collection preview.
