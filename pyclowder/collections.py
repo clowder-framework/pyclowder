@@ -3,14 +3,11 @@
 This module provides simple wrappers around the clowder Collections API
 """
 
-import json
 import logging
-import requests
-
-from pyclowder.client import ClowderClient
-from pyclowder.utils import StatusMessage
+from client import ClowderClient
 
 
+# TODO: Functions outside CollectionsApi are deprecated
 def create_empty(connector, host, key, collectionname, description, parentid=None, spaceid=None):
     """Create a new collection in Clowder.
 
@@ -24,48 +21,14 @@ def create_empty(connector, host, key, collectionname, description, parentid=Non
     spaceid -- id of the space to add dataset to
     """
 
-    logger = logging.getLogger(__name__)
-
-    if parentid:
-        if (spaceid):
-            url = '%sapi/collections/newCollectionWithParent?key=%s' % (host, key)
-            result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data=json.dumps({"name": collectionname, "description": description,
-                                                    "parentId": [parentid], "space": spaceid}),
-                                   verify=connector.ssl_verify if connector else True)
-        else:
-            url = '%sapi/collections/newCollectionWithParent?key=%s' % (host, key)
-            result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data=json.dumps({"name": collectionname, "description": description,
-                                                    "parentId": [parentid]}),
-                                   verify=connector.ssl_verify if connector else True)
-    else:
-        if (spaceid):
-            url = '%sapi/collections?key=%s' % (host, key)
-            result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data=json.dumps({"name": collectionname, "description": description,
-                                                    "space": spaceid}),
-                                   verify=connector.ssl_verify if connector else True)
-        else:
-            url = '%sapi/collections?key=%s' % (host, key)
-            result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data=json.dumps({"name": collectionname, "description": description}),
-                                   verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    collectionid = result.json()['id']
-    logger.debug("collection id = [%s]", collectionid)
-
-    return collectionid
+    client = CollectionsApi(host=host, key=key)
+    return client.create(collectionname, description, parentid, spaceid)
 
 
 def delete(connector, host, key, collectionid):
-    url = "%sapi/collections/%s" % (host, collectionid)
 
-    result = requests.delete(url, verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    return json.loads(result.text)
+    client = CollectionsApi(host=host, key=key)
+    return client.delete(collectionid)
 
 
 def get_child_collections(connector, host, key, collectionid):
@@ -78,13 +41,8 @@ def get_child_collections(connector, host, key, collectionid):
     collectionid -- the collection to get children of
     """
 
-    url = "%sapi/collections/%s/getChildCollections?key=%s" % (host, collectionid, key)
-
-    result = requests.get(url,
-                          verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    return json.loads(result.text)
+    client = CollectionsApi(host=host, key=key)
+    return client.get_child_collections(collectionid)
 
 
 def get_datasets(connector, host, key, collectionid):
@@ -97,13 +55,8 @@ def get_datasets(connector, host, key, collectionid):
     datasetid -- the collection to get datasets of
     """
 
-    url = "%sapi/collections/%s/datasets?key=%s" % (host, collectionid, key)
-
-    result = requests.get(url,
-                          verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    return json.loads(result.text)
+    client = CollectionsApi(host=host, key=key)
+    return client.get_datasets(collectionid)
 
 
 # pylint: disable=too-many-arguments
@@ -121,36 +74,8 @@ def upload_preview(connector, host, key, collectionid, previewfile, previewmetad
                     section this preview should be associated with.
     """
 
-    connector.status_update(StatusMessage.processing, {"type": "collection", "id": collectionid},
-                            "Uploading collection preview.")
-
-    logger = logging.getLogger(__name__)
-    headers = {'Content-Type': 'application/json'}
-
-    # upload preview
-    url = '%sapi/previews?key=%s' % (host, key)
-    with open(previewfile, 'rb') as filebytes:
-        result = requests.post(url, files={"File": filebytes},
-                               verify=connector.ssl_verify if connector else True)
-        result.raise_for_status()
-    previewid = result.json()['id']
-    logger.debug("preview id = [%s]", previewid)
-
-    # associate uploaded preview with original collection
-    if collectionid and not (previewmetadata and previewmetadata['section_id']):
-        url = '%sapi/collections/%s/previews/%s?key=%s' % (host, collectionid, previewid, key)
-        result = requests.post(url, headers=headers, data=json.dumps({}),
-                               verify=connector.ssl_verify if connector else True)
-        result.raise_for_status()
-
-    # associate metadata with preview
-    if previewmetadata is not None:
-        url = '%sapi/previews/%s/metadata?key=%s' % (host, previewid, key)
-        result = requests.post(url, headers=headers, data=json.dumps(previewmetadata),
-                               verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    return previewid
+    client = CollectionsApi(host=host, key=key)
+    return client.upload_preview(collectionid, previewfile, previewmetadata)
 
 
 class CollectionsApi(object):
@@ -164,49 +89,31 @@ class CollectionsApi(object):
         else:
             self.client = ClowderClient(host=host, key=key, username=username, password=password)
 
-    def create(self, name, description, parent_id, space_id):
+    def create(self, name, description="", parent_id=None, space_id=None):
         """Create a new collection in Clowder.
 
         Keyword arguments:
-        connector -- connector information, used to get missing parameters and send status updates
-        host -- the clowder host, including http and port, should end with a /
-        key -- the secret key to login to clowder
-        collectionname -- name of new dataset to create
-        description -- description of new dataset
-        parentid -- id of parent collection
-        spaceid -- id of the space to add dataset to
+        name -- name of new collection to create
+        description -- description of new collection
+        parent_id -- id of parent collection
+        space_id -- id of the space to add collection to
         """
 
+        body = {
+            "name": name,
+            "description": description,
+        }
+
         if parent_id:
+            body["parentId"] = [parent_id]
             if space_id:
-                body = {
-                    "name": name,
-                    "description": description,
-                    "parentId": [parent_id],
-                    "space": space_id
-                }
-                result = self.client.post("/collections/newCollectionWithParents", body)
-            else:
-                body = {
-                    "name": name,
-                    "description": description,
-                    "parentId": [parent_id],
-                }
-                result = self.client.post("/collections/newCollectionWithParent", body)
+                body["space"] = space_id
+            result = self.client.post("collections/newCollectionWithParent", body)
         else:
             if space_id:
-                body = {
-                    "name": name,
-                    "description": description,
-                    "space": space_id
-                }
-                result = self.client.post("/collections", body)
-            else:
-                body = {
-                    "name": name,
-                    "description": description,
-                }
-                result = self.client.post("/collections", body)
+                body["space"] = space_id
+            result = self.client.post("collections", body)
+
         result.raise_for_status()
 
         collection_id = result.json()['id']
@@ -214,10 +121,60 @@ class CollectionsApi(object):
 
         return collection_id
 
-    def get_all_collections(self):
-        """
-        Get All Collections in Clowder
+    def delete(self, collection_id):
+        """Delete a collection from Clowder.
 
-        :return: List of collections in Clowder
+        Keyword arguments:
+        collection_id -- id of collection to delete
         """
+
+        return self.client.delete("collections/%s" % collection_id)
+
+    def get_all_collections(self):
+        """Get all Collections in Clowder."""
+
         return self.client.get("/collections")
+
+    def get_child_collections(self, collection_id):
+        """List child collections of a collection.
+
+        Keyword arguments:
+        collection_id -- id of collection to get children of
+        """
+
+        return self.client.get("collections/%s/getChildCollections" % collection_id)
+
+    def get_datasets(self, collection_id):
+        """Get list of datasets in a collection.
+
+        Keyword arguments:
+        collection_id -- id of collection to get datasets of
+        """
+
+        return self.client.get("collections/%s/datasets" % collection_id)
+
+    def upload_preview(self, collection_id, preview_file, preview_metadata):
+        """Upload a collection preview.
+
+        Keyword arguments:
+        collection_id -- the file that is currently being processed
+        preview_file -- the file containing the preview
+        preview_metadata: any metadata to be associated with preview,
+                        this can contain a section_id to indicate the
+                        section this preview should be associated with.
+        """
+
+        logger = logging.getLogger(__name__)
+
+        # upload preview
+        prev = self.client.post_file("previews", preview_file)
+
+        # associate uploaded preview with original collection
+        if collection_id and not (preview_metadata and preview_metadata['section_id']):
+            self.client.post("collections/%s/previews/%s" % (collection_id, prev['id']))
+
+        # associate metadata with preview
+        if preview_metadata is not None:
+            self.client.post("previews/%s/metadata" % prev['id'], preview_metadata)
+
+        return prev['id']

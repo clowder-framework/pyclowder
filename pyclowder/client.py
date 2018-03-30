@@ -104,7 +104,7 @@ class ClowderClient(object):
                 else:
                     self.logger.debug("Error calling GET url %s: %s" % (url, e.message))
 
-    def post(self, path, content, params=None, headers=None):
+    def post(self, path, content={}, params=None, headers=None):
         """
         Call HTTP POST against `path` with `content` in body.
 
