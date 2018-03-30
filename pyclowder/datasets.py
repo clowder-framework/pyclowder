@@ -3,16 +3,13 @@
 This module provides simple wrappers around the clowder Datasets API
 """
 
-import json
 import logging
-import os
 import tempfile
-
-import requests
 
 from pyclowder.client import ClowderClient
 from pyclowder.collections import get_datasets, get_child_collections, delete as delete_collection
-from pyclowder.utils import StatusMessage
+from files import FilesApi
+from collections import CollectionsApi
 
 
 # TODO: Functions outside DatasetsApi are deprecated
@@ -45,7 +42,6 @@ def delete(connector, host, key, datasetid):
     client = DatasetsApi(host=host, key=key)
     return client.delete(datasetid)
 
-# TODO: Put this in BulkOperationsApi?
 def delete_by_collection(connector, host, key, collectionid, recursive=True, delete_colls=False):
     """Delete datasets from Clowder by iterating through collection.
 
@@ -57,17 +53,9 @@ def delete_by_collection(connector, host, key, collectionid, recursive=True, del
     recursive -- whether to also iterate across child collections
     delete_colls -- whether to also delete collections containing the datasets
     """
-    dslist = get_datasets(connector, host, key, collectionid)
-    for ds in dslist:
-        delete(connector, host, key, ds['id'])
 
-    if recursive:
-        childcolls = get_child_collections(connector, host, key, collectionid)
-        for coll in childcolls:
-            delete_by_collection(connector, host, key, coll['id'], recursive, delete_colls)
-
-    if delete_colls:
-        delete_collection(connector, host, key, collectionid)
+    collapi = CollectionsApi(host=host, key=key)
+    return collapi.delete_all_datasets(collectionid, recursive, delete_colls)
 
 def download(connector, host, key, datasetid):
     """Download dataset as zip file.
@@ -151,7 +139,6 @@ def submit_extraction(connector, host, key, datasetid, extractorname):
     client = DatasetsApi(host=host, key=key)
     return client.submit_extraction(datasetid, extractorname)
 
-# TODO: Put this in BulkOperationsApi?
 def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, recursive=True):
     """Manually trigger an extraction on all datasets in a collection.
 
@@ -167,15 +154,8 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
         recursive -- whether to also submit child collection datasets recursively (defaults to True)
     """
 
-    dslist = get_datasets(connector, host, key, collectionid)
-
-    for ds in dslist:
-        submit_extraction(connector, host, key, ds['id'], extractorname)
-
-    if recursive:
-        childcolls = get_child_collections(connector, host, key, collectionid)
-        for coll in childcolls:
-            submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, recursive)
+    collapi = CollectionsApi(host=host, key=key)
+    return collapi.submit_all_datasets_for_extraction(collectionid, extractorname, recursive)
 
 def upload_metadata(connector, host, key, datasetid, metadata):
     """Upload dataset JSON-LD metadata to Clowder.
@@ -402,3 +382,20 @@ class DatasetsApi(object):
 
         return self.client.post("datasets/%s/extractions" % dataset_id,
                                 {"extractor": extractor_name})
+
+
+    def submit_all_files_for_extraction(self, dataset_id, extractor_name, extension=None):
+        """Manually trigger an extraction on all files in a dataset.
+
+        Keyword arguments:
+        dataset_id -- the dataset UUID to submit
+        extractor_name -- registered name of extractor to trigger
+        extension -- extension to filter. e.g. 'tif' will only submit TIFF files for extraction
+        """
+
+        fileapi = FilesApi(self.client)
+        filelist = self.get_file_list(dataset_id)
+        for fi in filelist:
+            if extension and not fi['filename'].endswith(extension):
+                continue
+            fileapi.submit_extraction(fi['id'], extractor_name)

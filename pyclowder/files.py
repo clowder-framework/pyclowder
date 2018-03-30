@@ -4,15 +4,12 @@ This module provides simple wrappers around the clowder Files API
 """
 
 import json
-import logging
 import os
-
 import requests
 from urllib3.filepost import encode_multipart_formdata
 
-from pyclowder.datasets import DatasetsApi
-from pyclowder.collections import get_datasets, get_child_collections
-from pyclowder.utils import StatusMessage
+from datasets import DatasetsApi
+from collections import CollectionsApi
 
 # Some sources of urllib3 support warning suppression, but not all
 try:
@@ -81,7 +78,6 @@ def submit_extraction(connector, host, key, fileid, extractorname):
     client = FilesApi(host=host, key=key)
     return client.submit_extraction(fileid, extractorname)
 
-# TODO: Put this in BulkOperationsApi?
 def submit_extractions_by_dataset(connector, host, key, datasetid, extractorname, ext=False):
     """Manually trigger an extraction on all files in a dataset.
 
@@ -97,16 +93,9 @@ def submit_extractions_by_dataset(connector, host, key, datasetid, extractorname
         ext -- extension to filter. e.g. 'tif' will only submit TIFF files for extraction.
     """
 
-    filelist = get_file_list(connector, host, key, datasetid)
+    dsapi = DatasetsApi(host=host, key=key)
+    dsapi.submit_all_files_for_extraction(datasetid, extractorname, ext)
 
-    for f in filelist:
-        # Only submit files that end with given extension, if specified
-        if ext and not f['filename'].endswith(ext):
-            continue
-
-        submit_extraction(connector, host, key, f['id'], extractorname)
-
-# TODO: Put this in BulkOperationsApi?
 def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, ext=False, recursive=True):
     """Manually trigger an extraction on all files in a collection.
 
@@ -123,15 +112,8 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
         recursive -- whether to also submit child collection files recursively (defaults to True)
     """
 
-    dslist = get_datasets(connector, host, key, collectionid)
-
-    for ds in dslist:
-        submit_extractions_by_dataset(connector, host, key, ds['id'], extractorname, ext)
-
-    if recursive:
-        childcolls = get_child_collections(connector, host, key, collectionid)
-        for coll in childcolls:
-            submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, ext, recursive)
+    collapi = CollectionsApi(host=host, key=key)
+    collapi.submit_all_files_for_extraction(collectionid, extractorname, ext, recursive)
 
 def upload_metadata(connector, host, key, fileid, metadata):
     """Upload file JSON-LD metadata to Clowder.
