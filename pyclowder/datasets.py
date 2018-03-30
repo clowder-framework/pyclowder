@@ -5,169 +5,53 @@ This module provides simple wrappers around the clowder Datasets API
 
 import logging
 import tempfile
-
-from pyclowder.client import ClowderClient
-from pyclowder.collections import get_datasets, get_child_collections, delete as delete_collection
+from client import ClowderClient
 from files import FilesApi
 from collections import CollectionsApi
 
 
-# TODO: Functions outside DatasetsApi are deprecated
+@deprecated
 def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
-    """Create a new dataset in Clowder.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    datasetname -- name of new dataset to create
-    description -- description of new dataset
-    parentid -- id of parent collection
-    spaceid -- id of the space to add dataset to
-    """
-
     client = DatasetsApi(host=host, key=key)
     return client.create(datasetname, description, parentid, spaceid)
-
+@deprecated
 def delete(connector, host, key, datasetid):
-    """Delete dataset from Clowder.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    datasetid -- the dataset to delete
-    """
-
     client = DatasetsApi(host=host, key=key)
     return client.delete(datasetid)
-
+@deprecated
 def delete_by_collection(connector, host, key, collectionid, recursive=True, delete_colls=False):
-    """Delete datasets from Clowder by iterating through collection.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    collectionid -- the collection to walk
-    recursive -- whether to also iterate across child collections
-    delete_colls -- whether to also delete collections containing the datasets
-    """
-
     collapi = CollectionsApi(host=host, key=key)
     return collapi.delete_all_datasets(collectionid, recursive, delete_colls)
-
+@deprecated
 def download(connector, host, key, datasetid):
-    """Download dataset as zip file.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    datasetid -- the file that is currently being processed
-    """
-
     client = DatasetsApi(host=host, key=key)
     return client.download(datasetid)
-
+@deprecated
 def download_metadata(connector, host, key, datasetid, extractor=None):
-    """Download dataset JSON-LD metadata from Clowder.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    datasetid -- the dataset to fetch metadata of
-    extractor -- extractor name to filter results (if only one extractor's metadata is desired)
-    """
-
     client = DatasetsApi(host=host, key=key)
     return client.download_metadata(datasetid, extractor)
-
+@deprecated
 def get_info(connector, host, key, datasetid):
-    """Get basic dataset information from UUID.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    datasetid -- the dataset to get info of
-    """
-
     client = DatasetsApi(host=host, key=key)
     return client.get_info(datasetid)
-
+@deprecated
 def get_file_list(connector, host, key, datasetid):
-    """Get list of files in a dataset as JSON object.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    datasetid -- the dataset to get filelist of
-    """
-
     client = DatasetsApi(host=host, key=key)
     return client.get_file_list(datasetid)
-
+@deprecated
 def remove_metadata(connector, host, key, datasetid, extractor=None):
-    """Delete dataset JSON-LD metadata from Clowder.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    datasetid -- the dataset to fetch metadata of
-    extractor -- extractor name to filter deletion
-                    !!! ALL JSON-LD METADATA WILL BE REMOVED IF NO extractor PROVIDED !!!
-    """
-
     client = DatasetsApi(host=host, key=key)
     return client.remove_metadata(datasetid, extractor)
-
+@deprecated
 def submit_extraction(connector, host, key, datasetid, extractorname):
-    """Submit dataset for extraction by given extractor.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    datasetid -- the dataset UUID to submit
-    extractorname -- registered name of extractor to trigger
-    """
-
     client = DatasetsApi(host=host, key=key)
     return client.submit_extraction(datasetid, extractorname)
-
+@deprecated
 def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, recursive=True):
-    """Manually trigger an extraction on all datasets in a collection.
-
-        This will iterate through all datasets in the given collection and submit them to
-        the provided extractor.
-
-        Keyword arguments:
-        connector -- connector information, used to get missing parameters and send status updates
-        host -- the clowder host, including http and port, should end with a /
-        key -- the secret key to login to clowder
-        datasetid -- the dataset UUID to submit
-        extractorname -- registered name of extractor to trigger
-        recursive -- whether to also submit child collection datasets recursively (defaults to True)
-    """
-
     collapi = CollectionsApi(host=host, key=key)
     return collapi.submit_all_datasets_for_extraction(collectionid, extractorname, recursive)
-
+@deprecated
 def upload_metadata(connector, host, key, datasetid, metadata):
-    """Upload dataset JSON-LD metadata to Clowder.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    datasetid -- the dataset that is currently being processed
-    metadata -- the metadata to be uploaded
-    """
-
     client = DatasetsApi(host=host, key=key)
     return client.add_metadata(datasetid, metadata)
 
@@ -192,6 +76,7 @@ class DatasetsApi(object):
         :return: Full list of datasets.
         :rtype: `requests.Response`
         """
+
         logging.debug("Getting all datasets")
         try:
             return self.client.get("/datasets/")
@@ -205,6 +90,7 @@ class DatasetsApi(object):
         :return: Sensor object as JSON.
         :rtype: `requests.Response`
         """
+
         logging.debug("Getting dataset %s" % dataset_id)
         try:
             return self.client.get("/datasets/%s" % dataset_id)
@@ -218,6 +104,7 @@ class DatasetsApi(object):
         :return: If successful or not.
         :rtype: `requests.Response`
         """
+
         logging.debug("Adding dataset")
         try:
             return self.client.post("/datasets/createempty", dataset_id)
@@ -231,6 +118,7 @@ class DatasetsApi(object):
         :return: If successfull or not.
         :rtype: `requests.Response`
         """
+
         logging.debug("Deleting dataset %s" % dataset_id)
         try:
             return self.client.delete("/datasets/%s" % dataset_id)
@@ -244,6 +132,7 @@ class DatasetsApi(object):
         :return: If successfull or not.
         :rtype: `requests.Response`
         """
+
         logging.debug("Uploading a file to dataset %s" % dataset_id)
         try:
             return self.client.post_file("/uploadToDataset/%s" % dataset_id, file)

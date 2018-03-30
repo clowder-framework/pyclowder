@@ -1,14 +1,12 @@
-"""
-    ClowderClient
-    ~~~
-    This module contains a basic client to interact with the Clowder API.
+"""ClowderClient
+
+This module contains a basic client to interact with the Clowder API.
 """
 
 import json
 import logging
 import os
 import tempfile
-
 import requests
 
 

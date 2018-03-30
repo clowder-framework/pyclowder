@@ -7,69 +7,24 @@ from client import ClowderClient
 from datasets import DatasetsApi
 
 
-# TODO: Functions outside CollectionsApi are deprecated
+@deprecated
 def create_empty(connector, host, key, collectionname, description, parentid=None, spaceid=None):
-    """Create a new collection in Clowder.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    collectionname -- name of new dataset to create
-    description -- description of new dataset
-    parentid -- id of parent collection
-    spaceid -- id of the space to add dataset to
-    """
-
     client = CollectionsApi(host=host, key=key)
     return client.create(collectionname, description, parentid, spaceid)
-
+@deprecated
 def delete(connector, host, key, collectionid):
-
     client = CollectionsApi(host=host, key=key)
     return client.delete(collectionid)
-
+@deprecated
 def get_child_collections(connector, host, key, collectionid):
-    """Get list of child collections in collection by UUID.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    collectionid -- the collection to get children of
-    """
-
     client = CollectionsApi(host=host, key=key)
     return client.get_child_collections(collectionid)
-
+@deprecated
 def get_datasets(connector, host, key, collectionid):
-    """Get list of datasets in collection by UUID.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    datasetid -- the collection to get datasets of
-    """
-
     client = CollectionsApi(host=host, key=key)
     return client.get_datasets(collectionid)
-
-# pylint: disable=too-many-arguments
+@deprecated
 def upload_preview(connector, host, key, collectionid, previewfile, previewmetadata):
-    """Upload preview to Clowder.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    collectionid -- the file that is currently being processed
-    preview -- the file containing the preview
-    previewdata: any metadata to be associated with preview,
-                    this can contain a section_id to indicate the
-                    section this preview should be associated with.
-    """
-
     client = CollectionsApi(host=host, key=key)
     return client.upload_preview(collectionid, previewfile, previewmetadata)
 
