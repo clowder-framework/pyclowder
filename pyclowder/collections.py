@@ -24,12 +24,10 @@ def create_empty(connector, host, key, collectionname, description, parentid=Non
     client = CollectionsApi(host=host, key=key)
     return client.create(collectionname, description, parentid, spaceid)
 
-
 def delete(connector, host, key, collectionid):
 
     client = CollectionsApi(host=host, key=key)
     return client.delete(collectionid)
-
 
 def get_child_collections(connector, host, key, collectionid):
     """Get list of child collections in collection by UUID.
@@ -44,7 +42,6 @@ def get_child_collections(connector, host, key, collectionid):
     client = CollectionsApi(host=host, key=key)
     return client.get_child_collections(collectionid)
 
-
 def get_datasets(connector, host, key, collectionid):
     """Get list of datasets in collection by UUID.
 
@@ -57,8 +54,6 @@ def get_datasets(connector, host, key, collectionid):
 
     client = CollectionsApi(host=host, key=key)
     return client.get_datasets(collectionid)
-
-
 # pylint: disable=too-many-arguments
 def upload_preview(connector, host, key, collectionid, previewfile, previewmetadata):
     """Upload preview to Clowder.
@@ -90,6 +85,31 @@ class CollectionsApi(object):
             self.api_client = client
         else:
             self.client = ClowderClient(host=host, key=key, username=username, password=password)
+
+
+    def add_preview(self, collection_id, preview_file, preview_metadata):
+        """Upload a collection preview.
+
+        Keyword arguments:
+        collection_id -- the collection that is currently being processed
+        preview_file -- the file containing the preview
+        preview_metadata: any metadata to be associated with preview,
+                        this can contain a section_id to indicate the
+                        section this preview should be associated with.
+        """
+
+        # upload preview
+        prev = self.client.post_file("previews", preview_file)
+
+        # associate uploaded preview with original collection
+        if collection_id and not (preview_metadata and preview_metadata['section_id']):
+            self.client.post("collections/%s/previews/%s" % (collection_id, prev['id']))
+
+        # associate metadata with preview
+        if preview_metadata is not None:
+            self.client.post("previews/%s/metadata" % prev['id'], preview_metadata)
+
+        return prev['id']
 
 
     def create(self, name, description="", parent_id=None, space_id=None):
@@ -159,28 +179,3 @@ class CollectionsApi(object):
         return self.client.get("collections/%s/datasets" % collection_id)
 
 
-    def upload_preview(self, collection_id, preview_file, preview_metadata):
-        """Upload a collection preview.
-
-        Keyword arguments:
-        collection_id -- the file that is currently being processed
-        preview_file -- the file containing the preview
-        preview_metadata: any metadata to be associated with preview,
-                        this can contain a section_id to indicate the
-                        section this preview should be associated with.
-        """
-
-        logger = logging.getLogger(__name__)
-
-        # upload preview
-        prev = self.client.post_file("previews", preview_file)
-
-        # associate uploaded preview with original collection
-        if collection_id and not (preview_metadata and preview_metadata['section_id']):
-            self.client.post("collections/%s/previews/%s" % (collection_id, prev['id']))
-
-        # associate metadata with preview
-        if preview_metadata is not None:
-            self.client.post("previews/%s/metadata" % prev['id'], preview_metadata)
-
-        return prev['id']

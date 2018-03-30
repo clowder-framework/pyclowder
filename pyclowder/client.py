@@ -230,7 +230,7 @@ class ClowderClient(object):
                 os.remove(filename)
                 raise
 
-    def post_file(self, path, filename, params=None, headers=None):
+    def post_file(self, path, filename, params=None, headers=None, mime=None):
         """
         Call HTTP POST against `path` with `content` in body. Header with content-type is not required.
 
@@ -238,9 +238,11 @@ class ClowderClient(object):
         :param filename: The name of the file to post.
         :param dict params: Additional parameters to pass to clowder.
         :param dict headers: Additional headers to pass to clowder.
+        :param str mime: Mimetype of file that is being posted.
         :return: the json-encoded content of a response.
         :raises: `requests.HTTPError`
         """
+
         attempt = 0
         url = '%s/api/%s' % (self.host, path.lstrip('/'))
         if params is None:
@@ -255,7 +257,12 @@ class ClowderClient(object):
             auth = None
         while True:
             try:
-                response = requests.post(url, files={"File": open(filename, 'rb')}, headers=headers, params=params,
+                if mime is not None:
+                    response = requests.post(url, files={"File": (os.path.basename(filename), open(filename, 'rb'), mime)},
+                                             headers=headers, params=params,
+                                             auth=auth, timeout=self.timeout, verify=self.ssl)
+                else:
+                    response = requests.post(url, files={"File": open(filename, 'rb')}, headers=headers, params=params,
                                          auth=auth, timeout=self.timeout, verify=self.ssl)
                 response.raise_for_status()
                 return response.json()

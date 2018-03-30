@@ -32,7 +32,6 @@ def create_empty(connector, host, key, datasetname, description, parentid=None, 
     client = DatasetsApi(host=host, key=key)
     return client.create(datasetname, description, parentid, spaceid)
 
-
 def delete(connector, host, key, datasetid):
     """Delete dataset from Clowder.
 
@@ -45,7 +44,6 @@ def delete(connector, host, key, datasetid):
 
     client = DatasetsApi(host=host, key=key)
     return client.delete(datasetid)
-
 
 # TODO: Put this in BulkOperationsApi?
 def delete_by_collection(connector, host, key, collectionid, recursive=True, delete_colls=False):
@@ -71,9 +69,8 @@ def delete_by_collection(connector, host, key, collectionid, recursive=True, del
     if delete_colls:
         delete_collection(connector, host, key, collectionid)
 
-
 def download(connector, host, key, datasetid):
-    """Download dataset to be processed from Clowder as zip file.
+    """Download dataset as zip file.
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
@@ -84,7 +81,6 @@ def download(connector, host, key, datasetid):
 
     client = DatasetsApi(host=host, key=key)
     return client.download(datasetid)
-
 
 def download_metadata(connector, host, key, datasetid, extractor=None):
     """Download dataset JSON-LD metadata from Clowder.
@@ -100,7 +96,6 @@ def download_metadata(connector, host, key, datasetid, extractor=None):
     client = DatasetsApi(host=host, key=key)
     return client.download_metadata(datasetid, extractor)
 
-
 def get_info(connector, host, key, datasetid):
     """Get basic dataset information from UUID.
 
@@ -114,7 +109,6 @@ def get_info(connector, host, key, datasetid):
     client = DatasetsApi(host=host, key=key)
     return client.get_info(datasetid)
 
-
 def get_file_list(connector, host, key, datasetid):
     """Get list of files in a dataset as JSON object.
 
@@ -127,7 +121,6 @@ def get_file_list(connector, host, key, datasetid):
 
     client = DatasetsApi(host=host, key=key)
     return client.get_file_list(datasetid)
-
 
 def remove_metadata(connector, host, key, datasetid, extractor=None):
     """Delete dataset JSON-LD metadata from Clowder.
@@ -144,7 +137,6 @@ def remove_metadata(connector, host, key, datasetid, extractor=None):
     client = DatasetsApi(host=host, key=key)
     return client.remove_metadata(datasetid, extractor)
 
-
 def submit_extraction(connector, host, key, datasetid, extractorname):
     """Submit dataset for extraction by given extractor.
 
@@ -158,7 +150,6 @@ def submit_extraction(connector, host, key, datasetid, extractorname):
 
     client = DatasetsApi(host=host, key=key)
     return client.submit_extraction(datasetid, extractorname)
-
 
 # TODO: Put this in BulkOperationsApi?
 def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, recursive=True):
@@ -185,7 +176,6 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
         childcolls = get_child_collections(connector, host, key, collectionid)
         for coll in childcolls:
             submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, recursive)
-
 
 def upload_metadata(connector, host, key, datasetid, metadata):
     """Upload dataset JSON-LD metadata to Clowder.
@@ -410,4 +400,5 @@ class DatasetsApi(object):
         extractor_name -- registered name of extractor to trigger
         """
 
-        return self.client.post("datasets/%s/extractions", {"extractor": extractor_name})
+        return self.client.post("datasets/%s/extractions" % dataset_id,
+                                {"extractor": extractor_name})
