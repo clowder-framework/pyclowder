@@ -14,42 +14,62 @@ from collections import CollectionsApi
 def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
     client = DatasetsApi(host=host, key=key)
     return client.create(datasetname, description, parentid, spaceid)
+
+
 @deprecated
 def delete(connector, host, key, datasetid):
     client = DatasetsApi(host=host, key=key)
     return client.delete(datasetid)
+
+
 @deprecated
 def delete_by_collection(connector, host, key, collectionid, recursive=True, delete_colls=False):
     collapi = CollectionsApi(host=host, key=key)
     return collapi.delete_all_datasets(collectionid, recursive, delete_colls)
+
+
 @deprecated
 def download(connector, host, key, datasetid):
     client = DatasetsApi(host=host, key=key)
     return client.download(datasetid)
+
+
 @deprecated
 def download_metadata(connector, host, key, datasetid, extractor=None):
     client = DatasetsApi(host=host, key=key)
     return client.download_metadata(datasetid, extractor)
+
+
 @deprecated
 def get_info(connector, host, key, datasetid):
     client = DatasetsApi(host=host, key=key)
     return client.get_info(datasetid)
+
+
 @deprecated
 def get_file_list(connector, host, key, datasetid):
     client = DatasetsApi(host=host, key=key)
     return client.get_file_list(datasetid)
+
+
 @deprecated
 def remove_metadata(connector, host, key, datasetid, extractor=None):
     client = DatasetsApi(host=host, key=key)
     return client.remove_metadata(datasetid, extractor)
+
+
 @deprecated
 def submit_extraction(connector, host, key, datasetid, extractorname):
     client = DatasetsApi(host=host, key=key)
     return client.submit_extraction(datasetid, extractorname)
+
+
 @deprecated
 def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, recursive=True):
     collapi = CollectionsApi(host=host, key=key)
     return collapi.submit_all_datasets_for_extraction(collectionid, extractorname, recursive)
+
+
 @deprecated
 def upload_metadata(connector, host, key, datasetid, metadata):
     client = DatasetsApi(host=host, key=key)
@@ -153,7 +173,6 @@ class DatasetsApi(object):
         except Exception:
             logging.error("Error upload to dataset %s: %s" % (dataset_id, e.message))
 
-
     def add_metadata(self, dataset_id, metadata):
         """Upload dataset JSON-LD metadata.
 
@@ -163,7 +182,6 @@ class DatasetsApi(object):
         """
 
         self.client.post("datasets/%s/metadata.jsonld", metadata)
-
 
     def create(self, name, description="", parent_id=None, space_id=None):
         """Create a new dataset in Clowder.
@@ -194,7 +212,6 @@ class DatasetsApi(object):
         result = self.client.post("datasets/createempty", body)
         return result['id']
 
-
     def delete(self, dataset_id):
         """Delete a dataset from Clowder.
 
@@ -203,7 +220,6 @@ class DatasetsApi(object):
         """
 
         return self.client.delete("datasets/%s" % dataset_id)
-
 
     def download(self, dataset_id):
         """Download a dataset from Clowder as zip.
@@ -214,7 +230,6 @@ class DatasetsApi(object):
 
         fname = tempfile.mkstemp(suffix=".zip")
         return self.client.get_file("datasets/%s/download" % dataset_id, filename=fname)
-
 
     def download_metadata(self, dataset_id, extractor_name=None):
         """Download dataset JSON-LD metadata from Clowder.
@@ -227,7 +242,6 @@ class DatasetsApi(object):
         params = None if extractor_name is None else {"extractor": extractor_name}
         return self.client.get("datasets/%s/metadata.jsonld" % dataset_id, params)
 
-
     def get_info(self, dataset_id):
         """Download basic dataset information.
 
@@ -237,7 +251,6 @@ class DatasetsApi(object):
 
         return self.client.get("datasets/%s" % dataset_id)
 
-
     def get_file_list(self, dataset_id):
         """Download list of dataset files as JSON.
 
@@ -246,7 +259,6 @@ class DatasetsApi(object):
         """
 
         return self.client.get("datasets/%s/files" % dataset_id)
-
 
     def remove_metadata(self, dataset_id, extractor_name=None):
         """Delete dataset JSON-LD metadata, optionally filtered by extractor name.
@@ -260,7 +272,6 @@ class DatasetsApi(object):
         params = None if extractor_name is None else {"extractor": extractor_name}
         return self.client.delete("datasets/%s/metadata.jsonld" % dataset_id, params)
 
-
     def submit_extraction(self, dataset_id, extractor_name):
         """Submit dataset for extraction by given extractor.
 
@@ -271,7 +282,6 @@ class DatasetsApi(object):
 
         return self.client.post("datasets/%s/extractions" % dataset_id,
                                 {"extractor": extractor_name})
-
 
     def submit_all_files_for_extraction(self, dataset_id, extractor_name, extension=None):
         """Manually trigger an extraction on all files in a dataset.

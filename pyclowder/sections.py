@@ -11,10 +11,14 @@ from client import ClowderClient
 def upload(connector, host, key, sectiondata):
     client = SectionsApi(host=host, key=key)
     return client.upload(sectiondata)
+
+
 @deprecated
 def upload_tags(connector, host, key, sectionid, tags):
     client = SectionsApi(host=host, key=key)
     return client.add_tags(sectionid, tags)
+
+
 @deprecated
 def upload_description(connector, host, key, sectionid, description):
     client = SectionsApi(host=host, key=key)
@@ -34,18 +38,15 @@ class SectionsApi(object):
         else:
             self.client = ClowderClient(host=host, key=key, username=username, password=password)
 
-
     def add_description(self, section_id, description):
         """Upload description to a section."""
 
         self.client.post("sections/%s/description" % section_id, json.dumps(description))
 
-
     def add_tags(self, section_id, tags):
         """Upload section tag."""
 
         self.client.post("sections/%s/tags" % section_id, json.dumps(tags))
-
 
     def upload(self, section_data):
         """Upload section to Clowder.

@@ -11,18 +11,26 @@ from datasets import DatasetsApi
 def create_empty(connector, host, key, collectionname, description, parentid=None, spaceid=None):
     client = CollectionsApi(host=host, key=key)
     return client.create(collectionname, description, parentid, spaceid)
+
+
 @deprecated
 def delete(connector, host, key, collectionid):
     client = CollectionsApi(host=host, key=key)
     return client.delete(collectionid)
+
+
 @deprecated
 def get_child_collections(connector, host, key, collectionid):
     client = CollectionsApi(host=host, key=key)
     return client.get_child_collections(collectionid)
+
+
 @deprecated
 def get_datasets(connector, host, key, collectionid):
     client = CollectionsApi(host=host, key=key)
     return client.get_datasets(collectionid)
+
+
 @deprecated
 def upload_preview(connector, host, key, collectionid, previewfile, previewmetadata):
     client = CollectionsApi(host=host, key=key)
@@ -41,7 +49,6 @@ class CollectionsApi(object):
             self.api_client = client
         else:
             self.client = ClowderClient(host=host, key=key, username=username, password=password)
-
 
     def add_preview(self, collection_id, preview_file, preview_metadata):
         """Upload a collection preview.
@@ -66,7 +73,6 @@ class CollectionsApi(object):
             self.client.post("previews/%s/metadata" % prev['id'], preview_metadata)
 
         return prev['id']
-
 
     def create(self, name, description="", parent_id=None, space_id=None):
         """Create a new collection in Clowder.
@@ -98,7 +104,6 @@ class CollectionsApi(object):
 
         return result['id']
 
-
     def delete(self, collection_id):
         """Delete a collection from Clowder.
 
@@ -107,7 +112,6 @@ class CollectionsApi(object):
         """
 
         return self.client.delete("collections/%s" % collection_id)
-
 
     def delete_all_datasets(self, collection_id, recursive=True, delete_collections=False):
         """Delete all datasets from collection.
@@ -131,12 +135,10 @@ class CollectionsApi(object):
         if delete_collections:
             self.delete(collection_id)
 
-
     def get_all_collections(self):
         """Get all Collections in Clowder."""
 
         return self.client.get("/collections")
-
 
     def get_child_collections(self, collection_id):
         """List child collections of a collection.
@@ -147,7 +149,6 @@ class CollectionsApi(object):
 
         return self.client.get("collections/%s/getChildCollections" % collection_id)
 
-
     def get_datasets(self, collection_id):
         """Get list of datasets in a collection.
 
@@ -156,7 +157,6 @@ class CollectionsApi(object):
         """
 
         return self.client.get("collections/%s/datasets" % collection_id)
-
 
     def submit_all_files_for_extraction(self, collection_id, extractor_name, extension=None, recursive=True):
         """Manually trigger an extraction on all files in a collection.
@@ -180,7 +180,6 @@ class CollectionsApi(object):
             children = self.get_child_collections(collection_id)
             for child_coll in children:
                 self.submit_all_files_for_extraction(child_coll['id'], extractor_name, extension, recursive)
-
 
     def submit_all_datasets_for_extraction(self, collection_id, extractor_name, recursive=True):
         """Manually trigger an extraction on all datasets in a collection.

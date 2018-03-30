@@ -22,42 +22,62 @@ except:
 def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
     client = FilesApi(host=host, key=key)
     return client.download(fileid)
+
+
 @deprecated
 def download_info(connector, host, key, fileid):
     client = FilesApi(host=host, key=key)
     return client.download_info(fileid)
+
+
 @deprecated
 def download_metadata(connector, host, key, fileid, extractor=None):
     client = FilesApi(host=host, key=key)
     return client.download_metadata(fileid, extractor)
+
+
 @deprecated
 def submit_extraction(connector, host, key, fileid, extractorname):
     client = FilesApi(host=host, key=key)
     return client.submit_extraction(fileid, extractorname)
+
+
 @deprecated
 def submit_extractions_by_dataset(connector, host, key, datasetid, extractorname, ext=False):
     dsapi = DatasetsApi(host=host, key=key)
     dsapi.submit_all_files_for_extraction(datasetid, extractorname, ext)
+
+
 @deprecated
 def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, ext=False, recursive=True):
     collapi = CollectionsApi(host=host, key=key)
     collapi.submit_all_files_for_extraction(collectionid, extractorname, ext, recursive)
+
+
 @deprecated
 def upload_metadata(connector, host, key, fileid, metadata):
     client = FilesApi(host=host, key=key)
     return client.add_medadata(fileid, metadata)
+
+
 @deprecated
 def upload_preview(connector, host, key, fileid, previewfile, previewmetadata, preview_mimetype=None):
     client = FilesApi(host=host, key=key)
     return client.add_preview(fileid, previewfile, previewmetadata, preview_mimetype)
+
+
 @deprecated
 def upload_tags(connector, host, key, fileid, tags):
     client = FilesApi(host=host, key=key)
     return client.add_tags(fileid, tags)
+
+
 @deprecated
 def upload_thumbnail(connector, host, key, fileid, thumbnail):
     client = FilesApi(host=host, key=key)
     return client.add_thumbnail(fileid, thumbnail)
+
+
 @deprecated
 def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate=False):
     client = FilesApi(host=host, key=key)
@@ -77,7 +97,6 @@ class FilesApi(object):
         else:
             self.client = ClowderClient(host=host, key=key, username=username, password=password)
 
-
     def add_medadata(self, file_id, metadata):
         """Upload file JSON-LD metadata.
 
@@ -87,7 +106,6 @@ class FilesApi(object):
         """
 
         self.client.post("files/%s/metadata.jsonld", metadata)
-
 
     def add_preview(self, file_id, preview_file, preview_metadata, preview_mime=None):
         """Upload a file preview.
@@ -114,7 +132,6 @@ class FilesApi(object):
 
         return prev['id']
 
-
     def add_tags(self, file_id, tags):
         """Upload tags to a file.
 
@@ -124,7 +141,6 @@ class FilesApi(object):
         """
 
         self.client.post("files/%s/tags" % file_id, json.dumps(tags))
-
 
     def add_thumbnail(self, file_id, thumbnail):
         """Upload a file thumbnail.
@@ -143,7 +159,6 @@ class FilesApi(object):
 
         return thumb['id']
 
-
     def download(self, file_id):
         """Download a file.
 
@@ -153,7 +168,6 @@ class FilesApi(object):
 
         return self.client.get_file("files/%s/blob" % file_id)
 
-
     def download_info(self, file_id):
         """Download file summary metadata.
 
@@ -162,7 +176,6 @@ class FilesApi(object):
         """
 
         return self.client.get("files/%s/metadata" % file_id)
-
 
     def download_metadata(self, file_id, extractor_name=None):
         """Download file JSON-LD metadata.
@@ -175,7 +188,6 @@ class FilesApi(object):
         params = None if extractor_name is None else {"extractor": extractor_name}
         return self.client.get("files/%s/metadata.jsonld" % file_id, params)
 
-
     def submit_extraction(self, file_id, extractor_name):
         """Submit file for extraction by given extractor.
 
@@ -186,7 +198,6 @@ class FilesApi(object):
 
         return self.client.post("files/%s/extractions" % file_id,
                                 {"extractor": extractor_name})
-
 
     def upload_to_dataset(self, dataset_id, filepath, mounted_paths={}, check_duplicate=False):
         """Upload file to existing Clowder dataset.
@@ -214,7 +225,6 @@ class FilesApi(object):
             return result['id']
         else:
             raise
-
 
     def _upload_to_dataset_local(self, dataset_id, filepath, mounted_paths):
         """Upload file POINTER to existing Clowder dataset. Does not copy actual file bytes."""
