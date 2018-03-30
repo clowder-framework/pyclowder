@@ -15,6 +15,7 @@ from pyclowder.collections import get_datasets, get_child_collections, delete as
 from pyclowder.utils import StatusMessage
 
 
+# TODO: Functions outside DatasetsApi are deprecated
 def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
     """Create a new dataset in Clowder.
 
@@ -28,38 +29,8 @@ def create_empty(connector, host, key, datasetname, description, parentid=None, 
     spaceid -- id of the space to add dataset to
     """
 
-    logger = logging.getLogger(__name__)
-
-    url = '%sapi/datasets/createempty?key=%s' % (host, key)
-
-    if parentid:
-        if spaceid:
-            result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data=json.dumps({"name": datasetname, "description": description,
-                                                    "collection": [parentid], "space": [spaceid]}),
-                                   verify=connector.ssl_verify if connector else True)
-        else:
-            result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data=json.dumps({"name": datasetname, "description": description,
-                                                    "collection": [parentid]}),
-                                   verify=connector.ssl_verify if connector else True)
-    else:
-        if spaceid:
-            result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data=json.dumps({"name": datasetname, "description": description,
-                                                    "space": [spaceid]}),
-                                   verify=connector.ssl_verify if connector else True)
-        else:
-            result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data=json.dumps({"name": datasetname, "description": description}),
-                                   verify=connector.ssl_verify if connector else True)
-
-    result.raise_for_status()
-
-    datasetid = result.json()['id']
-    logger.debug("dataset id = [%s]", datasetid)
-
-    return datasetid
+    client = DatasetsApi(host=host, key=key)
+    return client.create(datasetname, description, parentid, spaceid)
 
 
 def delete(connector, host, key, datasetid):
@@ -71,14 +42,12 @@ def delete(connector, host, key, datasetid):
     key -- the secret key to login to clowder
     datasetid -- the dataset to delete
     """
-    url = "%sapi/datasets/%s" % (host, datasetid)
 
-    result = requests.delete(url, verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    return json.loads(result.text)
+    client = DatasetsApi(host=host, key=key)
+    return client.delete(datasetid)
 
 
+# TODO: Put this in BulkOperationsApi?
 def delete_by_collection(connector, host, key, collectionid, recursive=True, delete_colls=False):
     """Delete datasets from Clowder by iterating through collection.
 
@@ -113,20 +82,8 @@ def download(connector, host, key, datasetid):
     datasetid -- the file that is currently being processed
     """
 
-    connector.status_update(StatusMessage.processing, {"type": "dataset", "id": datasetid}, "Downloading dataset.")
-
-    # fetch dataset zipfile
-    url = '%sapi/datasets/%s/download?key=%s' % (host, datasetid, key)
-    result = requests.get(url, stream=True,
-                          verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    (filedescriptor, zipfile) = tempfile.mkstemp(suffix=".zip")
-    with os.fdopen(filedescriptor, "w") as outfile:
-        for chunk in result.iter_content(chunk_size=10 * 1024):
-            outfile.write(chunk)
-
-    return zipfile
+    client = DatasetsApi(host=host, key=key)
+    return client.download(datasetid)
 
 
 def download_metadata(connector, host, key, datasetid, extractor=None):
@@ -140,15 +97,8 @@ def download_metadata(connector, host, key, datasetid, extractor=None):
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
 
-    filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = '%sapi/datasets/%s/metadata.jsonld?key=%s%s' % (host, datasetid, key, filterstring)
-
-    # fetch data
-    result = requests.get(url, stream=True,
-                          verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    return result.json()
+    client = DatasetsApi(host=host, key=key)
+    return client.download_metadata(datasetid, extractor)
 
 
 def get_info(connector, host, key, datasetid):
@@ -161,13 +111,8 @@ def get_info(connector, host, key, datasetid):
     datasetid -- the dataset to get info of
     """
 
-    url = "%sapi/datasets/%s?key=%s" % (host, datasetid, key)
-
-    result = requests.get(url,
-                          verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    return json.loads(result.text)
+    client = DatasetsApi(host=host, key=key)
+    return client.get_info(datasetid)
 
 
 def get_file_list(connector, host, key, datasetid):
@@ -180,12 +125,8 @@ def get_file_list(connector, host, key, datasetid):
     datasetid -- the dataset to get filelist of
     """
 
-    url = "%sapi/datasets/%s/files?key=%s" % (host, datasetid, key)
-
-    result = requests.get(url, verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    return json.loads(result.text)
+    client = DatasetsApi(host=host, key=key)
+    return client.get_file_list(datasetid)
 
 
 def remove_metadata(connector, host, key, datasetid, extractor=None):
@@ -200,13 +141,8 @@ def remove_metadata(connector, host, key, datasetid, extractor=None):
                     !!! ALL JSON-LD METADATA WILL BE REMOVED IF NO extractor PROVIDED !!!
     """
 
-    filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = '%sapi/datasets/%s/metadata.jsonld?key=%s%s' % (host, datasetid, key, filterstring)
-
-    # fetch data
-    result = requests.delete(url, stream=True,
-                             verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
+    client = DatasetsApi(host=host, key=key)
+    return client.remove_metadata(datasetid, extractor)
 
 
 def submit_extraction(connector, host, key, datasetid, extractorname):
@@ -220,17 +156,11 @@ def submit_extraction(connector, host, key, datasetid, extractorname):
     extractorname -- registered name of extractor to trigger
     """
 
-    url = "%sapi/datasets/%s/extractions?key=%s" % (host, datasetid, key)
-
-    result = requests.post(url,
-                           headers={'Content-Type': 'application/json'},
-                           data=json.dumps({"extractor": extractorname}),
-                           verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    return result.status_code
+    client = DatasetsApi(host=host, key=key)
+    return client.submit_extraction(datasetid, extractorname)
 
 
+# TODO: Put this in BulkOperationsApi?
 def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, recursive=True):
     """Manually trigger an extraction on all datasets in a collection.
 
@@ -268,14 +198,8 @@ def upload_metadata(connector, host, key, datasetid, metadata):
     metadata -- the metadata to be uploaded
     """
 
-    connector.status_update(StatusMessage.processing, {"type": "dataset", "id": datasetid},
-                            "Uploading dataset metadata.")
-
-    headers = {'Content-Type': 'application/json'}
-    url = '%sapi/datasets/%s/metadata.jsonld?key=%s' % (host, datasetid, key)
-    result = requests.post(url, headers=headers, data=json.dumps(metadata),
-                           verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
+    client = DatasetsApi(host=host, key=key)
+    return client.add_metadata(datasetid, metadata)
 
 
 class DatasetsApi(object):
@@ -285,6 +209,7 @@ class DatasetsApi(object):
 
     def __init__(self, client=None, host=None, key=None, username=None, password=None):
         """Set client if provided otherwise create new one"""
+
         if client:
             self.api_client = client
         else:
@@ -368,3 +293,121 @@ class DatasetsApi(object):
             return self.client.post("/datasets/%s/metadata" % dataset_id, metadata)
         except Exception:
             logging.error("Error upload to dataset %s: %s" % (dataset_id, e.message))
+
+
+    def add_metadata(self, dataset_id, metadata):
+        """Upload dataset JSON-LD metadata.
+
+        Keyword arguments:
+        dataset_id -- the dataset that is currently being processed
+        metadata -- the metadata to be uploaded
+        """
+
+        self.client.post("datasets/%s/metadata.jsonld", metadata)
+
+
+    def create(self, name, description="", parent_id=None, space_id=None):
+        """Create a new dataset in Clowder.
+
+        Keyword arguments:
+        name -- name of new dataset to create
+        description -- description of new dataset
+        parent_id -- id of parent collection (or list of ids)
+        space_id -- id of the space to add dataset to (or list of ids)
+        """
+
+        body = {
+            "name": name,
+            "description": description,
+        }
+
+        if parent_id:
+            if isinstance(parent_id, list):
+                body["collection"] = parent_id
+            else:
+                body["collection"] = [parent_id]
+        if space_id:
+            if isinstance(space_id, list):
+                body["space"] = space_id
+            else:
+                body["space"] = [space_id]
+
+        result = self.client.post("datasets/createempty", body)
+        return result['id']
+
+
+    def delete(self, dataset_id):
+        """Delete a dataset from Clowder.
+
+        Keyword arguments:
+        dataset_id -- id of dataset to delete
+        """
+
+        return self.client.delete("datasets/%s" % dataset_id)
+
+
+    def download(self, dataset_id):
+        """Download a dataset from Clowder as zip.
+
+        Keyword arguments:
+        dataset_id -- id of dataset to download
+        """
+
+        fname = tempfile.mkstemp(suffix=".zip")
+        return self.client.get_file("datasets/%s/download" % dataset_id, filename=fname)
+
+
+    def download_metadata(self, dataset_id, extractor_name=None):
+        """Download dataset JSON-LD metadata from Clowder.
+
+        Keyword arguments:
+        dataset_id -- the dataset to fetch metadata of
+        extractor_name -- extractor name to filter results (if only one extractor's metadata is desired)
+        """
+
+        params = None if extractor_name is None else {"extractor": extractor_name}
+        return self.client.get("datasets/%s/metadata.jsonld" % dataset_id, params)
+
+
+    def get_info(self, dataset_id):
+        """Download basic dataset information.
+
+        Keyword arguments:
+        dataset_id -- id of dataset to get info for
+        """
+
+        return self.client.get("datasets/%s" % dataset_id)
+
+
+    def get_file_list(self, dataset_id):
+        """Download list of dataset files as JSON.
+
+        Keyword arguments:
+        dataset_id -- id of dataset to get files for
+        """
+
+        return self.client.get("datasets/%s/files" % dataset_id)
+
+
+    def remove_metadata(self, dataset_id, extractor_name=None):
+        """Delete dataset JSON-LD metadata, optionally filtered by extractor name.
+
+        Keyword arguments:
+        dataset_id -- the dataset to fetch metadata of
+        extractor_name -- extractor name to filter deletion
+                        !!! ALL JSON-LD METADATA WILL BE REMOVED IF NO extractor PROVIDED !!!
+        """
+
+        params = None if extractor_name is None else {"extractor": extractor_name}
+        return self.client.delete("datasets/%s/metadata.jsonld" % dataset_id, params)
+
+
+    def submit_extraction(self, dataset_id, extractor_name):
+        """Submit dataset for extraction by given extractor.
+
+        Keyword arguments:
+        dataset_id -- the dataset UUID to submit
+        extractor_name -- registered name of extractor to trigger
+        """
+
+        return self.client.post("datasets/%s/extractions", {"extractor": extractor_name})

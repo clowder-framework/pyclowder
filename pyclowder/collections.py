@@ -82,7 +82,9 @@ class CollectionsApi(object):
     """
         API to manage the REST CRUD endpoints for collections
     """
+
     def __init__(self, client=None, host=None, key=None, username=None, password=None):
+
         """Set client if provided otherwise create new one"""
         if client:
             self.api_client = client
@@ -96,7 +98,7 @@ class CollectionsApi(object):
         Keyword arguments:
         name -- name of new collection to create
         description -- description of new collection
-        parent_id -- id of parent collection
+        parent_id -- id of parent collection (or list of ids)
         space_id -- id of the space to add collection to
         """
 
@@ -106,7 +108,10 @@ class CollectionsApi(object):
         }
 
         if parent_id:
-            body["parentId"] = [parent_id]
+            if isinstance(parent_id, list):
+                body["parentId"] = parent_id
+            else:
+                body["parentId"] = [parent_id]
             if space_id:
                 body["space"] = space_id
             result = self.client.post("collections/newCollectionWithParent", body)
@@ -115,12 +120,7 @@ class CollectionsApi(object):
                 body["space"] = space_id
             result = self.client.post("collections", body)
 
-        result.raise_for_status()
-
-        collection_id = result.json()['id']
-        logging.debug("collection id = [%s]", collection_id)
-
-        return collection_id
+        return result['id']
 
 
     def delete(self, collection_id):
