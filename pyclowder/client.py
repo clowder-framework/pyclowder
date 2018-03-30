@@ -256,12 +256,13 @@ class ClowderClient(object):
         while True:
             try:
                 if mime is not None:
-                    response = requests.post(url, files={"File": (os.path.basename(filename), open(filename, 'rb'), mime)},
+                    response = requests.post(url,
+                                             files={"File": (os.path.basename(filename), open(filename, 'rb'), mime)},
                                              headers=headers, params=params,
                                              auth=auth, timeout=self.timeout, verify=self.ssl)
                 else:
                     response = requests.post(url, files={"File": open(filename, 'rb')}, headers=headers, params=params,
-                                         auth=auth, timeout=self.timeout, verify=self.ssl)
+                                             auth=auth, timeout=self.timeout, verify=self.ssl)
                 response.raise_for_status()
                 return response.json()
             except requests.HTTPError as e:
