@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/126513159.svg)](https://zenodo.org/badge/latestdoi/126513159)
+
 This repository contains the next generation of pyClowder. This library makes it easier to interact with clowder and
 to create extractors.
 
@@ -7,6 +9,21 @@ One of the most interesting aspects of Clowder is the ability to extract metadat
 created using extractors. To make it easy to create these extractors in python we have created a module called clowder.
 Besides wrapping often used api calls in convenient python calls, we have also added some code to make it easy to
 create new extractors.
+
+## Setup
+
+Install pyClowder2 on your system by cloning this repo:
+
+```
+git clone https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder2.git
+cd pyclowder2
+pip install -r requirements.txt
+python setup.py install
+```
+or directly from Bitbucket:
+```
+pip install -r https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/pyclowder2/raw/requirements.txt git+https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder2.git
+```
 
 ## Example Extractor
 

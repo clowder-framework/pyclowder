@@ -188,7 +188,7 @@ def upload_metadata(connector, host, key, fileid, metadata):
 
 
 # pylint: disable=too-many-arguments
-def upload_preview(connector, host, key, fileid, previewfile, previewmetadata):
+def upload_preview(connector, host, key, fileid, previewfile, previewmetadata, preview_mimetype=None):
     """Upload preview to Clowder.
 
     Keyword arguments:
@@ -199,6 +199,8 @@ def upload_preview(connector, host, key, fileid, previewfile, previewmetadata):
     previewfile -- the file containing the preview
     previewmetadata -- any metadata to be associated with preview, can contain a section_id
                     to indicate the section this preview should be associated with.
+    preview_mimetype -- (optional) MIME type of the preview file. By default, this is obtained from the
+                    file itself and this parameter can be ignored. E.g. 'application/vnd.clowder+custom+xml'
     """
 
     connector.status_update(StatusMessage.processing, {"type": "file", "id": fileid}, "Uploading file preview.")
@@ -209,7 +211,13 @@ def upload_preview(connector, host, key, fileid, previewfile, previewmetadata):
     # upload preview
     url = '%sapi/previews?key=%s' % (host, key)
     with open(previewfile, 'rb') as filebytes:
-        result = connector.post(url, files={"File": filebytes}, verify=connector.ssl_verify if connector else True)
+        # If a custom preview file MIME type is provided, use it to generate the preview file object.
+        if preview_mimetype is not None:
+            result = connector.post(url, files={"File": (os.path.basename(previewfile), filebytes, preview_mimetype)},
+                                    verify=connector.ssl_verify if connector else True)
+        else:
+            result = connector.post(url, files={"File": filebytes}, verify=connector.ssl_verify if connector else True)
+
     previewid = result.json()['id']
     logger.debug("preview id = [%s]", previewid)
 

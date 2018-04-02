@@ -1,0 +1,47 @@
+{
+    "title": "Python wrappers for use with the Clowder system", 
+    "description": "This library makes it easier to interact with clowder and to create extractors as well as code that will interact with clowder. The library will encapsulate the calls to the REST API. For extractors the library will provide the developer with an easy to extend framework to create new extractors.",
+    "creators": [
+        {
+            "affiliation": "National Center for Supercomputing Applications",
+            "name": "Rob Kooper",
+            "orcid": "0000-0002-5781-7287"
+        },
+        {
+            "affiliation": "National Center for Supercomputing Applications",
+            "name": "Max Burnette"
+        },
+        {
+            "affiliation": "National Center for Supercomputing Applications",
+            "name": "Sandeep Satheesan"
+        },
+        {
+            "affiliation": "National Center for Supercomputing Applications",
+            "name": "Bing Zhang"
+        },
+        {
+            "affiliation": "University of Illinois at Urbana-Champaign",
+            "name": "Todd Nicholson"
+        },
+        {
+            "affiliation": "National Center for Supercomputing Applications",
+            "name": "Indira Gutierrez"
+        },
+        {
+            "affiliation": "National Center for Supercomputing Applications",
+            "name": "Kenton McHenry"
+        },
+        {
+            "name": "Ward Poelmans"
+        }
+    ],
+    "upload_type": "software",
+    "license": "NCSA",
+    "access_right": "open",
+    "keywords": [
+        "json",
+        "python",
+        "clowder"
+    ],
+    "notes": "Development is supported by Brown Dog (NSF #1261582)"
+}
