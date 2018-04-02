@@ -4,3 +4,5 @@ PyYAML==3.12
 requests==2.18.4
 wheel==0.24.0
 urllib3==1.22
+pytest==3.0.3
+pytest-pep8==1.0.6

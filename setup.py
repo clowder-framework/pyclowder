@@ -31,10 +31,10 @@ setup(name='pyclowder',
       keywords=['clowder', 'data management system'],
 
       install_requires=[
-          'enum34>=1.1.6',
-          'pika>=0.11.2',
-          'PyYAML>=3.12',
-          'requests>=2.18.4',
+          'enum34==1.1.6',
+          'pika==0.11.2',
+          'PyYAML==3.12',
+          'requests==2.18.4',
       ],
 
       include_package_data=True,
