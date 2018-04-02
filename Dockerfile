@@ -18,10 +18,9 @@ RUN apt-get -q -q update && apt-get install -y --no-install-recommends \
 
 # instal pyclowder2
 COPY pyclowder /tmp/pyclowder/pyclowder
-COPY setup.py requirements.txt /tmp/pyclowder/
+COPY setup.py description.rst /tmp/pyclowder/
 
-RUN pip install --upgrade  -r /tmp/pyclowder/requirements.txt \
-    && pip install --upgrade /tmp/pyclowder \
+RUN pip install --upgrade /tmp/pyclowder \
     && rm -rf /tmp/pyclowder
 
 # change folder
