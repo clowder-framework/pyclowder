@@ -1,0 +1,4 @@
+-r requirements.txt
+
+pytest==3.0.3
+pytest-pep8==1.0.6
