@@ -242,7 +242,7 @@ class DatasetsApi(object):
         params = None if extractor_name is None else {"extractor": extractor_name}
         return self.client.get("datasets/%s/metadata.jsonld" % dataset_id, params)
 
-    def get_info(self, dataset_id):
+    def get(self, dataset_id):
         """Download basic dataset information.
 
         Keyword arguments:
