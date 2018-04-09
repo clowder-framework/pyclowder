@@ -1,14 +1,34 @@
 #!/bin/bash
 set -e
 
-# rabbitmq
+# use rabbitmq env variables to construct RABBITMQ_URI.
 if [ "${RABBITMQ_URI}" == "" ]; then
 
-    # configure RABBITMQ_URI if started using docker-compose or --link flag
-    if [ -n "${RABBITMQ_PORT_5672_TCP_ADDR}" ]; then
-        RABBITMQ_URI="amqp://${RABBITMQ_PORT_5672_TCP_ADDR}:${RABBITMQ_PORT_5672_TCP_PORT}/%2F"
+    # if empty, then set to default rabbitmq username
+    if [ "$RABBITMQ_USERNAME" == "" ]; then
+        RABBITMQ_USERNAME="guest"
     fi
+    # if empty, then set to default rabbitmq passwd
+    if [ "$RABBITMQ_PASSWD" == "" ]; then
+        RABBITMQ_PASSWD="guest"
+    fi
+    # if empty, then set to default rabbitmq hostname
+    if [ "$RABBITMQ_PORT_5672_TCP_ADDR" == "" ]; then
+        RABBITMQ_PORT_5672_TCP_ADDR="rabbitmq"
+    fi
+    # if empty, then set to default rabbitmq port
+    if [ "$RABBITMQ_PORT_5672_TCP_PORT" == "" ]; then
+        RABBITMQ_PORT_5672_TCP_PORT="5672"
+    fi
+    # if empty, then set to default rabbitmq vhost
+    if [ "$RABBITMQ_VHOST" == "" ]; then
+        RABBITMQ_VHOST="%2F"
+    fi
+
+    # configure RABBITMQ_URI if started using docker-compose or --link flag
+    RABBITMQ_URI="amqp://${RABBITMQ_USERNAME}:${RABBITMQ_PASSWD}@${RABBITMQ_PORT_5672_TCP_ADDR}:${RABBITMQ_PORT_5672_TCP_PORT}/${RABBITMQ_VHOST}"
 fi
+#TODO, else branch, if RABBITMQ_URI is not empty, then pasrse RABBITMQ_URI to set rabbitmq envs.
 
 # start server if asked
 if [ "$1" = 'extractor' ]; then
