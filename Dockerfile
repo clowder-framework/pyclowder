@@ -1,15 +1,10 @@
 FROM ubuntu:16.04
 
 # environment variables
-ENV RABBITMQ_URI="" \
+ENV RABBITMQ_URI="amqp://guest:guest@rabbitmq:5672/%2F" \
     RABBITMQ_EXCHANGE="clowder" \
     RABBITMQ_QUEUE="" \
     REGISTRATION_ENDPOINTS="https://clowder.ncsa.illinois.edu/extractors" \
-    RABBITMQ_USERNAME="guest"\
-    RABBITMQ_PASSWD="guest"\
-    RABBITMQ_PORT_5672_TCP_ADDR="rabbitmq"\
-    RABBITMQ_PORT_5672_TCP_PORT="5672"\
-    RABBITMQ_VHOST="%2F"\
     MAIN_SCRIPT=""
 
 # install python
