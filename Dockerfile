@@ -9,12 +9,10 @@ ENV RABBITMQ_URI="amqp://guest:guest@rabbitmq:5672/%2F" \
 
 # install python
 RUN apt-get -q -q update && apt-get install -y --no-install-recommends \
-        netcat \
         python \
         python-pip \
     && pip install --upgrade setuptools \
-    && rm -rf /var/lib/apt/lists/* \
-    && adduser --system clowder
+    && rm -rf /var/lib/apt/lists/*
 
 # instal pyclowder2
 COPY pyclowder /tmp/pyclowder/pyclowder
@@ -23,5 +21,8 @@ COPY setup.py description.rst /tmp/pyclowder/
 RUN pip install --upgrade /tmp/pyclowder \
     && rm -rf /tmp/pyclowder
 
-# change folder
-WORKDIR /home/clowder/
+# folder for pyclowder code
+WORKDIR /home/clowder
+
+# command to run when starting container
+CMD python "./${MAIN_SCRIPT}"
