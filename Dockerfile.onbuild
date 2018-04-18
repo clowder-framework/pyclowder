@@ -1,4 +1,4 @@
-FROM clowder/pyclowder:2
+FROM clowder/pyclowder
 
 # install any packages
 ONBUILD COPY packages.* Dockerfile /home/clowder/
@@ -16,11 +16,3 @@ ONBUILD RUN if [ -e requirements.txt ]; then \
 
 # copy all files
 ONBUILD ADD . /home/clowder/
-
-# switch to user clowder last minute
-ONBUILD USER clowder
-
-# command to run when starting container
-COPY entrypoint.sh /home/clowder/
-ENTRYPOINT ["/home/clowder/entrypoint.sh"]
-CMD ["extractor"]

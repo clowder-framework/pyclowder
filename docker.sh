@@ -1,17 +1,15 @@
 #!/bin/sh
 
-#DEBUG=echo
+# exit on error, with error code
+set -e
+
+# use DEBUG=echo ./release.sh to print all commands
+export DEBUG=${DEBUG:-""}
 
 # build docker container
-${DEBUG} docker build  --tag clowder/pyclowder:2 .
-${DEBUG} docker build  --tag clowder/pyclowder:onbuild --file Dockerfile.onbuild .
+${DEBUG} docker build --tag clowder/pyclowder:latest .
+${DEBUG} docker build --tag clowder/pyclowder:onbuild --file Dockerfile.onbuild .
+${DEBUG} docker build --tag clowder/extractors-binary-preview:onbuild sample-extractors/binary-preview
 
 # build sample extractors
-${DEBUG} docker build  --tag clowder/extractors-wordcount:2 sample-extractors/wordcount
-
-
-if [ "$(git rev-parse --abbrev-ref HEAD)" = "master" ]; then
-  ${DEBUG} docker push clowder/pyclowder:2
-  ${DEBUG} docker push clowder/pyclowder:onbuild
-  ${DEBUG} docker push clowder/extractors-wordcount:2
-fi
+${DEBUG} docker build --tag clowder/extractors-wordcount:latest sample-extractors/wordcount
