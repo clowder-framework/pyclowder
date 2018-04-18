@@ -8,6 +8,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - push to pypi (can now do pip install pyclowder)
+- added binary-preview-extractor which can be configured using environment
+  variables (see sample-extractors/binary-preview/README.rst).
 
 ### Changed
 - Now has onbuild version of pyclowder
