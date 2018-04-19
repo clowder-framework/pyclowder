@@ -19,9 +19,9 @@ BRANCH=${BRANCH:-"$(git rev-parse --abbrev-ref HEAD)"}
 $(dirname $0)/docker.sh
 
 # check branch and set version
-if [ "${BRANCH}" == "master" ]; then
+if [ "${BRANCH}" = "master" ]; then
     VERSION=${VERSION:-"2.0.3 2.0 2 latest"}
-elif [ "${BRANCH}" == "develop" ]; then
+elif [ "${BRANCH}" = "develop" ]; then
     VERSION="develop"
 else
     exit 0
