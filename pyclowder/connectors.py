@@ -620,7 +620,7 @@ class RabbitMQConnector(Connector):
                 self.channel.connection.process_data_events(time_limit=1)  # 1 second
                 if self.worker:
                     self.worker.process_messages(self.channel)
-                    if self.worker.thread and not self.worker.thread.isAlive():
+                    if self.worker.is_finished():
                         self.worker = None
         except SystemExit:
             raise
@@ -685,6 +685,8 @@ class RabbitMQHandler(Connector):
         self.body = body
         self.messages = []
         self.thread = None
+        self.finished = False
+        self.lock = threading.Lock()
 
     def start_thread(self, json_body):
         """Start the separate thread for processing & create a queue for messages.
@@ -701,9 +703,15 @@ class RabbitMQHandler(Connector):
         self.thread = threading.Thread(target=self._process_message, args=(json_body,))
         self.thread.start()
 
+    def is_finished(self):
+        with self.lock:
+            return self.thread and not self.thread.isAlive() and self.finished and len(self.messages) == 0
+
     def process_messages(self, channel):
         while self.messages:
-            msg = self.messages.pop(0)
+            with self.lock:
+                msg = self.messages.pop(0)
+            logging.getLogger(__name__).info("Received %s." % msg["type"])
 
             if msg["type"] == 'status':
                 if self.header.reply_to:
@@ -715,6 +723,8 @@ class RabbitMQHandler(Connector):
 
             elif msg["type"] == 'ok':
                 channel.basic_ack(self.method.delivery_tag)
+                with self.lock:
+                    self.finished = True
 
             elif msg["type"] == 'error':
                 properties = pika.BasicProperties(delivery_mode=2, reply_to=self.header.reply_to)
@@ -723,6 +733,8 @@ class RabbitMQHandler(Connector):
                                       properties=properties,
                                       body=self.body)
                 channel.basic_ack(self.method.delivery_tag)
+                with self.lock:
+                    self.finished = True
 
             elif msg["type"] == 'resubmit':
                 retry_count = msg['retry_count']
@@ -739,6 +751,11 @@ class RabbitMQHandler(Connector):
                                       properties=properties,
                                       body=json.dumps(jbody))
                 channel.basic_ack(self.method.delivery_tag)
+                with self.lock:
+                    self.finished = True
+
+            else:
+                logging.getLogger(__name__).error("Received unknown message type [%s]." % msg["type"])
 
     def status_update(self, status, resource, message):
         super(RabbitMQHandler, self).status_update(status, resource, message)
@@ -748,22 +765,26 @@ class RabbitMQHandler(Connector):
         status_report['extractor_id'] = self.extractor_info['name']
         status_report['status'] = "%s: %s" % (status, message)
         status_report['start'] = pyclowder.utils.iso8601time()
-        self.messages.append({"type": "status",
-                              "status": status_report,
-                              "resource": resource,
-                              "message": message})
+        with self.lock:
+            self.messages.append({"type": "status",
+                                  "status": status_report,
+                                  "resource": resource,
+                                  "message": message})
 
     def message_ok(self, resource):
         super(RabbitMQHandler, self).message_ok(resource)
-        self.messages.append({"type": "ok"})
+        with self.lock:
+            self.messages.append({"type": "ok"})
 
     def message_error(self, resource):
         super(RabbitMQHandler, self).message_error(resource)
-        self.messages.append({"type": "error"})
+        with self.lock:
+            self.messages.append({"type": "error"})
 
     def message_resubmit(self, resource, retry_count):
         super(RabbitMQHandler, self).message_resubmit(resource, retry_count)
-        self.messages.append({"type": "resubmit", "retry_count": retry_count})
+        with self.lock:
+            self.messages.append({"type": "resubmit", "retry_count": retry_count})
 
 
 class HPCConnector(Connector):
