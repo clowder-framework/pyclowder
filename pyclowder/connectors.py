@@ -711,7 +711,6 @@ class RabbitMQHandler(Connector):
         while self.messages:
             with self.lock:
                 msg = self.messages.pop(0)
-            logging.getLogger(__name__).info("Received %s." % msg["type"])
 
             if msg["type"] == 'status':
                 if self.header.reply_to:
