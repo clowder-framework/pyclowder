@@ -7,8 +7,7 @@ import json
 import os
 import requests
 from urllib3.filepost import encode_multipart_formdata
-from datasets import DatasetsApi
-from collections import CollectionsApi
+
 # Some sources of urllib3 support warning suppression, but not all
 try:
     from urllib3 import disable_warnings
@@ -18,67 +17,58 @@ except:
     pass
 
 
-@deprecated
 def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
     client = FilesApi(host=host, key=key)
     return client.download(fileid)
 
 
-@deprecated
 def download_info(connector, host, key, fileid):
     client = FilesApi(host=host, key=key)
     return client.download_info(fileid)
 
 
-@deprecated
 def download_metadata(connector, host, key, fileid, extractor=None):
     client = FilesApi(host=host, key=key)
     return client.download_metadata(fileid, extractor)
 
 
-@deprecated
 def submit_extraction(connector, host, key, fileid, extractorname):
     client = FilesApi(host=host, key=key)
     return client.submit_extraction(fileid, extractorname)
 
 
-@deprecated
 def submit_extractions_by_dataset(connector, host, key, datasetid, extractorname, ext=False):
+    from pyclowder.datasets import DatasetsApi
     dsapi = DatasetsApi(host=host, key=key)
     dsapi.submit_all_files_for_extraction(datasetid, extractorname, ext)
 
 
-@deprecated
 def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, ext=False, recursive=True):
+    from pyclowder.collections import CollectionsApi
     collapi = CollectionsApi(host=host, key=key)
     collapi.submit_all_files_for_extraction(collectionid, extractorname, ext, recursive)
 
 
-@deprecated
 def upload_metadata(connector, host, key, fileid, metadata):
     client = FilesApi(host=host, key=key)
     return client.add_medadata(fileid, metadata)
 
 
-@deprecated
 def upload_preview(connector, host, key, fileid, previewfile, previewmetadata, preview_mimetype=None):
     client = FilesApi(host=host, key=key)
     return client.add_preview(fileid, previewfile, previewmetadata, preview_mimetype)
 
 
-@deprecated
 def upload_tags(connector, host, key, fileid, tags):
     client = FilesApi(host=host, key=key)
     return client.add_tags(fileid, tags)
 
 
-@deprecated
 def upload_thumbnail(connector, host, key, fileid, thumbnail):
     client = FilesApi(host=host, key=key)
     return client.add_thumbnail(fileid, thumbnail)
 
 
-@deprecated
 def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate=False):
     client = FilesApi(host=host, key=key)
     return client.upload_to_dataset(datasetid, filepath, connector.mounted_paths, check_duplicate)
@@ -91,9 +81,11 @@ class FilesApi(object):
 
     def __init__(self, client=None, host=None, key=None, username=None, password=None):
         """Set client if provided otherwise create new one"""
+        from pyclowder.datasets import DatasetsApi
+        self.DatasetsApi = DatasetsApi
 
         if client:
-            self.api_client = client
+            self.client = client
         else:
             self.client = ClowderClient(host=host, key=key, username=username, password=password)
 
@@ -210,7 +202,7 @@ class FilesApi(object):
         """
 
         if check_duplicate:
-            dsapi = DatasetsApi(self.client)
+            dsapi = self.DatasetsApi(self.client)
             ds_files = dsapi.get_file_list(dataset_id)
             for f in ds_files:
                 if f['filename'] == os.path.basename(filepath):

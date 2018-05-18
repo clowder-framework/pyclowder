@@ -4,34 +4,28 @@ This module provides simple wrappers around the clowder Collections API
 """
 
 from client import ClowderClient
-from datasets import DatasetsApi
 
 
-@deprecated
 def create_empty(connector, host, key, collectionname, description, parentid=None, spaceid=None):
     client = CollectionsApi(host=host, key=key)
     return client.create(collectionname, description, parentid, spaceid)
 
 
-@deprecated
 def delete(connector, host, key, collectionid):
     client = CollectionsApi(host=host, key=key)
     return client.delete(collectionid)
 
 
-@deprecated
 def get_child_collections(connector, host, key, collectionid):
     client = CollectionsApi(host=host, key=key)
     return client.get_child_collections(collectionid)
 
 
-@deprecated
 def get_datasets(connector, host, key, collectionid):
     client = CollectionsApi(host=host, key=key)
     return client.get_datasets(collectionid)
 
 
-@deprecated
 def upload_preview(connector, host, key, collectionid, previewfile, previewmetadata):
     client = CollectionsApi(host=host, key=key)
     return client.upload_preview(collectionid, previewfile, previewmetadata)
@@ -43,10 +37,12 @@ class CollectionsApi(object):
     """
 
     def __init__(self, client=None, host=None, key=None, username=None, password=None):
+        from pyclowder.datasets import DatasetsApi
+        self.DatasetsApi = DatasetsApi
 
         """Set client if provided otherwise create new one"""
         if client:
-            self.api_client = client
+            self.client = client
         else:
             self.client = ClowderClient(host=host, key=key, username=username, password=password)
 
@@ -122,7 +118,7 @@ class CollectionsApi(object):
         delete_collections -- whether to also delete collections containing the datasets
         """
 
-        dsapi = DatasetsApi(self.client)
+        dsapi = self.DatasetsApi(self.client)
         dslist = self.get_datasets(collection_id)
         for ds in dslist:
             dsapi.delete(ds['id'])
@@ -171,7 +167,7 @@ class CollectionsApi(object):
         recursive -- whether to also submit child collection files recursively (defaults to True)
         """
 
-        dsapi = DatasetsApi(self.client)
+        dsapi = self.DatasetsApi(self.client)
         dslist = self.get_datasets(collection_id)
         for ds in dslist:
             dsapi.submit_all_files_for_extraction(ds['id'], extractor_name, extension)
@@ -193,7 +189,7 @@ class CollectionsApi(object):
         recursive -- whether to also submit child collection datasets recursively (defaults to True)
         """
 
-        dsapi = DatasetsApi(self.client)
+        dsapi = self.DatasetsApi(self.client)
         dslist = self.get_datasets(collection_id)
         for ds in dslist:
             dsapi.submit_extraction(ds['id'], extractor_name)

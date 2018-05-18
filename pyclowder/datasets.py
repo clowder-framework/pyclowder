@@ -6,71 +6,60 @@ This module provides simple wrappers around the clowder Datasets API
 import logging
 import tempfile
 from client import ClowderClient
-from files import FilesApi
-from collections import CollectionsApi
 
 
-@deprecated
 def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
     client = DatasetsApi(host=host, key=key)
     return client.create(datasetname, description, parentid, spaceid)
 
 
-@deprecated
 def delete(connector, host, key, datasetid):
     client = DatasetsApi(host=host, key=key)
     return client.delete(datasetid)
 
 
-@deprecated
 def delete_by_collection(connector, host, key, collectionid, recursive=True, delete_colls=False):
+    from pyclowder.collections import CollectionsApi
     collapi = CollectionsApi(host=host, key=key)
     return collapi.delete_all_datasets(collectionid, recursive, delete_colls)
 
 
-@deprecated
 def download(connector, host, key, datasetid):
     client = DatasetsApi(host=host, key=key)
     return client.download(datasetid)
 
 
-@deprecated
 def download_metadata(connector, host, key, datasetid, extractor=None):
     client = DatasetsApi(host=host, key=key)
     return client.download_metadata(datasetid, extractor)
 
 
-@deprecated
 def get_info(connector, host, key, datasetid):
     client = DatasetsApi(host=host, key=key)
     return client.get_info(datasetid)
 
 
-@deprecated
 def get_file_list(connector, host, key, datasetid):
     client = DatasetsApi(host=host, key=key)
     return client.get_file_list(datasetid)
 
 
-@deprecated
 def remove_metadata(connector, host, key, datasetid, extractor=None):
     client = DatasetsApi(host=host, key=key)
     return client.remove_metadata(datasetid, extractor)
 
 
-@deprecated
 def submit_extraction(connector, host, key, datasetid, extractorname):
     client = DatasetsApi(host=host, key=key)
     return client.submit_extraction(datasetid, extractorname)
 
 
-@deprecated
 def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, recursive=True):
+    from pyclowder.collections import CollectionsApi
     collapi = CollectionsApi(host=host, key=key)
     return collapi.submit_all_datasets_for_extraction(collectionid, extractorname, recursive)
 
 
-@deprecated
 def upload_metadata(connector, host, key, datasetid, metadata):
     client = DatasetsApi(host=host, key=key)
     return client.add_metadata(datasetid, metadata)
@@ -83,9 +72,11 @@ class DatasetsApi(object):
 
     def __init__(self, client=None, host=None, key=None, username=None, password=None):
         """Set client if provided otherwise create new one"""
+        from pyclowder.files import FilesApi
+        self.FilesApi = FilesApi
 
         if client:
-            self.api_client = client
+            self.client = client
         else:
             self.client = ClowderClient(host=host, key=key, username=username, password=password)
 
@@ -292,7 +283,7 @@ class DatasetsApi(object):
         extension -- extension to filter. e.g. 'tif' will only submit TIFF files for extraction
         """
 
-        fileapi = FilesApi(self.client)
+        fileapi = self.FilesApi(self.client)
         filelist = self.get_file_list(dataset_id)
         for fi in filelist:
             if extension and not fi['filename'].endswith(extension):
