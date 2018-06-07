@@ -34,4 +34,3 @@ class SimpleExtractor(Extractor):
                 self.logger.info("upload preview")
                 pyclowder.files.upload_preview(connector, host, secret_key, file_id, preview.get('file'),
                                                preview.get('metadata'), preview.get('mimetype'))
-
