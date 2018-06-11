@@ -22,7 +22,7 @@ class SimpleExtractor(Extractor):
         if 'metadata' in result.keys():
             metadata = self.get_metadata(result.get('metadata'), 'file', file_id, host)
             self.logger.info("upload metadata")
-            print(metadata)
+            self.logger.debug(metadata)
             pyclowder.files.upload_metadata(connector, host, secret_key, file_id, metadata)
         if 'previews' in result.keys():
             self.logger.info("upload previews")
