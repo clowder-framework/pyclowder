@@ -225,9 +225,9 @@ If you need any python packages installed you will need to create file called re
 the docker build process will use `pip install -r requirements.txt` to install these packages.
 
 ## SimpleExtractor
-Motivation: design and implement an simple extractor to bridge Python developer and knowledge of PyClowder library. It is inevitable for us to assume a learning curve for Python developer to be familiar with PyClowder api library and start to code extractor.
+Motivation: design and implement a simple extractor to bridge Python developer and knowledge of PyClowder library. It requires little effort for Python developers to wrap their python code into Clowder's extractors.
 
-Instead of making a complete extractor, SimpleExtractor provides a way to decouple the function of metadata computation from the full implementation of extractor.  Developers will just focus on their own extract function body. Meanwhile, simple extractor will take developer defined function as input to do extraction and then parse and organize the metadata output into Clowder defined metadata data-struct and submit back to Clowder.
+Simple extractors take developer defined main function as input parameter to do extraction and then parse and pack extraction's output into Simple extractor defined metadata data-struct and submit back to Clowder.
 
 Users' function must have to return a ``dict'' object containing metdata and previews.
 ```markdown
@@ -241,17 +241,12 @@ result = {
 ```
 
 ### Example: 
-Extraction on single file is most common extractor type. In Clowder extractors' repositories, we would think 90% or more extractors are computing extraction on single file(e.g., wordcount, meangrey, ocr, etc.), which means user uploads a file onto Clowder, and then that uploaded file will be forwarded to an applicable extractor to compute metadata and extractor will post back Clowder the attached computing metadata and previews for this particular file.
+`wordcount-simpleextractor` is the simplest example to illustrate how to wrap existing Python code as a Simple Extractor.
 
-
-`wordcount-simpleextractor` is the simplest example to use SimpleExtractor. It consists of three files, which will be illustrated respectivaly.
-
-
-wordcount.py is regular python file which is defined and provided by users. In the code, wordcount invoke `wc` command to process input file and extractor lines, words, characters. It packs metadata into python dict.
+wordcount.py is regular python file which is defined and provided by Python developers. In the code, wordcount invoke `wc` command to process input file to extract lines, words, characters. It packs metadata into python dict.
 ```markdown
 import subprocess
   
-
 def wordcount(input_file):
     result = subprocess.check_output(['wc', input_file], stderr=subprocess.STDOUT)
     (lines, words, characters, _) = result.split()
@@ -266,13 +261,12 @@ def wordcount(input_file):
     return result
 ```
 
-To build wordcount simple extractor as docker image, we provide the template Dockerfile shown below. EXTRACTION_FUNC is environment variable and must be assigned to extraction function, where in wordcount.py, the function is `wordcount`.
+To build wordcount as a Simpel extractor docker image, users just simply assign two environment variables in Dockerfile shown below. EXTRACTION_FUNC is environment variable and has to be assigned as extraction function, where in wordcount.py, the extraction function is `wordcount`. Environment variable EXTRACTION_MODULE is the name of module file containing the definition of extraction function.
 ```markdown
-FROM clowder/pyclowder:onbuild
-  
-ENV EXTRACTION_FUNC="wordcount"
+FROM clowder/extractors-simple-extractor:onbuild
 
-CMD python -c "from pyclowder.simpleextractor import SimpleExtractor; from wordcount import *; SimpleExtractor(${EXTRACTION_FUNC}).start()"
+ENV EXTRACTION_FUNC="wordcount"
+ENV EXTRACTION_MODULE="wordcount"
 ```
 
 
