@@ -3,7 +3,7 @@
 The goal of the simple extractor is to make writing of an extractor as easy as possible. It wraps almost all of the 
 complexities in itself and exposes only two environment variables: ```EXTRACTION_FUNC``` and ```EXTRACTION_MODULE```. Environment 
 variable ```EXTRACTION_FUNC``` is the name of the method that needs to be called when this extractor receives a message from 
-the message broker. The other environment variable ```EXTRACTION_MODULE`` is the module name of python file where ```EXTRACTION_FUNC``` function has been declared.
+the message broker. The other environment variable ```EXTRACTION_MODULE``` is the module name of python file where ```EXTRACTION_FUNC``` function has been declared.
  
 # When to Use This
 
