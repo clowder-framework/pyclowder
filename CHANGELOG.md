@@ -12,6 +12,8 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Fixed
 - Acks were not always send due to racing condition
   [CATS-886](https://opensource.ncsa.illinois.edu/jira/browse/CATS-886)
+- Queue name was not set from extractor_info.json
+  [CATS-896](https://opensource.ncsa.illinois.edu/jira/browse/CATS-896)
 
 ## 2.0.3 - 2018-04-18
 
