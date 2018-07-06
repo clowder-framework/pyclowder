@@ -4,6 +4,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 2.1.0 - 2018-07-06
+
+### Added
+- [Simple extractor](https://opensource.ncsa.illinois.edu/confluence/display/CATS/Simple+Extractor+wrapper+for+basic+functions), now can create a extractor from a single function.
+
+### Fixed
+- Acks were not always send due to racing condition
+  [CATS-886](https://opensource.ncsa.illinois.edu/jira/browse/CATS-886)
+
 ## 2.0.3 - 2018-04-18
 
 ### Added
