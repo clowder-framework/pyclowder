@@ -4,10 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 2.1.1 - 2018-07-12
+
+### Fixed
+- RABBITMQ_QUEUE variable/flag was ignored when set and would connect
+  to default queue.
+
 ## 2.1.0 - 2018-07-06
 
 ### Added
-- [Simple extractor](https://opensource.ncsa.illinois.edu/confluence/display/CATS/Simple+Extractor+wrapper+for+basic+functions), now can create a extractor from a single function.
+- [Simple extractor](https://opensource.ncsa.illinois.edu/confluence/display/CATS/Simple+Extractor+wrapper+for+basic+functions),
+  now can create a extractor from a single function.
 
 ### Fixed
 - Acks were not always send due to racing condition

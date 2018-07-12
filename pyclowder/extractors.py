@@ -149,7 +149,8 @@ class Extractor(object):
                                     else:
                                         rabbitmq_key.append("*.%s.%s" % (key, mt.replace("/", ".")))
 
-                    rconn = RabbitMQConnector(self.extractor_info,
+                    rconn = RabbitMQConnector(self.args.rabbitmq_queuename,
+                                              self.extractor_info,
                                               check_message=self.check_message,
                                               process_message=self.process_message,
                                               rabbitmq_uri=self.args.rabbitmq_uri,
@@ -164,7 +165,8 @@ class Extractor(object):
                 if 'hpc_picklefile' not in self.args:
                     logger.error("Missing hpc_picklefile for HPCExtractor")
                 else:
-                    hconn = HPCConnector(self.extractor_info,
+                    hconn = HPCConnector(self.extractor_info['name'],
+                                         self.extractor_info,
                                          check_message=self.check_message,
                                          process_message=self.process_message,
                                          picklefile=self.args.hpc_picklefile,
@@ -180,7 +182,9 @@ class Extractor(object):
                 elif not os.path.isfile(self.args.input_file_path):
                     logger.error("Local input file is not a regular file. Please check the path.")
                 else:
-                    local_connector = LocalConnector(self.extractor_info, self.args.input_file_path,
+                    local_connector = LocalConnector(self.extractor_info['name'],
+                                                     self.extractor_info,
+                                                     self.args.input_file_path,
                                                      process_message=self.process_message,
                                                      output_file_path=self.args.output_file_path)
                     connectors.append(local_connector)
