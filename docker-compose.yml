@@ -1,0 +1,80 @@
+version: "3.5"
+
+services:
+  # clowder application
+  clowder:
+    image: clowder/clowder:latest
+    ports:
+      - 9000:9000
+    networks:
+      - clowder
+    volumes:
+      - clowder-custom:/home/clowder/custom
+      - clowder-data:/home/clowder/data
+    restart: unless-stopped
+    deploy:
+      mode: replicated
+      restart_policy:
+        condition: any
+    depends_on:
+      - mongo
+      - rabbitmq
+      - elasticsearch
+
+  # mongo database used to store metadata/data
+  mongo:
+    image: mongo:3.4
+    networks:
+      - clowder
+    ports:
+      - 27017
+    volumes:
+      - mongo:/data/db
+    restart: unless-stopped
+    deploy:
+      mode: replicated
+      restart_policy:
+        condition: any
+
+  # rabbitmq to connect to extractors
+  rabbitmq:
+    image: rabbitmq:management-alpine
+    networks:
+      - clowder
+    ports:
+      - 5672
+      - 15672
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+    restart: unless-stopped
+    deploy:
+      mode: replicated
+      restart_policy:
+        condition: any
+
+  # elasticsearch to allow indexing
+  elasticsearch:
+    image: elasticsearch:2
+    command: elasticsearch -Des.cluster.name="clowder"
+    networks:
+      - clowder
+    ports:
+      - 9200
+      - 9300
+    volumes:
+      - elasticsearch:/usr/share/elasticsearch/data
+    restart: unless-stopped
+    deploy:
+      mode: replicated
+      restart_policy:
+        condition: any
+
+networks:
+    clowder:
+
+volumes:
+  clowder-data:
+  clowder-custom:
+  mongo:
+  rabbitmq:
+  elasticsearch:
