@@ -20,4 +20,4 @@ ONBUILD RUN if [ -e requirements.txt ]; then \
 # copy all files
 ONBUILD ADD . /home/clowder/
 
-CMD python -c "from simple_extractor import SimpleExtractor; from ${EXTRACTION_MODULE} import *; SimpleExtractor(${EXTRACTION_FUNC}).start()"
+CMD python -c "from simple_extractor import SimplePythonExtractor; from ${EXTRACTION_MODULE} import *; SimplePythonExtractor(${EXTRACTION_FUNC}).start()"

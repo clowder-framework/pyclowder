@@ -31,9 +31,8 @@ can contain either metadata information ("metadata"), details about file preview
 
 2. Let's create a Dockerfile for your extractor. Dockerfile contents need to be:
 
-        FROM clowder/extractors-simple-extractor:onbuild
-        ENV EXTRACTION_FUNC="your_main_function"
-        ENV EXTRACTION_MODULE="your_python_program"
-
-
-
+```Dockerfile
+FROM clowder/extractors-simple-extractor:onbuild
+ENV EXTRACTION_FUNC="your_main_function"
+ENV EXTRACTION_MODULE="your_python_program"
+```
