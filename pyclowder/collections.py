@@ -137,7 +137,7 @@ def upload_preview(connector, host, key, collectionid, previewfile, previewmetad
     logger.debug("preview id = [%s]", previewid)
 
     # associate uploaded preview with original collection
-    if collectionid and not (previewmetadata and previewmetadata['section_id']):
+    if collectionid and not (previewmetadata and 'section_id' in previewmetadata and previewmetadata['section_id']):
         url = '%sapi/collections/%s/previews/%s?key=%s' % (host, collectionid, previewid, key)
         result = requests.post(url, headers=headers, data=json.dumps({}),
                                verify=connector.ssl_verify if connector else True)
