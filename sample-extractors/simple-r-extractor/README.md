@@ -54,10 +54,20 @@ The dockerfile has 2 environment variables that need to be set:
   no file needs to be sourced (for example in case when the file is installed as a package).
 - R_FUNCTION : the name of the function that needs to be called that takes a file as input and returns an object that
   contains the data described above.
+
 There can be 2 additional files that are used when creating the docker image:
 - packages.apt : a list of ubuntu packages that need to be installed for the default ubuntu repositories.
 - docker.R : an R script that is run during the docker build process. This can be used to install any required R
   packages. Another option is to install the code if it is provided as an R package.
+
+An example of the Dockerfile is:
+
+```Dockerfile
+FROM clowder/extractors-simple-r-extractor:onbuild
+
+ENV R_SCRIPT="wordcount.R" \
+    R_FUNCTION="process_file"
+```
 
 There also has to be an extractor_info.json file which contains information about the extractor and is used to by the
 extractor framework to initialize the extractor as well as upload information to clowder about the extractor.
