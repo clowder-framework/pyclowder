@@ -83,7 +83,7 @@ class Extractor(object):
         self.parser.add_argument('--pickle', type=file, nargs='*', dest="hpc_picklefile",
                                  default=None, action='append',
                                  help='pickle file that needs to be processed (only needed for HPC)')
-        self.parser.add_argument('--register', '-r', nargs='?', dest="regstration_endpoints",
+        self.parser.add_argument('--register', '-r', nargs='?', dest="registration_endpoints",
                                  default=registration_endpoints,
                                  help='Clowder registration URL (default=%s)' % registration_endpoints)
         self.parser.add_argument('--rabbitmqURI', nargs='?', dest='rabbitmq_uri', default=rabbitmq_uri,
@@ -158,7 +158,7 @@ class Extractor(object):
                                               rabbitmq_key=rabbitmq_key,
                                               mounted_paths=json.loads(self.args.mounted_paths))
                     rconn.connect()
-                    rconn.register_extractor(self.args.regstration_endpoints)
+                    rconn.register_extractor(self.args.registration_endpoints)
                     connectors.append(rconn)
                     threading.Thread(target=rconn.listen, name="Connector-" + str(connum)).start()
             elif self.args.connector == "HPC":
@@ -171,7 +171,7 @@ class Extractor(object):
                                          process_message=self.process_message,
                                          picklefile=self.args.hpc_picklefile,
                                          mounted_paths=json.loads(self.args.mounted_paths))
-                    hconn.register_extractor(self.args.regstration_endpoints)
+                    hconn.register_extractor(self.args.registration_endpoints)
                     connectors.append(hconn)
                     threading.Thread(target=hconn.listen, name="Connector-" + str(connum)).start()
             elif self.args.connector == "Local":

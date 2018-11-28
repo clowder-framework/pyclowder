@@ -4,7 +4,7 @@ FROM ubuntu:16.04
 ENV RABBITMQ_URI="amqp://guest:guest@rabbitmq:5672/%2F" \
     RABBITMQ_EXCHANGE="clowder" \
     RABBITMQ_QUEUE="" \
-    REGISTRATION_ENDPOINTS="https://clowder.ncsa.illinois.edu/extractors" \
+    REGISTRATION_ENDPOINTS="" \
     MAIN_SCRIPT=""
 
 # install python
