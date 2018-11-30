@@ -5,32 +5,6 @@ This module provides simple wrappers around the clowder Collections API
 
 from client import ClowderClient
 
-
-def create_empty(connector, host, key, collectionname, description, parentid=None, spaceid=None):
-    client = CollectionsApi(host=host, key=key)
-    return client.create(collectionname, description, parentid, spaceid)
-
-
-def delete(connector, host, key, collectionid):
-    client = CollectionsApi(host=host, key=key)
-    return client.delete(collectionid)
-
-
-def get_child_collections(connector, host, key, collectionid):
-    client = CollectionsApi(host=host, key=key)
-    return client.get_child_collections(collectionid)
-
-
-def get_datasets(connector, host, key, collectionid):
-    client = CollectionsApi(host=host, key=key)
-    return client.get_datasets(collectionid)
-
-
-def upload_preview(connector, host, key, collectionid, previewfile, previewmetadata):
-    client = CollectionsApi(host=host, key=key)
-    return client.upload_preview(collectionid, previewfile, previewmetadata)
-
-
 class CollectionsApi(object):
     """
         API to manage the REST CRUD endpoints for collections
