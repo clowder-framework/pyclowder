@@ -7,6 +7,7 @@ import json
 import os
 import requests
 from urllib3.filepost import encode_multipart_formdata
+from client import ClowderClient
 
 # Some sources of urllib3 support warning suppression, but not all
 try:
@@ -41,7 +42,7 @@ class FilesApi(object):
         if client:
             self.client = client
         else:
-            self.client = client.ClowderClient(host=host, key=key, username=username, password=password)
+            self.client = ClowderClient(host=host, key=key, username=username, password=password)
 
     def add_medadata(self, file_id, metadata):
         """Upload file JSON-LD metadata.
