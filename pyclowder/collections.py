@@ -5,6 +5,7 @@ This module provides simple wrappers around the clowder Collections API
 
 from client import ClowderClient
 
+
 class CollectionsApi(object):
     """
         API to manage the REST CRUD endpoints for collections
