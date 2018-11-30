@@ -8,16 +8,6 @@ import tempfile
 from client import ClowderClient
 
 
-def delete_by_collection(connector, host, key, collectionid, recursive=True, delete_colls=False):
-    from pyclowder.collections import CollectionsApi
-    collapi = CollectionsApi(host=host, key=key)
-    return collapi.delete_all_datasets(collectionid, recursive, delete_colls)
-
-def get_info(connector, host, key, datasetid):
-    client = DatasetsApi(host=host, key=key)
-    return client.get_info(datasetid)
-
-
 class DatasetsApi(object):
     """
         API to manage the REST CRUD endpoints for datasets.
@@ -33,19 +23,10 @@ class DatasetsApi(object):
         else:
             self.client = ClowderClient(host=host, key=key, username=username, password=password)
 
-    def datasets_get(self):
-        """
-        Get the list of all available datasets.
-
-        :return: Full list of datasets.
-        :rtype: `requests.Response`
-        """
-
-        logging.debug("Getting all datasets")
-        try:
-            return self.client.get("/datasets/")
-        except Exception as e:
-            logging.error("Error retrieving dataset list: %s", e.message)
+    def delete_by_collection(self, collection_id, recursive=True, delete_colls=False):
+        from pyclowder.collections import CollectionsApi
+        collapi = CollectionsApi
+        return collapi.delete_all_datasets(collection_id, recursive, delete_colls)
 
     def dataset_get(self, dataset_id):
         """
@@ -117,7 +98,7 @@ class DatasetsApi(object):
         except Exception as e:
             logging.error("Error upload to dataset %s: %s" % (dataset_id, e.message))
 
-    def add_metadata(self, dataset_id, metadata):
+    def add_metadata_jsonld(self, dataset_id, metadata):
         """Upload dataset JSON-LD metadata.
 
         Keyword arguments:
@@ -125,7 +106,7 @@ class DatasetsApi(object):
         metadata -- the metadata to be uploaded
         """
 
-        self.client.post("datasets/%s/metadata.jsonld", metadata)
+        self.client.post("datasets/%s/metadata.jsonld" % dataset_id, metadata)
 
     def create(self, name, description="", parent_id=None, space_id=None):
         """Create a new dataset in Clowder.
@@ -186,14 +167,18 @@ class DatasetsApi(object):
         params = None if extractor_name is None else {"extractor": extractor_name}
         return self.client.get("datasets/%s/metadata.jsonld" % dataset_id, params)
 
-    def get(self, dataset_id):
+    def get_info(self, dataset_id):
         """Download basic dataset information.
 
         Keyword arguments:
         dataset_id -- id of dataset to get info for
         """
 
-        return self.client.get("datasets/%s" % dataset_id)
+        logging.debug("Getting dataset %s" % dataset_id)
+        try:
+            return self.client.get("/datasets/%s" % dataset_id)
+        except Exception as e:
+            logging.error("Error retrieving dataset %s: %s" % (dataset_id, e.message))
 
     def get_file_list(self, dataset_id):
         """Download list of dataset files as JSON.
