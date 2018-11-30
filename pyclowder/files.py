@@ -17,26 +17,6 @@ except:
     pass
 
 
-def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
-    client = FilesApi(host=host, key=key)
-    return client.download(fileid)
-
-
-def download_info(connector, host, key, fileid):
-    client = FilesApi(host=host, key=key)
-    return client.download_info(fileid)
-
-
-def download_metadata(connector, host, key, fileid, extractor=None):
-    client = FilesApi(host=host, key=key)
-    return client.download_metadata(fileid, extractor)
-
-
-def submit_extraction(connector, host, key, fileid, extractorname):
-    client = FilesApi(host=host, key=key)
-    return client.submit_extraction(fileid, extractorname)
-
-
 def submit_extractions_by_dataset(connector, host, key, datasetid, extractorname, ext=False):
     from pyclowder.datasets import DatasetsApi
     dsapi = DatasetsApi(host=host, key=key)
@@ -47,32 +27,6 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
     from pyclowder.collections import CollectionsApi
     collapi = CollectionsApi(host=host, key=key)
     collapi.submit_all_files_for_extraction(collectionid, extractorname, ext, recursive)
-
-
-def upload_metadata(connector, host, key, fileid, metadata):
-    client = FilesApi(host=host, key=key)
-    return client.add_medadata(fileid, metadata)
-
-
-def upload_preview(connector, host, key, fileid, previewfile, previewmetadata, preview_mimetype=None):
-    client = FilesApi(host=host, key=key)
-    return client.add_preview(fileid, previewfile, previewmetadata, preview_mimetype)
-
-
-def upload_tags(connector, host, key, fileid, tags):
-    client = FilesApi(host=host, key=key)
-    return client.add_tags(fileid, tags)
-
-
-def upload_thumbnail(connector, host, key, fileid, thumbnail):
-    client = FilesApi(host=host, key=key)
-    return client.add_thumbnail(fileid, thumbnail)
-
-
-def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate=False):
-    client = FilesApi(host=host, key=key)
-    return client.upload_to_dataset(datasetid, filepath, connector.mounted_paths, check_duplicate)
-
 
 class FilesApi(object):
     """
@@ -87,7 +41,7 @@ class FilesApi(object):
         if client:
             self.client = client
         else:
-            self.client = ClowderClient(host=host, key=key, username=username, password=password)
+            self.client = client.ClowderClient(host=host, key=key, username=username, password=password)
 
     def add_medadata(self, file_id, metadata):
         """Upload file JSON-LD metadata.
