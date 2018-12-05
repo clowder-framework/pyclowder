@@ -1,15 +1,16 @@
-FROM clowder/pyclowder
+FROM clowder/pyclowder:latest
 
 ENV R_SCRIPT="" \
     R_FUNCTION=""
 
-RUN apt-get -q -q update \
-    && apt-get -y install --no-install-recommends r-base-core r-base-dev python-dev \
+RUN echo "deb http://cran.rstudio.com/bin/linux/ubuntu xenial/" > /etc/apt/sources.list.d/R.list \
+    && apt-key adv --keyserver keyserver.ubuntu.com --recv E084DAB9 \
+    && apt-get -q -q update \
+    && apt-get -y install --no-install-recommends r-base-core r-base-dev \
     && rm -rf /var/lib/apt/lists/* \
-    && pip install rpy2==2.8.6
-RUN Rscript --vanilla -e "install.packages('jsonlite', repos='http://cran.rstudio.com/'); print(system.file(package = 'jsonlite')); q(status=as.integer(system.file(package = 'jsonlite') == ''))"
+    && Rscript --vanilla -e "install.packages('jsonlite', repos='http://cran.rstudio.com/'); print(system.file(package = 'jsonlite')); q(status=as.integer(system.file(package = 'jsonlite') == ''))"
 
-COPY r_extractor.py /home/clowder/
+COPY r_extractor.py launcher.R /home/clowder/
 
 # install any packages
 ONBUILD COPY packages.* Dockerfile /home/clowder/
