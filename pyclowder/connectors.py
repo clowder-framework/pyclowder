@@ -674,9 +674,8 @@ class RabbitMQConnector(Connector):
                 json_body['routing_key'] = method.routing_key
 
             self.worker = RabbitMQHandler(self.extractor_name, self.extractor_info, self.check_message,
-
-                                          self.process_message, self.ssl_verify, self.mounted_paths, method, header, body)
-
+                                          self.process_message, self.ssl_verify, self.mounted_paths,
+                                          method, header, body)
             self.worker.start_thread(json_body)
 
         except: # pylint: disable=broad-except
