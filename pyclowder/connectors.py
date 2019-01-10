@@ -664,13 +664,30 @@ class RabbitMQConnector(Connector):
         or there is an exception (except for SystemExit and SystemError exceptions).
         """
 
-        json_body = json.loads(body)
-        if 'routing_key' not in json_body and method.routing_key:
-            json_body['routing_key'] = method.routing_key
+        try:
+            try:
+                json_body = json.loads(body)
+            except ValueError:
+                json_body = json.loads(body, encoding='ISO-8859-1')
 
-        self.worker = RabbitMQHandler(self.extractor_name, self.extractor_info, self.check_message,
-                                      self.process_message, self.ssl_verify, self.mounted_paths, method, header, body)
-        self.worker.start_thread(json_body)
+            if 'routing_key' not in json_body and method.routing_key:
+                json_body['routing_key'] = method.routing_key
+
+            self.worker = RabbitMQHandler(self.extractor_name, self.extractor_info, self.check_message,
+
+                                          self.process_message, self.ssl_verify, self.mounted_paths, method, header, body)
+
+            self.worker.start_thread(json_body)
+
+        except: # pylint: disable=broad-except
+            # something went wrong, move message to error queue and give up on this message immediately
+            logging.exception("Error processing message, message moved to error queue")
+            properties = pika.BasicProperties(delivery_mode=2, reply_to=header.reply_to)
+            channel.basic_publish(exchange='',
+                                  routing_key='error.' + self.extractor_name,
+                                  properties=properties,
+                                  body=body)
+            channel.basic_ack(method.delivery_tag)
 
 
 class RabbitMQHandler(Connector):
