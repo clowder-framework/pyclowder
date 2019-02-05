@@ -48,6 +48,11 @@ import pyclowder.datasets
 import pyclowder.files
 import pyclowder.utils
 
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from string import Template
+
 
 class Connector(object):
     """ Class that will listen for messages.
@@ -69,6 +74,49 @@ class Connector(object):
             self.mounted_paths = {}
         else:
             self.mounted_paths = mounted_paths
+
+        filename = 'notifications.json'
+        self.smtp_server = None
+        if os.path.isfile(filename):
+            try:
+                with open(filename) as notifications_file:
+                    notifications_content = notifications_file.read()
+                    notifications_template = Template(notifications_content)
+                    notifications_json = json.loads(notifications_content)
+                    notifications_json['extractor_name'] = extractor_name
+                    notifications = notifications_template.safe_substitute(notifications_json)
+
+                    notifications_interpolate = json.loads(notifications)
+                    self.smtp_server = os.getenv('EMAIL_SERVER', None)
+                    self.emailmsg = MIMEMultipart('alternative')
+
+                    self.emailmsg['From'] = os.getenv('EMAIL_SENDER', notifications_json.get('sender'))
+                    self.emailmsg['Subject'] = notifications_interpolate.get('notifications').get('email').get(
+                        'subject')
+                    self.emailmsg['Body'] = notifications_interpolate.get('notifications').get('email').get('body')
+            except Exception:  # pylint: disable=broad-except
+                print("Error loading notifications.json")
+
+    def email(self, emaillist, clowderurl):
+        """ Send extraction completion as the email notification """
+        logger = logging.getLogger(__name__)
+        if emaillist and self.smtp_server:
+            server = smtplib.SMTP(self.smtp_server)
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = self.emailmsg['Subject']
+            msg['From'] = self.emailmsg['From']
+
+            content = "%s \n%s" % (self.emailmsg['Body'], clowderurl)
+            content = MIMEText(content.encode('utf-8'), _charset='utf-8')
+            msg.attach(content)
+
+            try:
+                logger.debug("send email notification to %s, %s " % (emaillist, msg.as_string()))
+                server.sendmail(msg['From'], emaillist, msg.as_string())
+            except:
+                logger.warning("failed to send email notification to %s" % emaillist)
+                pass
+            server.quit()
 
     def listen(self):
         """Listen for incoming messages.
@@ -309,7 +357,10 @@ class Connector(object):
         """
 
         logger = logging.getLogger(__name__)
-
+        emailaddrlist = None
+        if body.get('notifies'):
+            emailaddrlist = body.get('notifies')
+            logger.debug(emailaddrlist)
         host = body.get('host', '')
         if host == '':
             return
@@ -356,6 +407,10 @@ class Connector(object):
                                 resource['local_paths'] = [file_path]
 
                             self.process_message(self, host, secret_key, resource, body)
+
+                            clowderurl = "%sfiles/%s" % (host, body.get('id', ''))
+                            # notificatino of extraction job is done by email.
+                            self.email(emailaddrlist, clowderurl)
                         finally:
                             if file_path is not None and not found_local:
                                 try:
@@ -372,6 +427,9 @@ class Connector(object):
                             resource['local_paths'] = file_paths
 
                             self.process_message(self, host, secret_key, resource, body)
+                            clowderurl = "%sdatasets/%s" % (host, body.get('datasetId', ''))
+                            # notificatino of extraction job is done by email.
+                            self.email(emailaddrlist, clowderurl)
                         finally:
                             for tmp_f in tmp_files:
                                 try:

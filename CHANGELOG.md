@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - files.upload_preview and collections.upload_preview does not require section_id for metadata [CATS-935](https://opensource.ncsa.illinois.edu/jira/browse/CATS-935)
 
 ### Added
+- Email notification when extraction is done [CATSPYC-17] (https://opensource.ncsa.illinois.edu/jira/browse/CATSPYC-17) 
 - Docker compose file for starting up the Clowder stack [BD-2226](https://opensource.ncsa.illinois.edu/jira/browse/BD-2226)
 
 ## 2.1.1 - 2018-07-12

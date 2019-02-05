@@ -1,0 +1,11 @@
+{
+    "extractor_name": "ExtractorName",
+    "sender": "admin@system.com",
+    "notifications": {
+        "email": {
+            "from": "${sender}",
+            "subject": "${extractor_name} is done",
+            "body": "This is email notification on extraction completion."
+        }
+    }
+}
