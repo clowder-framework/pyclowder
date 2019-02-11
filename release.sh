@@ -37,7 +37,7 @@ for i in pyclowder extractors-wordcount; do
     done
 done
 
-for i in pyclowder extractors-binary-preview extractors-simple-extractor; do
+for i in pyclowder extractors-binary-preview extractors-simple-extractor extractors-simple-r-extractor; do
     for v in ${VERSION}; do
         if [ "$v" != "latest" ]; then
             ${DEBUG} docker tag clowder/${i}:onbuild ${SERVER}clowder/${i}:${v}-onbuild
