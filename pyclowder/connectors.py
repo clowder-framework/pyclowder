@@ -105,7 +105,7 @@ class Connector(object):
             msg = MIMEMultipart('alternative')
             msg['Subject'] = self.emailmsg['Subject']
             msg['From'] = self.emailmsg['From']
-
+            msg['To'] = ' '.join(emaillist)
             content = "%s \n%s" % (self.emailmsg['Body'], clowderurl)
             content = MIMEText(content.encode('utf-8'), _charset='utf-8')
             msg.attach(content)
