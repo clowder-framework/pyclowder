@@ -254,6 +254,13 @@ class Connector(object):
             if not file_path:
                 missing_files.append(ds_file)
             else:
+                # Create a link to the original file if the "true" name of the file doesn't match what's on disk
+                if not file_path.lower().endswith(ds_file['filename'].lower()):
+                    ln_name = io.join_paths(tempfile.gettempdir(), ds_file['filename'])
+                    os.symlink(file_path, ln_name)
+                    tmp_files_created.append(ln_name)
+                    file_path = ln_name
+
                 # Also get file metadata in format expected by extrator
                 (file_md_dir, file_md_tmp) = self._download_file_metadata(host, secret_key, ds_file['id'],
                                                                           ds_file['filepath'])
