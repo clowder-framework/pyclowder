@@ -247,6 +247,10 @@ class Connector(object):
         tmp_files_created = []
         tmp_dirs_created = []
 
+        # Create a temporary folder to hold any links to local files we may need
+        temp_link_dir = tempfile.mkdtemp()
+        tmp_dirs_created.append(temp_link_dir)
+
         # first check if any files in dataset accessible locally
         ds_file_list = pyclowder.datasets.get_file_list(self, host, secret_key, resource["id"])
         for ds_file in ds_file_list:
@@ -256,7 +260,7 @@ class Connector(object):
             else:
                 # Create a link to the original file if the "true" name of the file doesn't match what's on disk
                 if not file_path.lower().endswith(ds_file['filename'].lower()):
-                    ln_name = io.join_paths(tempfile.gettempdir(), ds_file['filename'])
+                    ln_name = io.path.join(temp_link_dir, ds_file['filename'])
                     os.symlink(file_path, ln_name)
                     tmp_files_created.append(ln_name)
                     file_path = ln_name
