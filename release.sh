@@ -28,7 +28,7 @@ else
 fi
 
 # tag all images and push if needed
-for i in pyclowder extractors-wordcount; do
+for i in pyclowder pyclowder-python3 extractors-monitor extractors-wordcount; do
     for v in ${VERSION}; do
         if [ "$v" != "latest" -o "$SERVER" != "" ]; then
             ${DEBUG} docker tag clowder/${i}:latest ${SERVER}clowder/${i}:${v}
@@ -37,7 +37,7 @@ for i in pyclowder extractors-wordcount; do
     done
 done
 
-for i in pyclowder extractors-binary-preview extractors-simple-extractor extractors-simple-r-extractor; do
+for i in pyclowder pyclowder-python3 extractors-binary-preview extractors-simple-extractor extractors-simple-extractor-python3 extractors-simple-r-extractor extractors-simple-r-extractor-python3; do
     for v in ${VERSION}; do
         if [ "$v" != "latest" ]; then
             ${DEBUG} docker tag clowder/${i}:onbuild ${SERVER}clowder/${i}:${v}-onbuild

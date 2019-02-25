@@ -39,7 +39,7 @@ extractor_info.json
        "name":"ncsa.audio.preview",
        "version":"1.0",
        "description":"Creates thumbnail and image previews of Audio files.",
-       "author":"Rob Kooper <koooper@illinois.edu>",
+       "author":"Rob Kooper <kooper@illinois.edu>",
        "contributors":[],
        "contexts":[],
        "repository":[

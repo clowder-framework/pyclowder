@@ -31,6 +31,7 @@ back to clowder. This connector takes a single argument (which can be list):
                           pickled messsages to be processed.
 """
 
+import errno
 import json
 import logging
 import os
@@ -39,7 +40,7 @@ import subprocess
 import time
 import tempfile
 import threading
-import errno
+import uuid
 
 import pika
 import requests
@@ -194,7 +195,7 @@ class Connector(object):
                 resource_type = "file"
         elif message_type.endswith(self.extractor_info['name']) or message_type.endswith(self.extractor_name):
             # This was migrated from another queue (e.g. error queue) so use extractor default
-            for key, value in self.extractor_info['process'].iteritems():
+            for key, value in self.extractor_info['process'].items():
                 if key == "dataset":
                     resource_type = "dataset"
                 else:
@@ -465,14 +466,6 @@ class Connector(object):
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
             self.message_resubmit(resource, retry_count)
             raise
-        except StandardError as exc:
-            status = "standard error : " + str(exc.message)
-            logger.exception("[%s] %s", resource['id'], status)
-            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            if retry_count < 10:
-                self.message_resubmit(resource, retry_count+1)
-            else:
-                self.message_error(resource)
         except subprocess.CalledProcessError as exc:
             status = str.format("Error processing [exit code={}]\n{}", exc.returncode, exc.output)
             logger.exception("[%s] %s", resource['id'], status)
@@ -482,7 +475,10 @@ class Connector(object):
             status = "Error processing : " + exc.message
             logger.exception("[%s] %s", resource['id'], status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            self.message_error(resource)
+            if retry_count < 10:
+                self.message_resubmit(resource, retry_count + 1)
+            else:
+                self.message_error(resource)
 
     def register_extractor(self, endpoints):
         """Register extractor info with Clowder.
@@ -612,13 +608,18 @@ class RabbitMQConnector(Connector):
     """
 
     # pylint: disable=too-many-arguments
-    def __init__(self, extractor_name, extractor_info, rabbitmq_uri, rabbitmq_exchange=None, rabbitmq_key=None,
+    def __init__(self, extractor_name, extractor_info,
+                 rabbitmq_uri, rabbitmq_exchange=None, rabbitmq_key=None, rabbitmq_queue=None,
                  check_message=None, process_message=None, ssl_verify=True, mounted_paths=None):
         super(RabbitMQConnector, self).__init__(extractor_name, extractor_info, check_message, process_message,
                                                 ssl_verify, mounted_paths)
         self.rabbitmq_uri = rabbitmq_uri
         self.rabbitmq_exchange = rabbitmq_exchange
         self.rabbitmq_key = rabbitmq_key
+        if rabbitmq_queue is None:
+            self.rabbitmq_queue = extractor_info['name']
+        else:
+            self.rabbitmq_queue = rabbitmq_queue
         self.channel = None
         self.connection = None
         self.consumer_tag = None
@@ -638,8 +639,9 @@ class RabbitMQConnector(Connector):
         self.channel.basic_qos(prefetch_count=1)
 
         # declare the queue in case it does not exist
-        self.channel.queue_declare(queue=self.extractor_name, durable=True)
-        self.channel.queue_declare(queue='error.'+self.extractor_name, durable=True)
+        self.channel.queue_declare(queue=self.rabbitmq_queue, durable=True)
+        self.channel.queue_declare(queue='extractors.' + self.rabbitmq_queue, durable=True)
+        self.channel.queue_declare(queue='error.'+self.rabbitmq_queue, durable=True)
 
         # register with an exchange
         if self.rabbitmq_exchange:
@@ -650,18 +652,22 @@ class RabbitMQConnector(Connector):
             # connect queue and exchange
             if self.rabbitmq_key:
                 if isinstance(self.rabbitmq_key, str):
-                    self.channel.queue_bind(queue=self.extractor_name,
+                    self.channel.queue_bind(queue=self.rabbitmq_queue,
                                             exchange=self.rabbitmq_exchange,
                                             routing_key=self.rabbitmq_key)
                 else:
                     for key in self.rabbitmq_key:
-                        self.channel.queue_bind(queue=self.extractor_name,
+                        self.channel.queue_bind(queue=self.rabbitmq_queue,
                                                 exchange=self.rabbitmq_exchange,
                                                 routing_key=key)
 
-            self.channel.queue_bind(queue=self.extractor_name,
+            self.channel.queue_bind(queue=self.rabbitmq_queue,
                                     exchange=self.rabbitmq_exchange,
                                     routing_key="extractors." + self.extractor_name)
+
+        # start the extractor announcer
+        self.announcer = RabbitMQBroadcast(self.rabbitmq_uri, self.extractor_info, self.rabbitmq_queue, 5)
+        self.announcer.start_thread()
 
     def listen(self):
         """Listen for messages coming from RabbitMQ"""
@@ -671,7 +677,7 @@ class RabbitMQConnector(Connector):
             self.connect()
 
         # create listener
-        self.consumer_tag = self.channel.basic_consume(self.on_message, queue=self.extractor_name, no_ack=False)
+        self.consumer_tag = self.channel.basic_consume(self.on_message, queue=self.rabbitmq_queue, no_ack=False)
 
         # start listening
         logging.getLogger(__name__).info("Starting to listen for messages.")
@@ -680,7 +686,7 @@ class RabbitMQConnector(Connector):
             while self.channel and self.channel._consumer_infos:
                 self.channel.connection.process_data_events(time_limit=1)  # 1 second
                 if self.worker:
-                    self.worker.process_messages(self.channel)
+                    self.worker.process_messages(self.channel, self.rabbitmq_queue)
                     if self.worker.is_finished():
                         self.worker = None
         except SystemExit:
@@ -731,6 +737,50 @@ class RabbitMQConnector(Connector):
         self.worker.start_thread(json_body)
 
 
+class RabbitMQBroadcast:
+    def __init__(self, rabbitmq_uri, extractor_info, rabbitmq_queue, heartbeat):
+        self.active = True
+        self.rabbitmq_uri = rabbitmq_uri
+        self.extractor_info = extractor_info
+        self.rabbitmq_queue = rabbitmq_queue
+        self.heartbeat = heartbeat
+        self.id = str(uuid.uuid4())
+
+    def start_thread(self):
+        parameters = pika.URLParameters(self.rabbitmq_uri)
+        self.connection = pika.BlockingConnection(parameters)
+
+        # connect to channel
+        self.channel = self.connection.channel()
+
+        # create extractors exchange for fanout
+        self.channel.exchange_declare(exchange='extractors', exchange_type='fanout', durable=True)
+
+        self.thread = threading.Thread(target=self.send_heartbeat)
+        self.thread.setDaemon(True)
+        self.thread.start()
+
+    def send_heartbeat(self):
+        # create the message we will send
+        message = {
+            'id': self.id,
+            'queue': self.rabbitmq_queue,
+            'extractor_info': self.extractor_info
+        }
+        while self.thread:
+            try:
+                time.sleep(self.heartbeat)
+                self.channel.basic_publish(exchange='extractors', routing_key='', body=json.dumps(message))
+            except SystemExit:
+                raise
+            except KeyboardInterrupt:
+                raise
+            except GeneratorExit:
+                raise
+            except Exception:  # pylint: disable=broad-except
+                logging.getLogger(__name__).exception("Error while sending heartbeat.")
+
+
 class RabbitMQHandler(Connector):
     """Simple handler that will process a single message at a time.
 
@@ -769,7 +819,7 @@ class RabbitMQHandler(Connector):
         with self.lock:
             return self.thread and not self.thread.isAlive() and self.finished and len(self.messages) == 0
 
-    def process_messages(self, channel):
+    def process_messages(self, channel, rabbitmq_queue):
         while self.messages:
             with self.lock:
                 msg = self.messages.pop(0)
@@ -790,7 +840,7 @@ class RabbitMQHandler(Connector):
             elif msg["type"] == 'error':
                 properties = pika.BasicProperties(delivery_mode=2, reply_to=self.header.reply_to)
                 channel.basic_publish(exchange='',
-                                      routing_key='error.' + self.extractor_name,
+                                      routing_key='error.' + rabbitmq_queue,
                                       properties=properties,
                                       body=self.body)
                 channel.basic_ack(self.method.delivery_tag)
@@ -799,7 +849,7 @@ class RabbitMQHandler(Connector):
 
             elif msg["type"] == 'resubmit':
                 retry_count = msg['retry_count']
-                queue = self.extractor_name
+                queue = rabbitmq_queue
                 properties = pika.BasicProperties(delivery_mode=2, reply_to=self.header.reply_to)
                 jbody = json.loads(self.body)
                 jbody['retry_count'] = retry_count
