@@ -27,7 +27,7 @@ def create_empty(connector, host, key, collectionname, description, parentid=Non
     logger = logging.getLogger(__name__)
 
     if parentid:
-        if (spaceid):
+        if spaceid:
             url = '%sapi/collections/newCollectionWithParent?key=%s' % (host, key)
             result = requests.post(url, headers={"Content-Type": "application/json"},
                                    data=json.dumps({"name": collectionname, "description": description,
@@ -40,7 +40,7 @@ def create_empty(connector, host, key, collectionname, description, parentid=Non
                                                     "parentId": [parentid]}),
                                    verify=connector.ssl_verify if connector else True)
     else:
-        if (spaceid):
+        if spaceid:
             url = '%sapi/collections?key=%s' % (host, key)
             result = requests.post(url, headers={"Content-Type": "application/json"},
                                    data=json.dumps({"name": collectionname, "description": description,

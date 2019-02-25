@@ -56,16 +56,28 @@ class BinaryPreviewExtractor(Extractor):
         file_id = resource['id']
 
         # create thumbnail image
+        if 'image_thumbnail' in parameters:
+            args = parameters['image_thumbnail']
+        else:
+            args = self.args.image_thumbnail_command
         self.execute_command(connector, host, secret_key, inputfile, file_id, resource, False,
-                             self.args.image_binary, self.args.image_thumbnail_command, self.args.image_type)
+                             self.args.image_binary, args, self.args.image_type)
 
         # create preview image
+        if 'image_preview' in parameters:
+            args = parameters['image_preview']
+        else:
+            args = self.args.image_preview_command
         self.execute_command(connector, host, secret_key, inputfile, file_id, resource, True,
-                             self.args.image_binary, self.args.image_preview_command, self.args.image_type)
+                             self.args.image_binary, args, self.args.image_type)
 
         # create extractor specifc preview
+        if 'preview' in parameters:
+            args = parameters['preview']
+        else:
+            args = self.args.preview_command
         self.execute_command(connector, host, secret_key, inputfile, file_id, resource, True,
-                             self.args.preview_binary, self.args.preview_command, self.args.preview_type)
+                             self.args.preview_binary, args, self.args.preview_type)
 
     @staticmethod
     def execute_command(connector, host, key, inputfile, fileid, resource, preview, binary, commandline, ext):

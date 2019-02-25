@@ -5,7 +5,7 @@
 import logging
 
 from pyclowder.extractors import Extractor
-from pyclowder.connectors import CheckMessage
+from pyclowder.utils import CheckMessage
 import pyclowder.files
 
 
