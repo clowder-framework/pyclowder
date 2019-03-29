@@ -733,19 +733,41 @@ class RabbitMQConnector(Connector):
     def alive(self):
         return self.connection is not None
 
+    @staticmethod
+    def _decode_body(body, codecs=['utf8', 'iso-8859-1']):
+        # see https://stackoverflow.com/a/15918519
+        for i in codecs:
+            try:
+                return body.decode(i)
+            except UnicodeDecodeError:
+                pass
+        raise ValueError("Cannot decode body")
+
     def on_message(self, channel, method, header, body):
         """When the message is received this will call the generic _process_message in
         the connector class. Any message will only be acked if the message is processed,
         or there is an exception (except for SystemExit and SystemError exceptions).
         """
 
-        json_body = json.loads(body)
-        if 'routing_key' not in json_body and method.routing_key:
-            json_body['routing_key'] = method.routing_key
+        try:
+            json_body = json.loads(self._decode_body(body))
+            if 'routing_key' not in json_body and method.routing_key:
+                json_body['routing_key'] = method.routing_key
 
-        self.worker = RabbitMQHandler(self.extractor_name, self.extractor_info, self.check_message,
-                                      self.process_message, self.ssl_verify, self.mounted_paths, method, header, body)
-        self.worker.start_thread(json_body)
+            self.worker = RabbitMQHandler(self.extractor_name, self.extractor_info, self.check_message,
+                                          self.process_message, self.ssl_verify, self.mounted_paths,
+                                          method, header, body)
+            self.worker.start_thread(json_body)
+
+        except ValueError:
+            # something went wrong, move message to error queue and give up on this message immediately
+            logging.exception("Error processing message, message moved to error queue")
+            properties = pika.BasicProperties(delivery_mode=2, reply_to=header.reply_to)
+            channel.basic_publish(exchange='',
+                                  routing_key='error.' + self.extractor_name,
+                                  properties=properties,
+                                  body=body)
+            channel.basic_ack(method.delivery_tag)
 
 
 class RabbitMQBroadcast:
