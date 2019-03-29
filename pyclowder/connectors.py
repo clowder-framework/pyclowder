@@ -658,6 +658,16 @@ class RabbitMQConnector(Connector):
     def alive(self):
         return self.connection is not None
 
+    @staticmethod
+    def _decode_body(body, codecs=['utf8', 'iso-8859-1']):
+        # see https://stackoverflow.com/a/15918519
+        for i in codecs:
+            try:
+                return body.decode(i)
+            except UnicodeDecodeError:
+                pass
+        raise ValueError("Cannot decode body")
+
     def on_message(self, channel, method, header, body):
         """When the message is received this will call the generic _process_message in
         the connector class. Any message will only be acked if the message is processed,
@@ -665,11 +675,7 @@ class RabbitMQConnector(Connector):
         """
 
         try:
-            try:
-                json_body = json.loads(body)
-            except ValueError:
-                json_body = json.loads(body, encoding='ISO-8859-1')
-
+            json_body = json.loads(self._decode_body(body))
             if 'routing_key' not in json_body and method.routing_key:
                 json_body['routing_key'] = method.routing_key
 
@@ -678,7 +684,7 @@ class RabbitMQConnector(Connector):
                                           method, header, body)
             self.worker.start_thread(json_body)
 
-        except: # pylint: disable=broad-except
+        except ValueError:
             # something went wrong, move message to error queue and give up on this message immediately
             logging.exception("Error processing message, message moved to error queue")
             properties = pika.BasicProperties(delivery_mode=2, reply_to=header.reply_to)
