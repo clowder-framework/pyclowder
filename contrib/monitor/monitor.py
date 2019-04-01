@@ -15,6 +15,8 @@ import requests
 rabbitmq_uri = os.getenv('RABBITMQ_URI', 'amqp://guest:guest@localhost/%2F')
 rabbitmq_mgmt_port = os.getenv('RABBITMQ_MGMT_PORT', '15672')
 rabbitmq_mgmt_url = ''
+rabbitmq_username = None
+rabbitmq_password = None
 
 extractors = {}
 
@@ -32,7 +34,7 @@ class MyServer(http.server.BaseHTTPRequestHandler):
         self.send_response(200)
         self.send_header('Content-type', 'application/json')
         self.end_headers()
-        self.wfile.write(bytes(json.dumps(extractors), 'utf-8'))
+        self.wfile.write(json.dumps(extractors).encode())
 
 
 def http_server():
@@ -52,7 +54,7 @@ def get_mgmt_queue_messages(queue):
         response = requests.get(rabbitmq_mgmt_url + queue, auth=(rabbitmq_username, rabbitmq_password), timeout=5)
         response.raise_for_status()
         return response.json()['messages']
-    except:
+    except Exception:
         logging.exception("Error getting list of messages in %s" % queue)
         return 0
 
@@ -121,9 +123,8 @@ def extractors_monitor():
     connection = pika.BlockingConnection(params)
 
     # create management url
-    rabbitmq_url = ''
     if rabbitmq_mgmt_port != '':
-        if params.ssl:
+        if params.ssl_options:
             rabbitmq_mgmt_url = 'https://'
         else:
             rabbitmq_mgmt_url = 'http://'

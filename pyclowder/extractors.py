@@ -205,8 +205,8 @@ class Extractor(object):
         except BaseException:
             logger.exception("Error while consuming messages.")
 
-        while connectors:
-            connectors.pop(0).stop()
+        for c in connectors:
+            c.stop()
 
     def get_metadata(self, content, resource_type, resource_id, server=None):
         """Generate a metadata field.
@@ -297,9 +297,9 @@ class SimpleExtractor(Extractor):
     """
 
     def __init__(self):
-        '''
+        """
         Initialize the extractor and setup the logger.
-        '''
+        """
         Extractor.__init__(self)
         self.setup()
 

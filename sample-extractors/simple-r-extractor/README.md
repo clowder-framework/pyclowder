@@ -81,12 +81,12 @@ extractor framework to initialize the extractor as well as upload information to
    "author": "<first name> <last name> <<email address>>",
    "contributors": [
        "<first name> <last name> <<email address>>",
-       "<first name> <last name> <<email address>>",
+       "<first name> <last name> <<email address>>"
      ],
    "contexts": [
     {
        "<metadata term 1>": "<URL definition of metadata term 1>",
-        "<metadata term 2>": "<URL definition of metadata term 2>",
+        "<metadata term 2>": "<URL definition of metadata term 2>"
      }
    ],
    "repository": [

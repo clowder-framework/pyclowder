@@ -60,7 +60,7 @@ def create_empty(connector, host, key, collectionname, description, parentid=Non
 
 
 def delete(connector, host, key, collectionid):
-    url = "%sapi/collections/%s" % (host, collectionid)
+    url = "%sapi/collections/%s?key=%s" % (host, collectionid, key)
 
     result = requests.delete(url, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()

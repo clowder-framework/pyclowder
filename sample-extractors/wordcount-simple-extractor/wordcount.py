@@ -11,6 +11,7 @@ def wordcount(input_file_path):
 
     # Execute word count command on the input file and obtain the output
     result = subprocess.check_output(['wc', input_file_path], stderr=subprocess.STDOUT)
+    result = result.decode('utf-8')
 
     # Split the output string into lines, words, and characters
     (lines, words, characters, _) = result.split()

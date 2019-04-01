@@ -5,7 +5,6 @@ This module provides simple wrappers around the clowder Geostreams API
 
 import json
 import logging
-import os
 
 import requests
 
@@ -50,7 +49,7 @@ def create_sensor(connector, host, key, sensorname, geom, type, region):
     return sensorid
 
 
-def create_stream(connector, host, key, streamname, sensorid, geom, properties={}):
+def create_stream(connector, host, key, streamname, sensorid, geom, properties=None):
     """Create a new stream in Geostreams.
 
     Keyword arguments:
@@ -64,6 +63,9 @@ def create_stream(connector, host, key, streamname, sensorid, geom, properties={
     """
 
     logger = logging.getLogger(__name__)
+
+    if not properties:
+        properties = {}
 
     body = {
         "name": streamname,
@@ -86,7 +88,7 @@ def create_stream(connector, host, key, streamname, sensorid, geom, properties={
     return streamid
 
 
-def create_datapoint(connector, host, key, streamid, geom, starttime, endtime, properties={}):
+def create_datapoint(connector, host, key, streamid, geom, starttime, endtime, properties=None):
     """Create a new datapoint in Geostreams.
 
     Keyword arguments:
@@ -101,6 +103,9 @@ def create_datapoint(connector, host, key, streamid, geom, starttime, endtime, p
     """
 
     logger = logging.getLogger(__name__)
+
+    if not properties:
+        properties = {}
 
     body = {
         "start_time": starttime,
@@ -162,8 +167,6 @@ def get_sensors_by_circle(connector, host, key, lon, lat, radius=0):
     radius -- distance in meters around point to search
     """
 
-    logger = logging.getLogger(__name__)
-
     url = "%sapi/geostreams/sensors?geocode=%s,%s,%s&key=%s" % (host, lat, lon, radius, key)
 
     result = requests.get(url,
@@ -187,8 +190,6 @@ def get_sensors_by_polygon(connector, host, key, coord_list):
     key -- the secret key to login to clowder
     coord_list -- list of (lon/lat) coordinate pairs forming polygon vertices
     """
-
-    logger = logging.getLogger(__name__)
 
     coord_strings = [str(i) for i in coord_list]
     url = "%sapi/geostreams/sensors?geocode=%s&key=%s" % (host, ','.join(coord_strings), key)
@@ -243,8 +244,6 @@ def get_streams_by_circle(connector, host, key, lon, lat, radius=0):
     radius -- distance in meters around point to search
     """
 
-    logger = logging.getLogger(__name__)
-
     url = "%sapi/geostreams/stream?geocode=%s,%s,%s&key=%s" % (host, lat, lon, radius, key)
 
     result = requests.get(url,
@@ -267,8 +266,6 @@ def get_streams_by_polygon(connector, host, key, coord_list):
     key -- the secret key to login to clowder
     coord_list -- list of (lon/lat) coordinate pairs forming polygon vertices
     """
-
-    logger = logging.getLogger(__name__)
 
     coord_strings = [str(i) for i in coord_list]
     url = "%sapi/geostreams/stream?geocode=%s&key=%s" % (host, ','.join(coord_strings), key)

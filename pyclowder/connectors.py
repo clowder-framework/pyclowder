@@ -254,7 +254,7 @@ class Connector(object):
                 "metadata": body['metadata']
             }
 
-    def _check_for_local_file(self, host, secret_key, file_metadata):
+    def _check_for_local_file(self, file_metadata):
         """ Try to get pointer to locally accessible copy of file for extractor."""
 
         # first check if file is accessible locally
@@ -285,7 +285,7 @@ class Connector(object):
         md_dir = tempfile.mkdtemp(suffix=fileid)
         (fd, md_file) = tempfile.mkstemp(suffix=md_name, dir=md_dir)
 
-        with os.fdopen(fd, "w") as tmp_file:
+        with os.fdopen(fd, "wb") as tmp_file:
             tmp_file.write(json.dumps(file_md))
 
         return (md_dir, md_file)
@@ -303,13 +303,13 @@ class Connector(object):
         # first check if any files in dataset accessible locally
         ds_file_list = pyclowder.datasets.get_file_list(self, host, secret_key, resource["id"])
         for ds_file in ds_file_list:
-            file_path = self._check_for_local_file(host, secret_key, ds_file)
+            file_path = self._check_for_local_file(ds_file)
             if not file_path:
                 missing_files.append(ds_file)
             else:
                 # Create a link to the original file if the "true" name of the file doesn't match what's on disk
                 if not file_path.lower().endswith(ds_file['filename'].lower()):
-                    ln_name = io.path.join(temp_link_dir, ds_file['filename'])
+                    ln_name = os.path.join(temp_link_dir, ds_file['filename'])
                     os.symlink(file_path, ln_name)
                     tmp_files_created.append(ln_name)
                     file_path = ln_name
@@ -342,7 +342,7 @@ class Connector(object):
             md_name = "%s_dataset_metadata.json" % resource["id"]
             md_dir = tempfile.mkdtemp(suffix=resource["id"])
             (fd, md_file) = tempfile.mkstemp(suffix=md_name, dir=md_dir)
-            with os.fdopen(fd, "w") as tmp_file:
+            with os.fdopen(fd, "wb") as tmp_file:
                 tmp_file.write(json.dumps(ds_md))
             located_files.append(md_file)
             tmp_files_created.append(md_file)
@@ -409,7 +409,7 @@ class Connector(object):
                         try:
                             if check_result != pyclowder.utils.CheckMessage.bypass:
                                 file_metadata = pyclowder.files.download_info(self, host, secret_key, resource["id"])
-                                file_path = self._check_for_local_file(host, secret_key, file_metadata)
+                                file_path = self._check_for_local_file(file_metadata)
                                 if not file_path:
                                     file_path = pyclowder.files.download(self, host, secret_key, resource["id"],
                                                                          resource["intermediate_id"],
@@ -460,7 +460,7 @@ class Connector(object):
             self.message_ok(resource)
 
         except SystemExit as exc:
-            status = "sys.exit : " + exc.message
+            status = "sys.exit : " + str(exc)
             logger.exception("[%s] %s", resource['id'], status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
             self.message_resubmit(resource, retry_count)
@@ -483,7 +483,7 @@ class Connector(object):
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
             self.message_error(resource)
         except Exception as exc:  # pylint: disable=broad-except
-            status = "Error processing : " + exc.message
+            status = "Error processing : " + str(exc)
             logger.exception("[%s] %s", resource['id'], status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
             if retry_count < 10:
@@ -635,6 +635,7 @@ class RabbitMQConnector(Connector):
         self.connection = None
         self.consumer_tag = None
         self.worker = None
+        self.announcer = None
 
     def connect(self):
         """connect to rabbitmq using URL parameters"""
@@ -688,13 +689,15 @@ class RabbitMQConnector(Connector):
             self.connect()
 
         # create listener
-        self.consumer_tag = self.channel.basic_consume(self.on_message, queue=self.rabbitmq_queue, no_ack=False)
+        self.consumer_tag = self.channel.basic_consume(queue=self.rabbitmq_queue,
+                                                       on_message_callback=self.on_message,
+                                                       auto_ack=False)
 
         # start listening
         logging.getLogger(__name__).info("Starting to listen for messages.")
         try:
             # pylint: disable=protected-access
-            while self.channel and self.channel._consumer_infos:
+            while self.channel and self.channel.is_open and self.channel._consumer_infos:
                 self.channel.connection.process_data_events(time_limit=1)  # 1 second
                 if self.worker:
                     self.worker.process_messages(self.channel, self.rabbitmq_queue)
@@ -710,20 +713,18 @@ class RabbitMQConnector(Connector):
             logging.getLogger(__name__).exception("Error while consuming messages.")
         finally:
             logging.getLogger(__name__).info("Stopped listening for messages.")
-            if self.channel:
+            if self.channel and self.channel.is_open:
                 try:
                     self.channel.close()
                 except Exception:
                     logging.getLogger(__name__).exception("Error while closing channel.")
-                finally:
-                    self.channel = None
-            if self.connection:
+            self.channel = None
+            if self.connection and self.connection.is_open:
                 try:
                     self.connection.close()
                 except Exception:
                     logging.getLogger(__name__).exception("Error while closing connection.")
-                finally:
-                    self.connection = None
+            self.connection = None
 
     def stop(self):
         """Tell the connector to stop listening for messages."""
@@ -734,7 +735,9 @@ class RabbitMQConnector(Connector):
         return self.connection is not None
 
     @staticmethod
-    def _decode_body(body, codecs=['utf8', 'iso-8859-1']):
+    def _decode_body(body, codecs=None):
+        if not codecs:
+            codecs = ['utf8', 'iso-8859-1']
         # see https://stackoverflow.com/a/15918519
         for i in codecs:
             try:
@@ -778,6 +781,9 @@ class RabbitMQBroadcast:
         self.rabbitmq_queue = rabbitmq_queue
         self.heartbeat = heartbeat
         self.id = str(uuid.uuid4())
+        self.connection = None
+        self.channel = None
+        self.thread = None
 
     def start_thread(self):
         parameters = pika.URLParameters(self.rabbitmq_uri)

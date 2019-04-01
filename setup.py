@@ -32,9 +32,9 @@ setup(name='pyclowder',
 
       install_requires=[
           'enum34==1.1.6',
-          'pika==0.11.2',
-          'PyYAML==3.12',
-          'requests==2.18.4',
+          'pika==1.0.0',
+          'PyYAML==5.1',
+          'requests==2.21.0',
       ],
 
       include_package_data=True,

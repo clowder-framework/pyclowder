@@ -102,6 +102,7 @@ class BinaryPreviewExtractor(Extractor):
 
             # execute command
             x = subprocess.check_output(commandline, stderr=subprocess.STDOUT)
+            x = x.decode('utf-8')
             if x:
                 logger.debug(binary + " : " + x)
 

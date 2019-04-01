@@ -34,6 +34,7 @@ class WordCount(Extractor):
 
         # call actual program
         result = subprocess.check_output(['wc', inputfile], stderr=subprocess.STDOUT)
+        result = result.decode('utf-8')
         (lines, words, characters, _) = result.split()
 
         # store results as metadata

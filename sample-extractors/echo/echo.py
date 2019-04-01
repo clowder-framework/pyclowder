@@ -6,6 +6,7 @@ import logging
 
 from pyclowder.extractors import Extractor
 from pyclowder.utils import CheckMessage
+import pyclowder.datasets
 import pyclowder.files
 
 

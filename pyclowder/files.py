@@ -48,11 +48,11 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
 
     (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
     try:
-        with os.fdopen(inputfile, "w") as outputfile:
+        with os.fdopen(inputfile, "wb") as outputfile:
             for chunk in result.iter_content(chunk_size=10*1024):
                 outputfile.write(chunk)
         return inputfilename
-    except:
+    except Exception:
         os.remove(inputfilename)
         raise
 
@@ -188,7 +188,7 @@ def upload_metadata(connector, host, key, fileid, metadata):
 
 
 # pylint: disable=too-many-arguments
-def upload_preview(connector, host, key, fileid, previewfile, previewmetadata, preview_mimetype=None):
+def upload_preview(connector, host, key, fileid, previewfile, previewmetadata=None, preview_mimetype=None):
     """Upload preview to Clowder.
 
     Keyword arguments:
