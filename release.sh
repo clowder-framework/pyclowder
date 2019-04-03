@@ -20,16 +20,25 @@ $(dirname $0)/docker.sh
 
 # check branch and set version
 if [ "${BRANCH}" = "master" ]; then
-    VERSION=${VERSION:-"2.1.1 2.1 2 latest"}
+    VERSION=$(grep version setup.py | sed "s/.*'\([0-9\.]*\)'.*/\1/")
+    TAGS="latest"
+    TMPVERSION="${VERSION}"
+    OLDVERSION=""
+    while [ "$OLDVERSION" != "$TMPVERSION" ]; do
+       TAGS="${TAGS} ${TMPVERSION}"
+       OLDVERSION="${TMPVERSION}"
+       TMPVERSION=$(echo ${OLDVERSION} | sed 's/\.[0-9]*$//')
+    done
 elif [ "${BRANCH}" = "develop" ]; then
     VERSION="develop"
+    TAGS="${VERSION}"
 else
     exit 0
 fi
 
 # tag all images and push if needed
 for i in pyclowder pyclowder-python3 extractors-monitor extractors-wordcount; do
-    for v in ${VERSION}; do
+    for v in ${TAGS}; do
         if [ "$v" != "latest" -o "$SERVER" != "" ]; then
             ${DEBUG} docker tag clowder/${i}:latest ${SERVER}clowder/${i}:${v}
         fi
@@ -38,7 +47,7 @@ for i in pyclowder pyclowder-python3 extractors-monitor extractors-wordcount; do
 done
 
 for i in pyclowder pyclowder-python3 extractors-binary-preview extractors-simple-extractor extractors-simple-extractor-python3 extractors-simple-r-extractor extractors-simple-r-extractor-python3; do
-    for v in ${VERSION}; do
+    for v in ${TAGS}; do
         if [ "$v" != "latest" ]; then
             ${DEBUG} docker tag clowder/${i}:onbuild ${SERVER}clowder/${i}:${v}-onbuild
             ${DEBUG} docker push ${SERVER}clowder/${i}:${v}-onbuild
