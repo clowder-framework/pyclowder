@@ -4,7 +4,8 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## [Unreleased]
+## 2.2.0 - 2019-04-03
+
 ### Changed
 - files.upload_preview and collections.upload_preview does not require section_id for metadata [CATS-935](https://opensource.ncsa.illinois.edu/jira/browse/CATS-935)
 
