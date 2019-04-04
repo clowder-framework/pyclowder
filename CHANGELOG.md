@@ -8,14 +8,24 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 2.2.0 - 2019-04-03
 
+### Fixed
+- Code is now compatible with both Python 2 and Python 3.
+- RabbitMQ queue name can be different from extractor name.
+- Updated dependencies.
+- A race condition existed where an ACK could be lost, resulting in an extractor not processing more messages [CATSPYC-1](https://opensource.ncsa.illinois.edu/jira/browse/CATSPYC-1)
+- Error decoding messages where filename contains non-ascii characters[CATSPYC-18](https://opensource.ncsa.illinois.edu/jira/browse/CATSPYC-18)
+
 ### Changed
 - files.upload_preview and collections.upload_preview does not require section_id for metadata [CATS-935](https://opensource.ncsa.illinois.edu/jira/browse/CATS-935)
+- Extractors will not register by default to clowder [CATSPYC-1](https://opensource.ncsa.illinois.edu/jira/browse/CATSPYC-1)
 
 ### Added
-- Email notification when extraction is done
-  [CATSPYC-17] (https://opensource.ncsa.illinois.edu/jira/browse/CATSPYC-17) 
-- Docker compose file for starting up the Clowder stack
-  [BD-2226](https://opensource.ncsa.illinois.edu/jira/browse/BD-2226)
+- Simple R extractor. Allows wrapping R code as a clowder extractor, see sample-extractors/wordcount-simple-r-extractor for an example.
+- Email notification when extraction is done [CATSPYC-17](https://opensource.ncsa.illinois.edu/jira/browse/CATSPYC-17)
+- Docker compose file for starting up the Clowder stack [BD-2226](https://opensource.ncsa.illinois.edu/jira/browse/BD-2226)
+- PyClowder will now send heartbeats on extractors exchange, processes can listen for broadcast to get notified when new extractors come online.
+- Monitor application to leverage new heartbeat send out by extractors
+- Extractors now send version and name to clowder as part of the agent information.
 
 ## 2.1.1 - 2018-07-12
 
