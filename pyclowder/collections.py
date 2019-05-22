@@ -84,13 +84,13 @@ class CollectionsApi(object):
 
         return self.client.delete("collections/%s" % collection_id)
 
-    def delete_all_datasets(self, collection_id, recursive=True, delete_collections=False):
+    def delete_all_datasets(self, collection_id, recursive=True, delete_collection=False):
         """Delete all datasets from collection.
 
         Keyword arguments:
         collection_id -- the collection to walk
         recursive -- whether to also iterate across child collections
-        delete_collections -- whether to also delete collections containing the datasets
+        delete_collection -- whether to also delete collection(s) containing the datasets
         """
 
         dsapi = self.DatasetsApi(self.client)
@@ -101,15 +101,10 @@ class CollectionsApi(object):
         if recursive:
             children = self.get_child_collections(collection_id)
             for child_coll in children:
-                self.delete_all_datasets(child_coll['id'], recursive, delete_collections)
+                self.delete_all_datasets(child_coll['id'], recursive, delete_collection)
 
-        if delete_collections:
+        if delete_collection:
             self.delete(collection_id)
-
-    def get_all_collections(self):
-        """Get all Collections in Clowder."""
-
-        return self.client.get("/collections")
 
     def get_child_collections(self, collection_id):
         """List child collections of a collection.
@@ -129,7 +124,12 @@ class CollectionsApi(object):
 
         return self.client.get("collections/%s/datasets" % collection_id)
 
-    def submit_all_files_for_extraction(self, collection_id, extractor_name, extension=None, recursive=True):
+    def list(self):
+        """Get all Collections in Clowder."""
+
+        return self.client.get("/collections")
+
+    def submit_files_for_extraction(self, collection_id, extractor_name, extension=None, recursive=True):
         """Manually trigger an extraction on all files in a collection.
 
         This will iterate through all datasets in the given collection and submit them to
@@ -152,7 +152,7 @@ class CollectionsApi(object):
             for child_coll in children:
                 self.submit_all_files_for_extraction(child_coll['id'], extractor_name, extension, recursive)
 
-    def submit_all_datasets_for_extraction(self, collection_id, extractor_name, recursive=True):
+    def submit_datasets_for_extraction(self, collection_id, extractor_name, recursive=True):
         """Manually trigger an extraction on all datasets in a collection.
 
         This will iterate through all datasets in the given collection and submit them to

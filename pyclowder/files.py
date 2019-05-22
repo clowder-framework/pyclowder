@@ -18,17 +18,6 @@ except:
     pass
 
 
-def submit_extractions_by_dataset(connector, host, key, datasetid, extractorname, ext=False):
-    from pyclowder.datasets import DatasetsApi
-    dsapi = DatasetsApi(host=host, key=key)
-    dsapi.submit_all_files_for_extraction(datasetid, extractorname, ext)
-
-
-def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, ext=False, recursive=True):
-    from pyclowder.collections import CollectionsApi
-    collapi = CollectionsApi(host=host, key=key)
-    collapi.submit_all_files_for_extraction(collectionid, extractorname, ext, recursive)
-
 class FilesApi(object):
     """
         API to manage the REST CRUD endpoints for files.
@@ -115,7 +104,7 @@ class FilesApi(object):
 
         return self.client.get_file("files/%s/blob" % file_id)
 
-    def download_info(self, file_id):
+    def get_info(self, file_id):
         """Download file summary metadata.
 
         Keyword arguments:
@@ -124,7 +113,7 @@ class FilesApi(object):
 
         return self.client.get("files/%s/metadata" % file_id)
 
-    def download_metadata(self, file_id, extractor_name=None):
+    def get_metadata(self, file_id, extractor_name=None):
         """Download file JSON-LD metadata.
 
         Keyword arguments:
