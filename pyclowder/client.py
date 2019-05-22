@@ -99,10 +99,10 @@ class ClowderClient(object):
             except requests.HTTPError as e:
                 attempt += 1
                 if attempt > self.retries:
-                    self.logger.exception("Error calling GET url %s: %s" % (url, e.message))
+                    self.logger.exception("Error calling GET url %s: %s" % (url, str(e)))
                     raise e
                 else:
-                    self.logger.debug("Error calling GET url %s: %s" % (url, e.message))
+                    self.logger.debug("Error calling GET url %s: %s" % (url, str(e)))
 
     def post(self, path, content, params=None, headers=None):
         """
@@ -138,10 +138,10 @@ class ClowderClient(object):
             except requests.HTTPError as e:
                 attempt += 1
                 if attempt > self.retries:
-                    self.logger.exception("Error calling POST url %s: %s" % (url, e.message))
+                    self.logger.exception("Error calling POST url %s: %s" % (url, str(e)))
                     raise e
                 else:
-                    self.logger.debug("Error calling POST url %s: %s" % (url, e.message))
+                    self.logger.debug("Error calling POST url %s: %s" % (url, str(e)))
 
     def delete(self, path, params=None, headers=None):
         """
@@ -175,10 +175,10 @@ class ClowderClient(object):
             except requests.HTTPError as e:
                 attempt += 1
                 if attempt > self.retries:
-                    self.logger.exception("Error calling DELETE url %s: %s" % (url, e.message))
+                    self.logger.exception("Error calling DELETE url %s: %s" % (url, str(e)))
                     raise e
                 else:
-                    self.logger.debug("Error calling DELETE url %s: %s" % (url, e.message))
+                    self.logger.debug("Error calling DELETE url %s: %s" % (url, str(e)))
 
     def get_file(self, path, filename=None, params=None, headers=None):
         """
@@ -262,7 +262,7 @@ class ClowderClient(object):
             except requests.HTTPError as e:
                 attempt += 1
                 if attempt > self.retries:
-                    self.logger.exception("Error calling POST url %s: %s" % (url, e.message))
+                    self.logger.exception("Error calling POST url %s: %s" % (url, str(e)))
                     raise e
                 else:
-                    self.logger.debug("Error calling POST url %s: %s" % (url, e.message))
+                    self.logger.debug("Error calling POST url %s: %s" % (url, str(e)))

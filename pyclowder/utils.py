@@ -84,7 +84,7 @@ def setup_logging(config_info=None):
             r = requests.get(config_info)
             r.raise_for_status()
             (temp_file, abs_path) = tempfile.mkstemp()
-            with os.fdopen(temp_file, "w") as tmp:
+            with os.fdopen(temp_file, "wb") as tmp:
                 for chunk in r.iter_content(chunk_size=1024):
                     tmp.write(chunk)
             config_info = temp_file

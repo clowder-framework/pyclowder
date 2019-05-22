@@ -223,3 +223,50 @@ the docker container.
 
 If you need any python packages installed you will need to create file called requiremenets.txt. If this file exists
 the docker build process will use `pip install -r requirements.txt` to install these packages.
+
+## SimpleExtractor
+Motivation: design and implement a simple extractor to bridge Python developer and knowledge of PyClowder library. It requires little effort for Python developers to wrap their python code into Clowder's extractors.
+
+Simple extractors take developer defined main function as input parameter to do extraction and then parse and pack extraction's output into Simple extractor defined metadata data-struct and submit back to Clowder.
+
+Users' function must have to return a ``dict'' object containing metdata and previews.
+```markdown
+result = {
+  'metadata': {},
+  'previews': [
+      'filename',
+      {'file': 'filename'},
+      {'file': 'filename', 'metadata': {}, 'mimetype': 'image/jpeg'}
+  ]}
+```
+
+### Example: 
+`wordcount-simpleextractor` is the simplest example to illustrate how to wrap existing Python code as a Simple Extractor.
+
+wordcount.py is regular python file which is defined and provided by Python developers. In the code, wordcount invoke `wc` command to process input file to extract lines, words, characters. It packs metadata into python dict.
+```markdown
+import subprocess
+  
+def wordcount(input_file):
+    result = subprocess.check_output(['wc', input_file], stderr=subprocess.STDOUT)
+    (lines, words, characters, _) = result.split()
+    metadata = {
+        'lines': lines,
+        'words': words,
+        'characters': characters
+    }
+    result = {
+        'metadata': metadata
+    }
+    return result
+```
+
+To build wordcount as a Simpel extractor docker image, users just simply assign two environment variables in Dockerfile shown below. EXTRACTION_FUNC is environment variable and has to be assigned as extraction function, where in wordcount.py, the extraction function is `wordcount`. Environment variable EXTRACTION_MODULE is the name of module file containing the definition of extraction function.
+```markdown
+FROM clowder/extractors-simple-extractor:onbuild
+
+ENV EXTRACTION_FUNC="wordcount"
+ENV EXTRACTION_MODULE="wordcount"
+```
+
+

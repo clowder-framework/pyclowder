@@ -1,4 +1,7 @@
-FROM clowder/pyclowder
+FROM clowder/pyclowder:onbuild
+
+ENV EXTRACTION_FUNC=""
+ENV EXTRACTION_MODULE=""
 
 # install any packages
 ONBUILD COPY packages.* Dockerfile /home/clowder/
@@ -16,3 +19,5 @@ ONBUILD RUN if [ -e requirements.txt ]; then \
 
 # copy all files
 ONBUILD ADD . /home/clowder/
+
+CMD python -c "from simple_extractor import SimplePythonExtractor; from ${EXTRACTION_MODULE} import *; SimplePythonExtractor(${EXTRACTION_FUNC}).start()"

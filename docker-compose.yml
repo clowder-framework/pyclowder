@@ -1,35 +1,80 @@
-# clowder server
-clowder:
-  image: clowder/clowder:develop
-#  environment:
-#    CLOWDER_ADMIN: "joe@aol.com"
-#    TOOLMANAGER_URI: "http://192.168.99.100:8080"
-#    SMTP_HOST: smtp.ncsa.illinois.edu
-  ports:
-    - "9000:9000"
-  links:
-    - mongo
-    - rabbitmq
+version: "3.5"
 
-# extractors
-# wordcount:
-#   image: clowder/pyclowder:2
-#   links:
-#     - rabbitmq
+services:
+  # clowder application
+  clowder:
+    image: clowder/clowder:latest
+    ports:
+      - 9000:9000
+    networks:
+      - clowder
+    volumes:
+      - clowder-custom:/home/clowder/custom
+      - clowder-data:/home/clowder/data
+    restart: unless-stopped
+    deploy:
+      mode: replicated
+      restart_policy:
+        condition: any
+    depends_on:
+      - mongo
+      - rabbitmq
+      - elasticsearch
 
-# mongo database used to store metadata/data
-mongo:
-  image: mongo:latest
-  ports:
-    - "27017:27017"
-  # volumes:
-  #   - clowder/mongo:/data/db
+  # mongo database used to store metadata/data
+  mongo:
+    image: mongo:3.4
+    networks:
+      - clowder
+    ports:
+      - 27017
+    volumes:
+      - mongo:/data/db
+    restart: unless-stopped
+    deploy:
+      mode: replicated
+      restart_policy:
+        condition: any
 
-# rabbitmq to connect to extractors
-rabbitmq:
-  image: rabbitmq:management
-  ports:
-    - "5672:5672"
-    - "15672:15672"
-  # volumes:
-  #   - clowder/rabbitmq:/var/lib/rabbitmq
+  # rabbitmq to connect to extractors
+  rabbitmq:
+    image: rabbitmq:management-alpine
+    networks:
+      - clowder
+    ports:
+      - 5672
+      - 15672
+    volumes:
+      - rabbitmq:/var/lib/rabbitmq
+    restart: unless-stopped
+    deploy:
+      mode: replicated
+      restart_policy:
+        condition: any
+
+  # elasticsearch to allow indexing
+  elasticsearch:
+    image: elasticsearch:2
+    command: elasticsearch -Des.cluster.name="clowder"
+    networks:
+      - clowder
+    ports:
+      - 9200
+      - 9300
+    volumes:
+      - elasticsearch:/usr/share/elasticsearch/data
+    restart: unless-stopped
+    deploy:
+      mode: replicated
+      restart_policy:
+        condition: any
+
+networks:
+    clowder:
+
+volumes:
+  clowder-data:
+  clowder-custom:
+  mongo:
+  rabbitmq:
+  elasticsearch:

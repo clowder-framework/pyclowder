@@ -31,6 +31,7 @@ back to clowder. This connector takes a single argument (which can be list):
                           pickled messsages to be processed.
 """
 
+import errno
 import json
 import logging
 import os
@@ -39,7 +40,7 @@ import subprocess
 import time
 import tempfile
 import threading
-import errno
+import uuid
 
 import pika
 import requests
@@ -47,6 +48,11 @@ import requests
 import pyclowder.datasets
 import pyclowder.files
 import pyclowder.utils
+
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from string import Template
 
 
 class Connector(object):
@@ -69,6 +75,49 @@ class Connector(object):
             self.mounted_paths = {}
         else:
             self.mounted_paths = mounted_paths
+
+        filename = 'notifications.json'
+        self.smtp_server = None
+        if os.path.isfile(filename):
+            try:
+                with open(filename) as notifications_file:
+                    notifications_content = notifications_file.read()
+                    notifications_template = Template(notifications_content)
+                    notifications_json = json.loads(notifications_content)
+                    notifications_json['extractor_name'] = extractor_name
+                    notifications = notifications_template.safe_substitute(notifications_json)
+
+                    notifications_interpolate = json.loads(notifications)
+                    self.smtp_server = os.getenv('EMAIL_SERVER', None)
+                    self.emailmsg = MIMEMultipart('alternative')
+
+                    self.emailmsg['From'] = os.getenv('EMAIL_SENDER', notifications_json.get('sender'))
+                    self.emailmsg['Subject'] = notifications_interpolate.get('notifications').get('email').get(
+                        'subject')
+                    self.emailmsg['Body'] = notifications_interpolate.get('notifications').get('email').get('body')
+            except Exception:  # pylint: disable=broad-except
+                print("Error loading notifications.json")
+
+    def email(self, emaillist, clowderurl):
+        """ Send extraction completion as the email notification """
+        logger = logging.getLogger(__name__)
+        if emaillist and self.smtp_server:
+            server = smtplib.SMTP(self.smtp_server)
+            msg = MIMEMultipart('alternative')
+            msg['Subject'] = self.emailmsg['Subject']
+            msg['From'] = self.emailmsg['From']
+            msg['To'] = ' '.join(emaillist)
+            content = "%s \n%s" % (self.emailmsg['Body'], clowderurl)
+            content = MIMEText(content.encode('utf-8'), _charset='utf-8')
+            msg.attach(content)
+
+            try:
+                logger.debug("send email notification to %s, %s " % (emaillist, msg.as_string()))
+                server.sendmail(msg['From'], emaillist, msg.as_string())
+            except:
+                logger.warning("failed to send email notification to %s" % emaillist)
+                pass
+            server.quit()
 
     def listen(self):
         """Listen for incoming messages.
@@ -146,7 +195,7 @@ class Connector(object):
                 resource_type = "file"
         elif message_type.endswith(self.extractor_info['name']) or message_type.endswith(self.extractor_name):
             # This was migrated from another queue (e.g. error queue) so use extractor default
-            for key, value in self.extractor_info['process'].iteritems():
+            for key, value in self.extractor_info['process'].items():
                 if key == "dataset":
                     resource_type = "dataset"
                 else:
@@ -205,7 +254,7 @@ class Connector(object):
                 "metadata": body['metadata']
             }
 
-    def _check_for_local_file(self, host, secret_key, file_metadata):
+    def _check_for_local_file(self, file_metadata):
         """ Try to get pointer to locally accessible copy of file for extractor."""
 
         # first check if file is accessible locally
@@ -236,7 +285,7 @@ class Connector(object):
         md_dir = tempfile.mkdtemp(suffix=fileid)
         (fd, md_file) = tempfile.mkstemp(suffix=md_name, dir=md_dir)
 
-        with os.fdopen(fd, "w") as tmp_file:
+        with os.fdopen(fd, "wb") as tmp_file:
             tmp_file.write(json.dumps(file_md))
 
         return (md_dir, md_file)
@@ -247,13 +296,24 @@ class Connector(object):
         tmp_files_created = []
         tmp_dirs_created = []
 
+        # Create a temporary folder to hold any links to local files we may need
+        temp_link_dir = tempfile.mkdtemp()
+        tmp_dirs_created.append(temp_link_dir)
+
         # first check if any files in dataset accessible locally
         ds_file_list = pyclowder.datasets.get_file_list(self, host, secret_key, resource["id"])
         for ds_file in ds_file_list:
-            file_path = self._check_for_local_file(host, secret_key, ds_file)
+            file_path = self._check_for_local_file(ds_file)
             if not file_path:
                 missing_files.append(ds_file)
             else:
+                # Create a link to the original file if the "true" name of the file doesn't match what's on disk
+                if not file_path.lower().endswith(ds_file['filename'].lower()):
+                    ln_name = os.path.join(temp_link_dir, ds_file['filename'])
+                    os.symlink(file_path, ln_name)
+                    tmp_files_created.append(ln_name)
+                    file_path = ln_name
+
                 # Also get file metadata in format expected by extrator
                 (file_md_dir, file_md_tmp) = self._download_file_metadata(host, secret_key, ds_file['id'],
                                                                           ds_file['filepath'])
@@ -282,7 +342,7 @@ class Connector(object):
             md_name = "%s_dataset_metadata.json" % resource["id"]
             md_dir = tempfile.mkdtemp(suffix=resource["id"])
             (fd, md_file) = tempfile.mkstemp(suffix=md_name, dir=md_dir)
-            with os.fdopen(fd, "w") as tmp_file:
+            with os.fdopen(fd, "wb") as tmp_file:
                 tmp_file.write(json.dumps(ds_md))
             located_files.append(md_file)
             tmp_files_created.append(md_file)
@@ -309,7 +369,10 @@ class Connector(object):
         """
 
         logger = logging.getLogger(__name__)
-
+        emailaddrlist = None
+        if body.get('notifies'):
+            emailaddrlist = body.get('notifies')
+            logger.debug(emailaddrlist)
         host = body.get('host', '')
         if host == '':
             return
@@ -346,7 +409,7 @@ class Connector(object):
                         try:
                             if check_result != pyclowder.utils.CheckMessage.bypass:
                                 file_metadata = pyclowder.files.download_info(self, host, secret_key, resource["id"])
-                                file_path = self._check_for_local_file(host, secret_key, file_metadata)
+                                file_path = self._check_for_local_file(file_metadata)
                                 if not file_path:
                                     file_path = pyclowder.files.download(self, host, secret_key, resource["id"],
                                                                          resource["intermediate_id"],
@@ -356,6 +419,10 @@ class Connector(object):
                                 resource['local_paths'] = [file_path]
 
                             self.process_message(self, host, secret_key, resource, body)
+
+                            clowderurl = "%sfiles/%s" % (host, body.get('id', ''))
+                            # notificatino of extraction job is done by email.
+                            self.email(emailaddrlist, clowderurl)
                         finally:
                             if file_path is not None and not found_local:
                                 try:
@@ -372,6 +439,9 @@ class Connector(object):
                             resource['local_paths'] = file_paths
 
                             self.process_message(self, host, secret_key, resource, body)
+                            clowderurl = "%sdatasets/%s" % (host, body.get('datasetId', ''))
+                            # notificatino of extraction job is done by email.
+                            self.email(emailaddrlist, clowderurl)
                         finally:
                             for tmp_f in tmp_files:
                                 try:
@@ -390,7 +460,7 @@ class Connector(object):
             self.message_ok(resource)
 
         except SystemExit as exc:
-            status = "sys.exit : " + exc.message
+            status = "sys.exit : " + str(exc)
             logger.exception("[%s] %s", resource['id'], status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
             self.message_resubmit(resource, retry_count)
@@ -407,24 +477,19 @@ class Connector(object):
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
             self.message_resubmit(resource, retry_count)
             raise
-        except StandardError as exc:
-            status = "standard error : " + str(exc.message)
-            logger.exception("[%s] %s", resource['id'], status)
-            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            if retry_count < 10:
-                self.message_resubmit(resource, retry_count+1)
-            else:
-                self.message_error(resource)
         except subprocess.CalledProcessError as exc:
             status = str.format("Error processing [exit code={}]\n{}", exc.returncode, exc.output)
             logger.exception("[%s] %s", resource['id'], status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
             self.message_error(resource)
         except Exception as exc:  # pylint: disable=broad-except
-            status = "Error processing : " + exc.message
+            status = "Error processing : " + str(exc)
             logger.exception("[%s] %s", resource['id'], status)
             self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            self.message_error(resource)
+            if retry_count < 10:
+                self.message_resubmit(resource, retry_count + 1)
+            else:
+                self.message_error(resource)
 
     def register_extractor(self, endpoints):
         """Register extractor info with Clowder.
@@ -554,17 +619,23 @@ class RabbitMQConnector(Connector):
     """
 
     # pylint: disable=too-many-arguments
-    def __init__(self, extractor_name, extractor_info, rabbitmq_uri, rabbitmq_exchange=None, rabbitmq_key=None,
+    def __init__(self, extractor_name, extractor_info,
+                 rabbitmq_uri, rabbitmq_exchange=None, rabbitmq_key=None, rabbitmq_queue=None,
                  check_message=None, process_message=None, ssl_verify=True, mounted_paths=None):
         super(RabbitMQConnector, self).__init__(extractor_name, extractor_info, check_message, process_message,
                                                 ssl_verify, mounted_paths)
         self.rabbitmq_uri = rabbitmq_uri
         self.rabbitmq_exchange = rabbitmq_exchange
         self.rabbitmq_key = rabbitmq_key
+        if rabbitmq_queue is None:
+            self.rabbitmq_queue = extractor_info['name']
+        else:
+            self.rabbitmq_queue = rabbitmq_queue
         self.channel = None
         self.connection = None
         self.consumer_tag = None
         self.worker = None
+        self.announcer = None
 
     def connect(self):
         """connect to rabbitmq using URL parameters"""
@@ -601,9 +672,9 @@ class RabbitMQConnector(Connector):
                                                 exchange=self.rabbitmq_exchange,
                                                 routing_key=key)
 
-            self.channel.queue_bind(queue=self.extractor_name,
-                                    exchange=self.rabbitmq_exchange,
-                                    routing_key="extractors." + self.extractor_name)
+        # start the extractor announcer
+        self.announcer = RabbitMQBroadcast(self.rabbitmq_uri, self.extractor_info, self.rabbitmq_queue, 5)
+        self.announcer.start_thread()
 
     def listen(self):
         """Listen for messages coming from RabbitMQ"""
@@ -613,16 +684,18 @@ class RabbitMQConnector(Connector):
             self.connect()
 
         # create listener
-        self.consumer_tag = self.channel.basic_consume(self.on_message, queue=self.extractor_name, no_ack=False)
+        self.consumer_tag = self.channel.basic_consume(queue=self.rabbitmq_queue,
+                                                       on_message_callback=self.on_message,
+                                                       auto_ack=False)
 
         # start listening
         logging.getLogger(__name__).info("Starting to listen for messages.")
         try:
             # pylint: disable=protected-access
-            while self.channel and self.channel._consumer_infos:
+            while self.channel and self.channel.is_open and self.channel._consumer_infos:
                 self.channel.connection.process_data_events(time_limit=1)  # 1 second
                 if self.worker:
-                    self.worker.process_messages(self.channel)
+                    self.worker.process_messages(self.channel, self.rabbitmq_queue)
                     if self.worker.is_finished():
                         self.worker = None
         except SystemExit:
@@ -635,20 +708,18 @@ class RabbitMQConnector(Connector):
             logging.getLogger(__name__).exception("Error while consuming messages.")
         finally:
             logging.getLogger(__name__).info("Stopped listening for messages.")
-            if self.channel:
+            if self.channel and self.channel.is_open:
                 try:
                     self.channel.close()
                 except Exception:
                     logging.getLogger(__name__).exception("Error while closing channel.")
-                finally:
-                    self.channel = None
-            if self.connection:
+            self.channel = None
+            if self.connection and self.connection.is_open:
                 try:
                     self.connection.close()
                 except Exception:
                     logging.getLogger(__name__).exception("Error while closing connection.")
-                finally:
-                    self.connection = None
+            self.connection = None
 
     def stop(self):
         """Tell the connector to stop listening for messages."""
@@ -658,19 +729,90 @@ class RabbitMQConnector(Connector):
     def alive(self):
         return self.connection is not None
 
+    @staticmethod
+    def _decode_body(body, codecs=None):
+        if not codecs:
+            codecs = ['utf8', 'iso-8859-1']
+        # see https://stackoverflow.com/a/15918519
+        for i in codecs:
+            try:
+                return body.decode(i)
+            except UnicodeDecodeError:
+                pass
+        raise ValueError("Cannot decode body")
+
     def on_message(self, channel, method, header, body):
         """When the message is received this will call the generic _process_message in
         the connector class. Any message will only be acked if the message is processed,
         or there is an exception (except for SystemExit and SystemError exceptions).
         """
 
-        json_body = json.loads(body)
-        if 'routing_key' not in json_body and method.routing_key:
-            json_body['routing_key'] = method.routing_key
+        try:
+            json_body = json.loads(self._decode_body(body))
+            if 'routing_key' not in json_body and method.routing_key:
+                json_body['routing_key'] = method.routing_key
 
-        self.worker = RabbitMQHandler(self.extractor_name, self.extractor_info, self.check_message,
-                                      self.process_message, self.ssl_verify, self.mounted_paths, method, header, body)
-        self.worker.start_thread(json_body)
+            self.worker = RabbitMQHandler(self.extractor_name, self.extractor_info, self.check_message,
+                                          self.process_message, self.ssl_verify, self.mounted_paths,
+                                          method, header, body)
+            self.worker.start_thread(json_body)
+
+        except ValueError:
+            # something went wrong, move message to error queue and give up on this message immediately
+            logging.exception("Error processing message, message moved to error queue")
+            properties = pika.BasicProperties(delivery_mode=2, reply_to=header.reply_to)
+            channel.basic_publish(exchange='',
+                                  routing_key='error.' + self.extractor_name,
+                                  properties=properties,
+                                  body=body)
+            channel.basic_ack(method.delivery_tag)
+
+
+class RabbitMQBroadcast:
+    def __init__(self, rabbitmq_uri, extractor_info, rabbitmq_queue, heartbeat):
+        self.active = True
+        self.rabbitmq_uri = rabbitmq_uri
+        self.extractor_info = extractor_info
+        self.rabbitmq_queue = rabbitmq_queue
+        self.heartbeat = heartbeat
+        self.id = str(uuid.uuid4())
+        self.connection = None
+        self.channel = None
+        self.thread = None
+
+    def start_thread(self):
+        parameters = pika.URLParameters(self.rabbitmq_uri)
+        self.connection = pika.BlockingConnection(parameters)
+
+        # connect to channel
+        self.channel = self.connection.channel()
+
+        # create extractors exchange for fanout
+        self.channel.exchange_declare(exchange='extractors', exchange_type='fanout', durable=True)
+
+        self.thread = threading.Thread(target=self.send_heartbeat)
+        self.thread.setDaemon(True)
+        self.thread.start()
+
+    def send_heartbeat(self):
+        # create the message we will send
+        message = {
+            'id': self.id,
+            'queue': self.rabbitmq_queue,
+            'extractor_info': self.extractor_info
+        }
+        while self.thread:
+            try:
+                time.sleep(self.heartbeat)
+                self.channel.basic_publish(exchange='extractors', routing_key='', body=json.dumps(message))
+            except SystemExit:
+                raise
+            except KeyboardInterrupt:
+                raise
+            except GeneratorExit:
+                raise
+            except Exception:  # pylint: disable=broad-except
+                logging.getLogger(__name__).exception("Error while sending heartbeat.")
 
 
 class RabbitMQHandler(Connector):
@@ -711,7 +853,7 @@ class RabbitMQHandler(Connector):
         with self.lock:
             return self.thread and not self.thread.isAlive() and self.finished and len(self.messages) == 0
 
-    def process_messages(self, channel):
+    def process_messages(self, channel, rabbitmq_queue):
         while self.messages:
             with self.lock:
                 msg = self.messages.pop(0)

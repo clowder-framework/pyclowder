@@ -70,7 +70,8 @@ class DatasetsApi(object):
         API to manage the REST CRUD endpoints for datasets.
     """
 
-    def __init__(self, client=None, host=None, key=None, username=None, password=None):
+    def __init__(self, client=None, host=None, key=None,
+                 username=None, password=None):
         """Set client if provided otherwise create new one"""
         from pyclowder.files import FilesApi
         self.FilesApi = FilesApi
@@ -78,7 +79,8 @@ class DatasetsApi(object):
         if client:
             self.client = client
         else:
-            self.client = ClowderClient(host=host, key=key, username=username, password=password)
+            self.client = ClowderClient(host=host, key=key,
+                                        username=username, password=password)
 
     def datasets_get(self):
         """
@@ -90,9 +92,9 @@ class DatasetsApi(object):
 
         logging.debug("Getting all datasets")
         try:
-            return self.client.get("/datasets/")
+            return self.client.get("/datasets")
         except Exception as e:
-            logging.error("Error retrieving dataset list: %s", e.message)
+            logging.error("Error retrieving dataset list: %s", str(e))
 
     def dataset_get(self, dataset_id):
         """
@@ -106,7 +108,7 @@ class DatasetsApi(object):
         try:
             return self.client.get("/datasets/%s" % dataset_id)
         except Exception as e:
-            logging.error("Error retrieving dataset %s: %s" % (dataset_id, e.message))
+            logging.error("Error retrieving dataset %s: %s" % (dataset_id, str(e)))
 
     def create_empty(self, dataset_id):
         """
@@ -120,7 +122,7 @@ class DatasetsApi(object):
         try:
             return self.client.post("/datasets/createempty", dataset_id)
         except Exception as e:
-            logging.error("Error adding datapoint %s: %s" % (dataset_id, e.message))
+            logging.error("Error adding datapoint %s: %s" % (dataset_id, str(e)))
 
     def dataset_delete(self, dataset_id):
         """
@@ -134,7 +136,7 @@ class DatasetsApi(object):
         try:
             return self.client.delete("/datasets/%s" % dataset_id)
         except Exception as e:
-            logging.error("Error retrieving dataset %s: %s" % (dataset_id, e.message))
+            logging.error("Error retrieving dataset %s: %s" % (dataset_id, str(e)))
 
     def upload_file(self, dataset_id, file):
         """
@@ -148,7 +150,7 @@ class DatasetsApi(object):
         try:
             return self.client.post_file("/uploadToDataset/%s" % dataset_id, file)
         except Exception as e:
-            logging.error("Error upload to dataset %s: %s" % (dataset_id, e.message))
+            logging.error("Error upload to dataset %s: %s" % (dataset_id, str(e)))
 
     def add_metadata(self, dataset_id, metadata):
         """
