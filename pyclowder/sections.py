@@ -7,24 +7,6 @@ import json
 from client import ClowderClient
 
 
-@deprecated
-def upload(connector, host, key, sectiondata):
-    client = SectionsApi(host=host, key=key)
-    return client.upload(sectiondata)
-
-
-@deprecated
-def upload_tags(connector, host, key, sectionid, tags):
-    client = SectionsApi(host=host, key=key)
-    return client.add_tags(sectionid, tags)
-
-
-@deprecated
-def upload_description(connector, host, key, sectionid, description):
-    client = SectionsApi(host=host, key=key)
-    return client.add_description(sectionid, description)
-
-
 class SectionsApi(object):
     """
         API to manage the REST CRUD endpoints for sections.
