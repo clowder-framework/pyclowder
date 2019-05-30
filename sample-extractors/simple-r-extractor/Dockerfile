@@ -1,4 +1,5 @@
-FROM clowder/pyclowder:latest
+ARG PYCLOWDER_PYTHON=""
+FROM clowder/pyclowder${PYCLOWDER_PYTHON}:latest
 
 ENV R_SCRIPT="" \
     R_FUNCTION=""

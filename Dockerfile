@@ -16,7 +16,7 @@ ENV PYTHON_VERSION=${PYTHON_VERSION:-"2.7"} \
 # install python
 RUN apt-get -q -q update \
     && apt-get install -y --no-install-recommends python${PYTHON_VERSION} curl \
-    && ln -s /usr/bin/python${PYTHON_VERSION} /usr/bin/python \
+    && if [ ! -e /usr/bin/python ]; then ln -s /usr/bin/python${PYTHON_VERSION} /usr/bin/python; fi \
     && curl -k https://bootstrap.pypa.io/get-pip.py -o /tmp/get-pip.py \
     && python /tmp/get-pip.py \
     && pip install --upgrade setuptools \
@@ -31,7 +31,7 @@ RUN pip install --upgrade /tmp/pyclowder \
 
 # folder for pyclowder code
 WORKDIR /home/clowder
-COPY notifications.json /home/clowder
+COPY notifications.json /home/clowder/
 
 # command to run when starting container
 CMD python "./${MAIN_SCRIPT}"

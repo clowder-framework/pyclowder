@@ -1,4 +1,5 @@
-FROM clowder/pyclowder:2
+ARG PYCLOWDER_PYTHON=""
+FROM clowder/pyclowder${PYCLOWDER_PYTHON}:latest
 
 # folder for code
 WORKDIR /src
