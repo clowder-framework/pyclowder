@@ -12,10 +12,12 @@
       "characters": "http://clowder.ncsa.illinois.edu/metadata/ncsa.wordcount#characters"
     }
   ],
-  "repository": {
-    "repType": "git",
-    "repUrl": "https://opensource.ncsa.illinois.edu/stash/scm/cats/pyclowder.git"
-  },
+  "repository": [
+    {
+      "repType": "git",
+      "repUrl": "https://opensource.ncsa.illinois.edu/stash/scm/cats/pyclowder.git"
+    }
+  ],
   "process": {
     "file": [
       "text/*",
