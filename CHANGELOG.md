@@ -4,11 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 2.2.1 - 2019-09-27
+## 2.2.2 - 2019-09-27
 
 ### Changed
 - Heartbeat is now every five minutes, was every 5 seconds
 - the python3 images were actually python2 images
+
+## 2.2.1 - 2019-08-02
+
+### Changed
+- sample extractors had bad extractor_info.json. registry needs to be an array.
 
 ## 2.2.0 - 2019-04-03
 
