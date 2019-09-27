@@ -5,7 +5,7 @@ ENV R_SCRIPT="" \
     R_FUNCTION=""
 
 RUN echo "deb http://cran.rstudio.com/bin/linux/ubuntu xenial/" > /etc/apt/sources.list.d/R.list \
-    && apt-key adv --keyserver keyserver.ubuntu.com --recv E084DAB9 \
+    && apt-key adv --keyserver keyserver.ubuntu.com --recv-keys E298A3A825C0D65DFD57CBB651716619E084DAB9 \
     && apt-get -q -q update \
     && apt-get -y install --no-install-recommends r-base-core r-base-dev \
     && rm -rf /var/lib/apt/lists/* \
