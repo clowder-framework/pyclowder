@@ -621,7 +621,8 @@ class RabbitMQConnector(Connector):
     # pylint: disable=too-many-arguments
     def __init__(self, extractor_name, extractor_info,
                  rabbitmq_uri, rabbitmq_exchange=None, rabbitmq_key=None, rabbitmq_queue=None,
-                 check_message=None, process_message=None, ssl_verify=True, mounted_paths=None):
+                 check_message=None, process_message=None, ssl_verify=True, mounted_paths=None,
+                 heartbeat=5*60):
         super(RabbitMQConnector, self).__init__(extractor_name, extractor_info, check_message, process_message,
                                                 ssl_verify, mounted_paths)
         self.rabbitmq_uri = rabbitmq_uri
@@ -636,6 +637,7 @@ class RabbitMQConnector(Connector):
         self.consumer_tag = None
         self.worker = None
         self.announcer = None
+        self.heartbeat = 5*60
 
     def connect(self):
         """connect to rabbitmq using URL parameters"""
@@ -678,7 +680,7 @@ class RabbitMQConnector(Connector):
                                     routing_key="extractors." + self.extractor_name)
 
         # start the extractor announcer
-        self.announcer = RabbitMQBroadcast(self.rabbitmq_uri, self.extractor_info, self.rabbitmq_queue, 5)
+        self.announcer = RabbitMQBroadcast(self.rabbitmq_uri, self.extractor_info, self.rabbitmq_queue, self.heartbeat)
         self.announcer.start_thread()
 
     def listen(self):
@@ -808,8 +810,8 @@ class RabbitMQBroadcast:
         }
         while self.thread:
             try:
-                time.sleep(self.heartbeat)
                 self.channel.basic_publish(exchange='extractors', routing_key='', body=json.dumps(message))
+                time.sleep(self.heartbeat)
             except SystemExit:
                 raise
             except KeyboardInterrupt:
