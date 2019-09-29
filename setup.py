@@ -18,7 +18,7 @@ setup(name='pyclowder',
 
       url='https://clowder.ncsa.illinois.edu',
       project_urls={
-        'Source': 'https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder2.git',
+        'Source': 'https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder.git',
       },
 
       license='BSD',
@@ -26,7 +26,8 @@ setup(name='pyclowder',
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python :: 2.7'
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 3'
       ],
       keywords=['clowder', 'data management system'],
 

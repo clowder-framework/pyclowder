@@ -22,7 +22,7 @@ RUN apt-get -q -q update \
     && pip install --upgrade setuptools \
     && rm -rf /var/lib/apt/lists/* /tmp/get-pip.py
 
-# instal pyclowder2
+# instal pyclowder
 COPY pyclowder /tmp/pyclowder/pyclowder
 COPY setup.py description.rst /tmp/pyclowder/
 

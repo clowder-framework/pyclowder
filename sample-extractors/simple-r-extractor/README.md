@@ -108,7 +108,7 @@ extractor framework to initialize the extractor as well as upload information to
 ```
 
 Once the image with the extractor is build you can test this extractor in the clowder environment. To do this you will
-need to start clowder first. This can be done using a single [docker-compose file](https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/pyclowder2/raw/docker-compose.yml).
+need to start clowder first. This can be done using a single [docker-compose file](https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/pyclowder/raw/docker-compose.yml).
 You can start the full clowder stack using `docker-compose up -p clowder` in the same folder where you downloaded the 
 docker-compose file. After some time you will have an instance of clowder running that you can access using:
 http://localhost:9000/ (if you use docker with virtualbox the url will probably be http://192.168.99.100:9000/).
