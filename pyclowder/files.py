@@ -9,6 +9,7 @@ import os
 import tempfile
 
 import requests
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 from urllib3.filepost import encode_multipart_formdata
 
 from pyclowder.datasets import get_file_list
@@ -312,7 +313,11 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
     url = '%sapi/uploadToDataset/%s?key=%s' % (host, datasetid, key)
 
     if os.path.exists(filepath):
-        result = connector.post(url, files={"File": open(filepath, 'rb')},
+        filename = os.path.basename(filepath)
+        m = MultipartEncoder(
+            fields={'file': (filename, open(filepath, 'rb'))}
+        )
+        result = connector.post(url, data=m, headers={'Content-Type': m.content_type},
                                 verify=connector.ssl_verify if connector else True)
 
         uploadedfileid = result.json()['id']
@@ -345,10 +350,11 @@ def _upload_to_dataset_local(connector, host, key, datasetid, filepath):
                                             source_path)
                 break
 
-        (content, header) = encode_multipart_formdata([
-            ("file", '{"path":"%s"}' % filepath)
-        ])
-        result = connector.post(url, data=content, headers={'Content-Type': header},
+        filename = os.path.basename(filepath)
+        m = MultipartEncoder(
+            fields={'file': (filename, open(filepath, 'rb'))}
+        )
+        result = connector.post(url, data=m, headers={'Content-Type': m.content_type},
                                 verify=connector.ssl_verify if connector else True)
 
         uploadedfileid = result.json()['id']
