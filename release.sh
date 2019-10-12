@@ -37,7 +37,7 @@ else
 fi
 
 # tag all images and push if needed
-for i in pyclowder pyclowder-python3 extractors-monitor extractors-wordcount; do
+for i in pyclowder pyclowder-python3 extractors-wordcount; do
     for v in ${TAGS}; do
         if [ "$v" != "latest" -o "$SERVER" != "" ]; then
             ${DEBUG} docker tag clowder/${i}:latest ${SERVER}clowder/${i}:${v}
@@ -49,15 +49,16 @@ done
 # tag all images for onbuild and push if needed
 for i in pyclowder extractors-binary-preview extractors-simple-extractor extractors-simple-r-extractor; do
     for j in "" "-python3"; do
-        for v in ${VERSION}; do
+        for v in ${TAGS}; do
             if [ "$v" != "latest" ]; then
-                ${DEBUG} docker tag clowder/${i}:onbuild ${SERVER}clowder/${i}:${v}-onbuild
-                ${DEBUG} docker push ${SERVER}clowder/${i}:${v}-onbuild
+                ${DEBUG} docker tag clowder/${i}${j}:onbuild ${SERVER}clowder/${i}${j}:${v}-onbuild
+                ${DEBUG} docker push ${SERVER}clowder/${i}${j}:${v}-onbuild
             elif [ "$SERVER" != "" ]; then
-                ${DEBUG} docker tag clowder/${i}:onbuild ${SERVER}clowder/${i}:onbuild
-                ${DEBUG} docker push ${SERVER}clowder/${i}:onbuild
+                ${DEBUG} docker tag clowder/${i}{j}:onbuild ${SERVER}clowder/${i}${j}:onbuild
+                ${DEBUG} docker push ${SERVER}clowder/${i}${j}:onbuild
             else
-                ${DEBUG} docker push clowder/${i}:onbuild
+                ${DEBUG} docker tag clowder/${i}${j}:onbuild clowder/${i}${j}:onbuild
+                ${DEBUG} docker push clowder/${i}${j}:onbuild
             fi
         done
     done

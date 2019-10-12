@@ -25,6 +25,3 @@ ${DEBUG} docker build --build-arg PYCLOWDER_PYTHON="-python3" --tag clowder/extr
 ${DEBUG} docker build --build-arg PYCLOWDER_PYTHON="-python3" --tag clowder/extractors-wordcount:latest sample-extractors/wordcount
 ${DEBUG} docker build --build-arg PYCLOWDER_PYTHON="-python3" --tag clowder/extractors-wordcount-simple-extractor:latest sample-extractors/wordcount-simple-extractor
 ${DEBUG} docker build --build-arg PYCLOWDER_PYTHON="-python3" --tag clowder/extractors-wordcount-simple-r-extractor:latest sample-extractors/wordcount-simple-r-extractor
-
-# build contrib
-${DEBUG} docker build --tag clowder/extractors-monitor:latest contrib/monitor
