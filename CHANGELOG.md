@@ -4,10 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 2.2.3 - 2019-10-14
+
+### Fixed
+- Heartbeat of 5 minutes would cause timeouts for RabbitMQ
+  [CATSPYC-30](https://opensource.ncsa.illinois.edu/jira/browse/CATSPYC-30)
+
 ## 2.2.2 - 2019-09-27
 
 ### Changed
 - Heartbeat is now every five minutes, was every 5 seconds
+
+### Fixed
 - the python3 images were actually python2 images
 
 ## 2.2.1 - 2019-08-02
