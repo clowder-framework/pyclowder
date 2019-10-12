@@ -37,6 +37,7 @@ import logging
 import os
 import pickle
 import subprocess
+import sys
 import time
 import tempfile
 import threading
@@ -808,10 +809,13 @@ class RabbitMQBroadcast:
             'queue': self.rabbitmq_queue,
             'extractor_info': self.extractor_info
         }
+        next_heartbeat = time.time()
         while self.thread:
             try:
-                self.channel.basic_publish(exchange='extractors', routing_key='', body=json.dumps(message))
-                time.sleep(self.heartbeat)
+                self.channel.connection.process_data_events()
+                if time.time() >= next_heartbeat:
+                    self.channel.basic_publish(exchange='extractors', routing_key='', body=json.dumps(message))
+                    next_heartbeat = time.time() + self.heartbeat
             except SystemExit:
                 raise
             except KeyboardInterrupt:
@@ -820,6 +824,8 @@ class RabbitMQBroadcast:
                 raise
             except Exception:  # pylint: disable=broad-except
                 logging.getLogger(__name__).exception("Error while sending heartbeat.")
+                sys.exit(-1)
+            time.sleep(1)
 
 
 class RabbitMQHandler(Connector):
