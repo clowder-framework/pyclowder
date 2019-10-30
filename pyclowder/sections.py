@@ -8,8 +8,6 @@ import logging
 
 import requests
 
-from pyclowder.utils import StatusMessage
-
 
 def upload(connector, host, key, sectiondata):
     """Upload section to Clowder.
@@ -47,7 +45,7 @@ def upload_tags(connector, host, key, sectionid, tags):
     tags -- the tags to be uploaded
     """
 
-    connector.status_update(StatusMessage.processing, {"type": "section", "id": sectionid}, "Uploading section tags.")
+    connector.message_process({"type": "section", "id": sectionid}, "Uploading section tags.")
 
     headers = {'Content-Type': 'application/json'}
     url = '%sapi/sections/%s/tags?key=%s' % (host, sectionid, key)
@@ -67,7 +65,7 @@ def upload_description(connector, host, key, sectionid, description):
     description -- the description to be uploaded
     """
 
-    connector.status_update(StatusMessage.processing, {"type": "section", "id": sectionid},
+    connector.message_process({"type": "section", "id": sectionid},
                             "Uploading section description.")
 
     headers = {'Content-Type': 'application/json'}

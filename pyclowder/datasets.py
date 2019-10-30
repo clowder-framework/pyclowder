@@ -12,7 +12,6 @@ import requests
 
 from pyclowder.client import ClowderClient
 from pyclowder.collections import get_datasets, get_child_collections, delete as delete_collection
-from pyclowder.utils import StatusMessage
 
 
 def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
@@ -113,7 +112,7 @@ def download(connector, host, key, datasetid):
     datasetid -- the file that is currently being processed
     """
 
-    connector.status_update(StatusMessage.processing, {"type": "dataset", "id": datasetid}, "Downloading dataset.")
+    connector.message_process({"type": "dataset", "id": datasetid}, "Downloading dataset.")
 
     # fetch dataset zipfile
     url = '%sapi/datasets/%s/download?key=%s' % (host, datasetid, key)
@@ -268,8 +267,7 @@ def upload_metadata(connector, host, key, datasetid, metadata):
     metadata -- the metadata to be uploaded
     """
 
-    connector.status_update(StatusMessage.processing, {"type": "dataset", "id": datasetid},
-                            "Uploading dataset metadata.")
+    connector.message_process({"type": "dataset", "id": datasetid}, "Uploading dataset metadata.")
 
     headers = {'Content-Type': 'application/json'}
     url = '%sapi/datasets/%s/metadata.jsonld?key=%s' % (host, datasetid, key)

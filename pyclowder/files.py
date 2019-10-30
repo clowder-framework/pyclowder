@@ -14,7 +14,6 @@ from urllib3.filepost import encode_multipart_formdata
 
 from pyclowder.datasets import get_file_list
 from pyclowder.collections import get_datasets, get_child_collections
-from pyclowder.utils import StatusMessage
 
 # Some sources of urllib3 support warning suppression, but not all
 try:
@@ -38,7 +37,7 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
     ext -- the file extension, the downloaded file will end with this extension
     """
 
-    connector.status_update(StatusMessage.processing, {"type": "file", "id": fileid}, "Downloading file.")
+    connector.message_process({"type": "file", "id": fileid}, "Downloading file.")
 
     # TODO: intermediateid doesn't really seem to be used here, can we remove entirely?
     if not intermediatefileid:
@@ -180,7 +179,7 @@ def upload_metadata(connector, host, key, fileid, metadata):
     metadata -- the metadata to be uploaded
     """
 
-    connector.status_update(StatusMessage.processing, {"type": "file", "id": fileid}, "Uploading file metadata.")
+    connector.message_process({"type": "file", "id": fileid}, "Uploading file metadata.")
 
     headers = {'Content-Type': 'application/json'}
     url = '%sapi/files/%s/metadata.jsonld?key=%s' % (host, fileid, key)
@@ -204,7 +203,7 @@ def upload_preview(connector, host, key, fileid, previewfile, previewmetadata=No
                     file itself and this parameter can be ignored. E.g. 'application/vnd.clowder+custom+xml'
     """
 
-    connector.status_update(StatusMessage.processing, {"type": "file", "id": fileid}, "Uploading file preview.")
+    connector.message_process({"type": "file", "id": fileid}, "Uploading file preview.")
 
     logger = logging.getLogger(__name__)
     headers = {'Content-Type': 'application/json'}
@@ -248,7 +247,7 @@ def upload_tags(connector, host, key, fileid, tags):
     tags -- the tags to be uploaded
     """
 
-    connector.status_update(StatusMessage.processing, {"type": "file", "id": fileid}, "Uploading file tags.")
+    connector.message_process({"type": "file", "id": fileid}, "Uploading file tags.")
 
     headers = {'Content-Type': 'application/json'}
     url = '%sapi/files/%s/tags?key=%s' % (host, fileid, key)
