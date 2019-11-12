@@ -1,10 +1,10 @@
-ARG PYCLOWDER_PYTHON=""
-FROM clowder/pyclowder${PYCLOWDER_PYTHON}:latest
 
 ENV EXTRACTION_FUNC=""
 ENV EXTRACTION_MODULE=""
 
 COPY simple_extractor.py .
+
+RUN apt-get update && apt-get install -y build-essential python3-dev
 
 # install any packages
 ONBUILD COPY packages.* Dockerfile /home/clowder/
