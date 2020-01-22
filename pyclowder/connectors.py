@@ -897,7 +897,7 @@ class RabbitMQHandler(Connector):
             # RESUBMITTING - Extractor encountered error and message is resubmitted to same queue
             elif msg["type"] == 'resubmit':
                 jbody = json.loads(self.body)
-                jbody['retry_count']  = msg['retry_count']
+                jbody['retry_count'] = msg['retry_count']
                 if 'exchange' not in jbody and self.method.exchange:
                     jbody['exchange'] = self.method.exchange
                 if 'routing_key' not in jbody and self.method.routing_key and self.method.routing_key != rabbitmq_queue:
