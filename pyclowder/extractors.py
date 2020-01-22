@@ -320,7 +320,7 @@ class SimpleExtractor(Extractor):
         if 'files' in resource:
             type = 'dataset'
             input_files = resource['local_paths']
-            dataset_id  = resource['id']
+            dataset_id = resource['id']
 
         elif 'local_paths' in resource:
             type = 'file'
