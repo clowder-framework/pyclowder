@@ -66,7 +66,7 @@ def upload_description(connector, host, key, sectionid, description):
     """
 
     connector.message_process({"type": "section", "id": sectionid},
-                            "Uploading section description.")
+                              "Uploading section description.")
 
     headers = {'Content-Type': 'application/json'}
     url = '%sapi/sections/%s/description?key=%s' % (host, sectionid, key)
