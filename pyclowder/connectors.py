@@ -478,6 +478,10 @@ class Connector(object):
             message = str.format("Error in subprocess [exit code={}]:\n{}", exc.returncode, exc.output)
             logger.exception("[%s] %s", resource['id'], message)
             self.message_error(resource, message)
+        except PyClowderExtractionAbort as exc:
+            message = str.format("Aborting message: {}", exc.message)
+            logger.exception("[%s] %s", resource['id'], message)
+            self.message_error(resource, message)
         except Exception as exc:  # pylint: disable=broad-except
             message = str(exc)
             logger.exception("[%s] %s", resource['id'], message)
@@ -1099,3 +1103,14 @@ class LocalConnector(Connector):
     def delete(self, url, raise_status=True, **kwargs):
         logging.getLogger(__name__).debug("DELETE: " + url)
         return None
+
+
+class PyClowderExtractionAbort(Exception):
+    """Raise exception that will not be subject to retry attempts (i.e. errors that are expected to fail again).
+
+    Attributes:
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message
