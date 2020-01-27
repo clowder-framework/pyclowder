@@ -364,7 +364,7 @@ class SimpleExtractor(Extractor):
                             self.logger.info("upload preview")
                             pyclowder.files.upload_preview(connector, host, secret_key, file_id, str(preview))
                 else:
-                    # TODO: Add Clowder endpoint & pyclowder method to attach previews to datasets
+                    # TODO: Add Clowder endpoint (& pyclowder method) to attach previews to datasets
                     self.logger.error("previews not currently supported for resource type: %s" % type)
 
             # upload output files to the processed file's parent dataset or processed dataset
@@ -401,6 +401,10 @@ class SimpleExtractor(Extractor):
                                     pyclowder.files.upload_to_dataset(connector, host, secret_key, new_dataset_id,
                                                                       str(output))
 
+                        if 'previews' in nds.keys():
+                            # TODO: Add Clowder endpoint (& pyclowder method) to attach previews to datasets
+                            self.logger.error("previews not currently supported for resource type: %s" % type)
+
         finally:
             self.cleanup_data(result)
 
@@ -409,7 +413,7 @@ class SimpleExtractor(Extractor):
         This function will process the file and return a dict that contains the result. This
         dict can have the following keys:
             - metadata: the metadata to be associated with the processed file
-            - previews: files on disk with the preview to be uploaded to the processed file
+            - previews: images on disk with the preview to be uploaded to the processed file
             - outputs: files on disk to be added to processed file's parent
         :param input_file: the file to be processed.
         :return: the specially formatted dict.
@@ -422,10 +426,12 @@ class SimpleExtractor(Extractor):
         dict can have the following keys:
             - metadata: the metadata to be associated with the processed dataset
             - outputs: files on disk to be added to the dataset
+            - previews: images to be associated with the dataset
             - new_dataset: a dict describing a new dataset to be created for the outputs, with the following keys:
                 - name: the name of the new dataset to be created (including adding the outputs,
                         metadata and previews contained in new_dataset)
                 - description: description for the new dataset to be created
+                - previews: (see above)
                 - metadata: (see above)
                 - outputs: (see above)
         :param input_files: the files to be processed.
