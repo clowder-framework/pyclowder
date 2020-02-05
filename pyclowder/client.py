@@ -10,6 +10,7 @@ import os
 import tempfile
 
 import requests
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 
 class ClowderClient(object):
@@ -255,7 +256,14 @@ class ClowderClient(object):
             auth = None
         while True:
             try:
-                response = requests.post(url, files={"File": open(filename, 'rb')}, headers=headers, params=params,
+                m = MultipartEncoder(
+                    fields={'file': (filename, open(filename, 'rb'))}
+                )
+                if headers is None:
+                    headers = {}
+                if 'Content-Type' not in headers:
+                    headers['Content-Type'] = m.content_type
+                response = requests.post(url, data=m, headers=headers, params=params,
                                          auth=auth, timeout=self.timeout, verify=self.ssl)
                 response.raise_for_status()
                 return response.json()
