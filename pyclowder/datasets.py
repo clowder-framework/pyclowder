@@ -5,8 +5,8 @@ This module provides simple wrappers around the clowder Datasets API
 
 import logging
 import tempfile
-from client import ClowderClient
-from files import FilesApi
+from pyclowder.client import ClowderClient
+from pyclowder.files import FilesApi
 
 
 class DatasetsApi(object):

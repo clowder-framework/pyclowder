@@ -4,7 +4,7 @@ This module provides simple wrappers around the clowder Sections API
 """
 
 import json
-from client import ClowderClient
+from pylowder.client import ClowderClient
 
 
 class SectionsApi(object):
