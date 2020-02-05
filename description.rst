@@ -14,12 +14,12 @@ Use the following command to install::
 Because this system is still under rapid development, you may want to
 install by cloning the repo using the following commands::
 
-    git clone https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder2.git
-    cd pyclowder2
+    git clone https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder.git
+    cd pyclowder
     pip install -r requirements.txt
     python setup.py install
 
 Or you can install directly from NCSA's Bitbucket::
 
-    pip install -r https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/pyclowder2/raw/requirements.txt git+https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder2.git
+    pip install -r https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/pyclowder/raw/requirements.txt git+https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder.git
 

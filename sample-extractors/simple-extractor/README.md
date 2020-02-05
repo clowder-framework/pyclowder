@@ -11,7 +11,7 @@ the message broker. The other environment variable ```EXTRACTION_MODULE``` is th
 needs to be wrapped as an extractor as quickly as possible.
 2. This extractor CURRENTLY outputs JSON format metadata or a list of preview files. If your extractor generates 
 any additional information like generated files, datasets, collections, thumbnails, etc., this method cannot be use and 
-you have to write your extractor the normal way using [PyClowder2](https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/pyclowder2/browse)
+you have to write your extractor the normal way using [PyClowder](https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/pyclowder/browse)
 3. [Docker](https://www.docker.com/) is the recommended way of developing / wrapping your code using the Simple Extractor.
 
 ## Steps for Writing an Extractor Using the Simple Extractor

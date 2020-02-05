@@ -1,7 +1,10 @@
-FROM clowder/pyclowder:onbuild
+ARG PYCLOWDER_PYTHON=""
+FROM clowder/pyclowder${PYCLOWDER_PYTHON}:latest
 
 ENV EXTRACTION_FUNC=""
 ENV EXTRACTION_MODULE=""
+
+COPY simple_extractor.py .
 
 # install any packages
 ONBUILD COPY packages.* Dockerfile /home/clowder/

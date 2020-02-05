@@ -9,7 +9,7 @@ def description():
 
 
 setup(name='pyclowder',
-      version='2.2.0',
+      version='2.2.3',
       packages=find_packages(),
       description='Python SDK for the Clowder Data Management System',
       long_description=description(),
@@ -18,7 +18,7 @@ setup(name='pyclowder',
 
       url='https://clowder.ncsa.illinois.edu',
       project_urls={
-        'Source': 'https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder2.git',
+        'Source': 'https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder.git',
       },
 
       license='BSD',
@@ -26,7 +26,8 @@ setup(name='pyclowder',
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python :: 2.7'
+        'Programming Language :: Python :: 2',
+        'Programming Language :: Python :: 3'
       ],
       keywords=['clowder', 'data management system'],
 
@@ -35,6 +36,7 @@ setup(name='pyclowder',
           'pika==1.0.0',
           'PyYAML==5.1',
           'requests==2.21.0',
+          'requests-toolbelt==0.9.1',
       ],
 
       include_package_data=True,

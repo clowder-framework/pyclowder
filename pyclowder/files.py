@@ -6,6 +6,7 @@ This module provides simple wrappers around the clowder Files API
 import json
 import os
 import requests
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 from urllib3.filepost import encode_multipart_formdata
 from client import ClowderClient
 
