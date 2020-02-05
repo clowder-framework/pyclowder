@@ -24,7 +24,8 @@ class FilesApi(object):
         API to manage the REST CRUD endpoints for files.
     """
 
-    def __init__(self, client=None, host=None, key=None, username=None, password=None):
+    def __init__(self, client=None, host=None, key=None,
+                 username=None, password=None):
         """Set client if provided otherwise create new one"""
         from pyclowder.datasets import DatasetsApi
         self.DatasetsApi = DatasetsApi

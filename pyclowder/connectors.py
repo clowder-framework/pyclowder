@@ -638,7 +638,7 @@ class RabbitMQConnector(Connector):
         self.consumer_tag = None
         self.worker = None
         self.announcer = None
-        self.heartbeat = 5*60
+        self.heartbeat = heartbeat
 
     def connect(self):
         """connect to rabbitmq using URL parameters"""
