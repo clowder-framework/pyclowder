@@ -44,14 +44,17 @@ class Echo(Extractor):
                 rabbitmq[key] = value
 
         # store results as metadata
-        metadata = self.get_metadata(rabbitmq, resource['type'], id, host)
+        metadata = self.generate_metadata(rabbitmq, resource['type'], id, host)
         logging.getLogger(__name__).debug(metadata)
 
-        # upload metadata
+        # create connection client to Clowder API
         if resource['type'] == 'file':
-            pyclowder.files.upload_metadata(connector, host, secret_key, id, metadata)
+            api = pyclowder.files.FilesApi(host=host, key=secret_key)
         elif resource['type'] == 'dataset':
-            pyclowder.datasets.upload_metadata(connector, host, secret_key, id, metadata)
+            api = pyclowder.datasets.DatasetsApi(host=host, key=secret_key)
+
+        # upload metadata
+        api.add_metadata(id, metadata)
 
 
 if __name__ == "__main__":

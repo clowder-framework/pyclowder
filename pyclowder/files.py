@@ -34,7 +34,7 @@ class FilesApi(object):
         else:
             self.client = ClowderClient(host=host, key=key, username=username, password=password)
 
-    def add_medadata(self, file_id, metadata):
+    def add_metadata(self, file_id, metadata):
         """Upload file JSON-LD metadata.
 
         Keyword arguments:
@@ -42,7 +42,7 @@ class FilesApi(object):
         metadata -- the metadata to be uploaded
         """
 
-        self.client.post("files/%s/metadata.jsonld", metadata)
+        self.client.post("files/%s/metadata.jsonld" % file_id, metadata)
 
     def add_preview(self, file_id, preview_file, preview_metadata, preview_mime=None):
         """Upload a file preview.

@@ -107,13 +107,15 @@ class BinaryPreviewExtractor(Extractor):
                 logger.debug(binary + " : " + x)
 
             if os.path.getsize(tmpfile) != 0:
+                api = pyclowder.files.FilesApi(host=host, key=key)
+
                 # upload result
                 if preview:
-                    pyclowder.files.upload_preview(connector, host, key, fileid, tmpfile, None)
+                    api.add_preview(fileid, tmpfile, None)
                     connector.status_update(pyclowder.utils.StatusMessage.processing, resource,
                                             "Uploaded preview of type %s" % ext)
                 else:
-                    pyclowder.files.upload_thumbnail(connector, host, key, fileid, tmpfile)
+                    api.add_thumbnail(fileid, tmpfile)
                     connector.status_update(pyclowder.utils.StatusMessage.processing, resource,
                                             "Uploaded thumbnail of type %s" % ext)
             else:

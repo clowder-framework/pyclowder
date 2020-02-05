@@ -208,7 +208,7 @@ class Extractor(object):
         for c in connectors:
             c.stop()
 
-    def get_metadata(self, content, resource_type, resource_id, server=None):
+    def generate_metadata(self, content, resource_type, resource_id, server=None):
         """Generate a metadata field.
 
         This will return a metadata dict that is valid JSON-LD. This will use the results as well as the information
