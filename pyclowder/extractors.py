@@ -264,7 +264,7 @@ class Extractor(object):
         return False
 
     # pylint: disable=no-self-use,unused-argument
-    def check_message(self, connector, host, secret_key, resource, parameters):
+    def check_message(self, client, resource, parameters):
         """Checks to see if the message needs to be processed.
 
         This will return one of the values from CheckMessage:
@@ -281,7 +281,7 @@ class Extractor(object):
         return CheckMessage.download
 
     # pylint: disable=no-self-use,unused-argument
-    def process_message(self, connector, host, secret_key, resource, parameters):
+    def process_message(self, client, resource, parameters):
         """Process the message and send results back to clowder.
 
         Args:
@@ -308,7 +308,7 @@ class SimpleExtractor(Extractor):
         self.logger = logging.getLogger('__main__')
         self.logger.setLevel(logging.INFO)
 
-    def process_message(self, connector, host, secret_key, resource, parameters):
+    def process_message(self, client, resource, parameters):
         """
         Process a clowder message. This will download the file to local disk and call the
         process_file to do the actual processing of the file. The resulting dict is then
@@ -324,20 +324,21 @@ class SimpleExtractor(Extractor):
         else:
             result = dict()
 
+        api = pyclowder.files.FilesApi(client)
+
         # return information to clowder
         try:
             if 'metadata' in result.keys():
-                metadata = self.get_metadata(result.get('metadata'), 'file', file_id, host)
+                metadata = self.generate_metadata(result.get('metadata'), 'file', file_id, client.host)
                 self.logger.info("upload metadata")
                 self.logger.debug(metadata)
-                pyclowder.files.upload_metadata(connector, host, secret_key, file_id, metadata)
+                api.add_metadata(file_id, metadata)
             if 'previews' in result.keys():
                 self.logger.info("upload previews")
                 for preview in result['previews']:
                     if os.path.exists(str(preview)):
-                        preview = {'file': preview}
                         self.logger.info("upload preview")
-                        pyclowder.files.upload_preview(connector, host, secret_key, file_id, str(preview))
+                        api.add_preview(file_id, str(preview))
         finally:
             self.cleanup_data(result)
 

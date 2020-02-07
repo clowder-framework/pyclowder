@@ -49,7 +49,7 @@ class BinaryPreviewExtractor(Extractor):
         logging.getLogger('pyclowder').setLevel(logging.DEBUG)
         logging.getLogger('__main__').setLevel(logging.DEBUG)
 
-    def process_message(self, connector, host, secret_key, resource, parameters):
+    def process_message(self, client, resource, parameters):
         # Process the file and upload the results
 
         inputfile = resource["local_paths"][0]
@@ -60,7 +60,7 @@ class BinaryPreviewExtractor(Extractor):
             args = parameters['image_thumbnail']
         else:
             args = self.args.image_thumbnail_command
-        self.execute_command(connector, host, secret_key, inputfile, file_id, resource, False,
+        self.execute_command(client, inputfile, file_id, resource, False,
                              self.args.image_binary, args, self.args.image_type)
 
         # create preview image
@@ -68,7 +68,7 @@ class BinaryPreviewExtractor(Extractor):
             args = parameters['image_preview']
         else:
             args = self.args.image_preview_command
-        self.execute_command(connector, host, secret_key, inputfile, file_id, resource, True,
+        self.execute_command(client, inputfile, file_id, resource, True,
                              self.args.image_binary, args, self.args.image_type)
 
         # create extractor specifc preview
@@ -76,11 +76,11 @@ class BinaryPreviewExtractor(Extractor):
             args = parameters['preview']
         else:
             args = self.args.preview_command
-        self.execute_command(connector, host, secret_key, inputfile, file_id, resource, True,
+        self.execute_command(client, inputfile, file_id, resource, True,
                              self.args.preview_binary, args, self.args.preview_type)
 
     @staticmethod
-    def execute_command(connector, host, key, inputfile, fileid, resource, preview, binary, commandline, ext):
+    def execute_command(client, inputfile, fileid, resource, preview, binary, commandline, ext):
         logger = logging.getLogger(__name__)
 
         if binary is None or binary == '' or commandline is None or commandline == '' or ext is None or ext == '':
@@ -107,16 +107,16 @@ class BinaryPreviewExtractor(Extractor):
                 logger.debug(binary + " : " + x)
 
             if os.path.getsize(tmpfile) != 0:
-                api = pyclowder.files.FilesApi(host=host, key=key)
+                api = pyclowder.files.FilesApi(client)
 
                 # upload result
                 if preview:
                     api.add_preview(fileid, tmpfile, None)
-                    connector.status_update(pyclowder.utils.StatusMessage.processing, resource,
+                    client.status_update(pyclowder.utils.StatusMessage.processing, resource,
                                             "Uploaded preview of type %s" % ext)
                 else:
                     api.add_thumbnail(fileid, tmpfile)
-                    connector.status_update(pyclowder.utils.StatusMessage.processing, resource,
+                    client.status_update(pyclowder.utils.StatusMessage.processing, resource,
                                             "Uploaded thumbnail of type %s" % ext)
             else:
                 logger.warning("Extraction resulted in 0 byte file, nothing uploaded.")
