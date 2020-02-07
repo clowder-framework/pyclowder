@@ -12,23 +12,24 @@ parser.add_argument('--username', '-u', type=str, default=None, help='username(e
 parser.add_argument('--password', '-p', type=str, default=None, help='password for Clowder')
 parser.add_argument('--key', '-k', type=str, default=None, help='API key for Clowder')
 parser.add_argument('--folder', '-f', type=str, required=True, nargs='*', help='folders to be uploaded to Clowder')
+parser.add_argument('--name', '-n', type=str, default='new dataset', help='name for newly created dataset')
 
 args = parser.parse_args()
 
-if args.key is None and args.username is None or args.password is None:
+if args.key is None and (args.username is None or args.password is None):
     print('Must input username/password combination or key')
     sys.exit(1)
 
 client = ClowderClient(host=clowder_host, key=args.key, username=args.username, password=args.password)
 dataset_api = DatasetsApi(client)
 
-response = client.post('/datasets/createempty', {'name': 'new dataset'})
-dataset_id = response.get('id')
+dataset_id = dataset_api.create(args.name)
+
 
 for folder in args.folder:
     response = client.post('/datasets/%s/newFolder' % dataset_id,
                            {'name': folder, 'parentId': dataset_id, 'parentType': 'dataset'})
-    folder_id = response.get('id')
+    folder_id = response['id']
 
     files = os.listdir(path=folder)
 
