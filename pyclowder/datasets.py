@@ -31,12 +31,28 @@ class DatasetsApi(object):
         dataset_id -- the dataset that is currently being processed
         file -- path to file
         """
-
         logging.debug("Uploading a file to dataset %s" % dataset_id)
         try:
             return self.client.post_file("/uploadToDataset/%s" % dataset_id, file)
         except Exception as e:
             logging.error("Error upload to dataset %s: %s" % (dataset_id, str(e)))
+
+    def add_folder(self, dataset_id, folder, parent_type, parent_id):
+        """Add a folder to a dataset.
+
+        Keyword arguments:
+        dataset_id -- the dataset that is currently being processed
+        folder -- path to folder
+        parent_type -- type of parent dataset
+        """
+
+        body = {
+            "name": folder,
+            "parentId": parent_id,
+            "parentType": parent_type,
+        }
+
+        return self.client.post('/datasets/%s/newFolder' % dataset_id, body)
 
     def add_metadata(self, dataset_id, metadata):
         """Upload dataset JSON-LD metadata.
@@ -140,6 +156,21 @@ class DatasetsApi(object):
             return self.client.get("datasets")
         except Exception as e:
             logging.error("Error retrieving dataset list: %s", str(e))
+
+    def move_file_to_folder(self, dataset_id, folder_id, file_id):
+        """Move a file in the dataset to a folder within the same dataset.
+
+        Keyword arguments:
+        dataset_id -- the dataset to process
+        folder_id -- the folder to move the file into
+        file_id -- the file to move
+        """
+
+        body = {
+            'folderId/': folder_id
+        }
+
+        return self.client.post('/datasets/%s/moveFile/%s/%s' % (dataset_id, folder_id, file_id), body)
 
     def remove_metadata(self, dataset_id, extractor_name=None):
         """Delete dataset JSON-LD metadata, optionally filtered by extractor name.
