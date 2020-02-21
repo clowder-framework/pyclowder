@@ -137,6 +137,15 @@ class DatasetsApi(object):
 
         return self.client.get("datasets/%s/files" % dataset_id)
 
+    def get_folder_list(self, dataset_id):
+        """Download list of dataset folders as JSON.
+
+                Keyword arguments:
+                dataset_id -- id of dataset to get folders for
+                """
+
+        return self.client.get("datasets/%s/folders" % dataset_id)
+
     def get_metadata(self, dataset_id, extractor_name=None):
         """Download dataset JSON-LD metadata from Clowder.
 
