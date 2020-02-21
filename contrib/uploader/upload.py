@@ -14,6 +14,7 @@ parser.add_argument('--username', '-u', type=str, default=None, help='username(e
 parser.add_argument('--password', '-p', type=str, default=None, help='password for Clowder')
 parser.add_argument('--key', '-k', type=str, default=None, help='API key for Clowder')
 parser.add_argument('--folder', '-f', type=str, required=True, nargs='*', help='folders to be uploaded to Clowder')
+parser.add_argument('--rerun', '-r', type=str, required=False, help='dataset id for rerun. Adds new files.')
 
 args = parser.parse_args()
 
@@ -77,4 +78,41 @@ def main():
                 add_subfolder(dataset_id, folder + '/' + file, 'dataset', dataset_id=dataset_id)
 
 
-main()
+def rerun():
+    """
+    If rerun option is used this function will walk the filesystem from the top down starting at the folder
+    specified by the user. Any new files will be added to the dataset.
+
+    """
+    clowder_files = dict()
+    clowder_folders = dict()
+
+    for folder in dataset_api.get_folder_list(args.rerun):
+        clowder_folders[(folder['name']).split('/').pop()] = ''.join([folder['id']])
+
+    for file in dataset_api.get_file_list(args.rerun):
+        clowder_files[file['filename']] = int(file['size'])
+
+    for folder in args.folder:
+        os.chdir(start_dir)
+        for root, dirs, files in os.walk(folder, topdown=True):
+            for name in files:
+                path = os.path.join(root, name)
+                size = os.stat(path).st_size
+                if name not in clowder_files or name in clowder_files and clowder_files[name] != size and name != \
+                        '.DS_Store':
+                    pl = path.split('/')
+                    pl.pop()
+                    local_folder = pl[-1]
+                    dir_path = '/'
+                    dir_path = dir_path.join(pl)
+                    os.chdir(dir_path)
+                    response = dataset_api.add_file(args.rerun, name)
+                    if local_folder in clowder_folders:
+                        dataset_api.move_file_to_folder(args.rerun, clowder_folders[local_folder], response['id'])
+
+
+if args.rerun:
+    rerun()
+else:
+    main()
