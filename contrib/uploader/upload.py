@@ -33,7 +33,7 @@ def add_subfolder(parent_id, folder, parent_type, dataset_id):
 
     :param parent_id: id of parent. Called with a dataset id
     :param folder: path of folder being added
-    :param parent_type: can be dataset or folder. Called with dataset
+    :param parent_type: can be dataset or folder
     :param dataset_id: id of dataset that folder is in
     """
     try:
@@ -81,14 +81,14 @@ def main():
 def rerun():
     """
     If rerun option is used this function will walk the filesystem from the top down starting at the folder
-    specified by the user. Any new files will be added to the dataset.
+    specified by the user. Any new files and folders will be added to the dataset.
 
     """
     clowder_files = dict()
     clowder_folders = dict()
 
     for folder in dataset_api.get_folder_list(args.rerun):
-        clowder_folders[(folder['name']).split('/').pop()] = ''.join([folder['id']])
+        clowder_folders[(folder['name']).split('/').pop()] = folder['id']
 
     for file in dataset_api.get_file_list(args.rerun):
         clowder_files[file['filename']] = int(file['size'])
@@ -96,11 +96,22 @@ def rerun():
     for folder in args.folder:
         os.chdir(start_dir)
         for root, dirs, files in os.walk(folder, topdown=True):
+            for name in dirs:
+                if name not in clowder_folders:
+                    print('Uploading new folder: %s' % name)
+                    if root == folder:
+                        add_subfolder(args.rerun, os.path.join(root, name), 'dataset', args.rerun)
+                    else:
+                        if root.split('/').pop() in clowder_folders:
+                            parent_id = clowder_folders[root.split('/').pop()]
+                            add_subfolder(parent_id, os.path.join(root, name), 'folder', args.rerun)
+
             for name in files:
                 path = os.path.join(root, name)
                 size = os.stat(path).st_size
-                if name not in clowder_files or name in clowder_files and clowder_files[name] != size and name != \
-                        '.DS_Store':
+                if (name not in clowder_files) or (name in clowder_files and clowder_files[name] != size) and \
+                        name != ".DS_Store":
+                    print('Adding new file: %s' % name)
                     pl = path.split('/')
                     pl.pop()
                     local_folder = pl[-1]
