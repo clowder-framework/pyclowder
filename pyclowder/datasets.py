@@ -102,6 +102,16 @@ class DatasetsApi(object):
 
         return self.client.delete("datasets/%s" % dataset_id)
 
+    def delete_folder(self, dataset_id, folder_id):
+        """Delete a folder from a dataset.
+
+        Keyword arguments:
+        dataset_id -- id of dataset containing folder
+        folder_id -- id of folder to delete
+        """
+
+        return self.client.delete("/datasets/%s/deleteFolder/%s" % (dataset_id, folder_id))
+
     def download(self, dataset_id, output_file=None):
         """Download a dataset from Clowder as zip.
 

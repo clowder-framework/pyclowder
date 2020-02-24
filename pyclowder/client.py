@@ -158,7 +158,7 @@ class ClowderClient(object):
         if params is None:
             params = dict()
         if headers is None:
-            headers = {'content-type': 'application/json'}
+            headers = {}
         if self.username and self.password:
             auth = (self.username, self.password)
             params['key'] = None
