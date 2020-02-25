@@ -107,10 +107,10 @@ def rerun():
                     print('Uploading new folder: %s' % name)
                     if root == folder:
                         add_subfolder(args.rerun, os.path.join(root, name), 'dataset', args.rerun)
-                        newly_added_folders.append(name)
+                        newly_added_folders.append(os.path.join(root, name))
                     else:
                         if root.split('/').pop() in clowder_folders:
-                            newly_added_folders.append(name)
+                            newly_added_folders.append(os.path.join(root, name))
                             parent_id = clowder_folders[root.split('/').pop()]
                             add_subfolder(parent_id, os.path.join(root, name), 'folder', args.rerun)
             for name in files:
@@ -119,7 +119,7 @@ def rerun():
                 local_folder = os.path.dirname(path).split('/').pop()
                 already_uploaded = False
                 for item in newly_added_folders:
-                    if item in path.split('/'):
+                    if item == os.path.dirname(path):
                         already_uploaded = True
                 if ((name not in clowder_files) or (name in clowder_files and clowder_files[name] != size)) and \
                         not already_uploaded and name != ".DS_Store":
@@ -135,7 +135,6 @@ def delete():
     If delete option is used this function will compare the local filesystem to a clowder dataset and delete
     files and folders in clowder that are not present locally.
     """
-
     clowder_files = dict()
     clowder_folders = dict()
     local_files = dict()
@@ -145,7 +144,7 @@ def delete():
         clowder_folders[(folder['name']).split('/').pop()] = folder['id']
 
     for file in dataset_api.get_file_list(args.rerun):
-        clowder_files[file['filename']] = file['id']
+        clowder_files[file['filename']] = [file['id'], int(file['size'])]
 
     for folder in args.folder:
         os.chdir(start_dir)
@@ -153,13 +152,14 @@ def delete():
             for name in dirs:
                 local_folders[name] = ''
             for name in files:
-                local_files[name] = ''
+                local_files[name] = os.stat(os.path.join(root, name)).st_size
 
     files_api = FilesApi(client)
-
-    for file in clowder_files.keys() - local_files.keys():
-        print("Deleting file: %s" % file)
-        files_api.delete(clowder_files[file])
+    for k in clowder_files.keys():
+        if ((k in local_files.keys() and clowder_files[k][1] != local_files[k]) or (k not in local_files.keys())) and k \
+                != '.DS_Store':
+            print("Deleting file: %s" % k)
+            files_api.delete(clowder_files[k][0])
 
     for folder in clowder_folders.keys() - local_folders.keys():
         print("Deleting folder: %s" % folder)
