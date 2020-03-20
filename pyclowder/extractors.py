@@ -338,6 +338,11 @@ class SimpleExtractor(Extractor):
                         preview = {'file': preview}
                         self.logger.info("upload preview")
                         pyclowder.files.upload_preview(connector, host, secret_key, file_id, str(preview))
+            if 'tags' in result.keys():
+                tags = {"tags": result["tags"]}
+                self.logger.info("upload tags")
+                self.logger.debug(tags)
+                pyclowder.files.upload_tags(connector, host, secret_key, file_id, tags)
         finally:
             self.cleanup_data(result)
 
