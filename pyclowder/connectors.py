@@ -230,8 +230,8 @@ class Connector(object):
                     "type": "dataset",
                     "id": datasetid
                 }
-                self.status_update(pyclowder.utils.StatusMessage.error, resource, msg)
-                self.message_error(resource)
+                self.status_update(pyclowder.utils.StatusMessage.error, resource, job_id, msg)
+                self.message_error(resource, job_id)
                 return None
 
         elif resource_type == "file":
@@ -291,7 +291,7 @@ class Connector(object):
 
         return (md_dir, md_file)
 
-    def _prepare_dataset(self, host, secret_key, resource):
+    def _prepare_dataset(self, host, secret_key, resource, job_id):
         located_files = []
         missing_files = []
         tmp_files_created = []
@@ -391,8 +391,11 @@ class Connector(object):
             Connector.registered_clowder.append(url)
             self.register_extractor("%s?key=%s" % (url, secret_key))
 
+        # Generate a unique job_id for this processing job
+        job_id = str(uuid.uuid4())
+
         # tell everybody we are starting to process the file
-        self.status_update(pyclowder.utils.StatusMessage.start, resource, "Started processing")
+        self.status_update(pyclowder.utils.StatusMessage.start, resource, job_id, "Started processing")
 
         # checks whether to process the file in this message or not
         # pylint: disable=too-many-nested-blocks
@@ -419,7 +422,7 @@ class Connector(object):
                                     found_local = True
                                 resource['local_paths'] = [file_path]
 
-                            self.process_message(self, host, secret_key, resource, body)
+                            self.process_message(self, host, secret_key, resource, job_id, body)
 
                             clowderurl = "%sfiles/%s" % (host, body.get('id', ''))
                             # notificatino of extraction job is done by email.
@@ -436,10 +439,10 @@ class Connector(object):
                         file_paths, tmp_files, tmp_dirs = [], [], []
                         try:
                             if check_result != pyclowder.utils.CheckMessage.bypass:
-                                (file_paths, tmp_files, tmp_dirs) = self._prepare_dataset(host, secret_key, resource)
+                                (file_paths, tmp_files, tmp_dirs) = self._prepare_dataset(host, secret_key, resource, job_id)
                             resource['local_paths'] = file_paths
 
-                            self.process_message(self, host, secret_key, resource, body)
+                            self.process_message(self, host, secret_key, resource, job_id, body)
                             clowderurl = "%sdatasets/%s" % (host, body.get('datasetId', ''))
                             # notificatino of extraction job is done by email.
                             self.email(emailaddrlist, clowderurl)
@@ -456,41 +459,41 @@ class Connector(object):
                                     logger.exception("Error removing temporary dataset directory")
 
             else:
-                self.status_update(pyclowder.utils.StatusMessage.processing, resource, "Skipped in check_message")
+                self.status_update(pyclowder.utils.StatusMessage.processing, resource, job_id, "Skipped in check_message")
 
-            self.message_ok(resource)
+            self.message_ok(resource, job_id)
 
         except SystemExit as exc:
             status = "sys.exit : " + str(exc)
-            logger.exception("[%s] %s", resource['id'], status)
-            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            self.message_resubmit(resource, retry_count)
+            logger.exception("[%s] (%s) %s", resource['id'], job_id, status)
+            self.status_update(pyclowder.utils.StatusMessage.error, resource, job_id, status)
+            self.message_resubmit(resource, job_id, retry_count)
             raise
         except KeyboardInterrupt:
             status = "keyboard interrupt"
-            logger.exception("[%s] %s", resource['id'], status)
-            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            self.message_resubmit(resource, retry_count)
+            logger.exception("[%s] (%s) %s", resource['id'], job_id, status)
+            self.status_update(pyclowder.utils.StatusMessage.error, resource, job_id, status)
+            self.message_resubmit(resource, job_id, retry_count)
             raise
         except GeneratorExit:
             status = "generator exit"
-            logger.exception("[%s] %s", resource['id'], status)
-            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            self.message_resubmit(resource, retry_count)
+            logger.exception("[%s] (%s) %s", resource['id'], job_id, status)
+            self.status_update(pyclowder.utils.StatusMessage.error, resource, job_id, status)
+            self.message_resubmit(resource, job_id, retry_count)
             raise
         except subprocess.CalledProcessError as exc:
             status = str.format("Error processing [exit code={}]\n{}", exc.returncode, exc.output)
-            logger.exception("[%s] %s", resource['id'], status)
-            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            self.message_error(resource)
+            logger.exception("[%s] (%s) %s", resource['id'], job_id, status)
+            self.status_update(pyclowder.utils.StatusMessage.error, resource, job_id, status)
+            self.message_error(resource, job_id)
         except Exception as exc:  # pylint: disable=broad-except
             status = "Error processing : " + str(exc)
-            logger.exception("[%s] %s", resource['id'], status)
-            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
+            logger.exception("[%s] (%s) %s", resource['id'], job_id, status)
+            self.status_update(pyclowder.utils.StatusMessage.error, resource, job_id, status)
             if retry_count < 10:
-                self.message_resubmit(resource, retry_count + 1)
+                self.message_resubmit(resource, job_id, retry_count + 1)
             else:
-                self.message_error(resource)
+                self.message_error(resource, job_id)
 
     def register_extractor(self, endpoints):
         """Register extractor info with Clowder.
@@ -521,7 +524,7 @@ class Connector(object):
                     logger.exception('Error in registering extractor: ' + str(exc))
 
     # pylint: disable=no-self-use
-    def status_update(self, status, resource, message):
+    def status_update(self, status, resource, job_id, message):
         """Sends a status message.
 
         These messages, unlike logger messages, will often be send back to clowder to let
@@ -532,16 +535,16 @@ class Connector(object):
         resource  - descriptor object with {"type", "id"} fields
         message - contents of the status update
         """
-        logging.getLogger(__name__).info("[%s] : %s: %s", resource["id"], status, message)
+        logging.getLogger(__name__).info("[%s] (%s) : %s: %s", resource["id"], job_id, status, message)
 
-    def message_ok(self, resource):
-        self.status_update(pyclowder.utils.StatusMessage.done, resource, "Done processing")
+    def message_ok(self, resource, job_id):
+        self.status_update(pyclowder.utils.StatusMessage.done, resource, job_id, "Done processing")
 
-    def message_error(self, resource):
-        self.status_update(pyclowder.utils.StatusMessage.error, resource, "Error processing message")
+    def message_error(self, resource, job_id):
+        self.status_update(pyclowder.utils.StatusMessage.error, resource, job_id, "Error processing message")
 
-    def message_resubmit(self, resource, retry_count):
-        self.status_update(pyclowder.utils.StatusMessage.processing, resource, "Resubmitting message (attempt #%s)"
+    def message_resubmit(self, resource, job_id, retry_count):
+        self.status_update(pyclowder.utils.StatusMessage.processing, resource, job_id, "Resubmitting message (attempt #%s)"
                            % retry_count)
 
     def get(self, url, params=None, raise_status=True, **kwargs):
@@ -915,13 +918,13 @@ class RabbitMQHandler(Connector):
             else:
                 logging.getLogger(__name__).error("Received unknown message type [%s]." % msg["type"])
 
-    def status_update(self, status, resource, message):
-        super(RabbitMQHandler, self).status_update(status, resource, message)
+    def status_update(self, status, resource, job_id, message):
+        super(RabbitMQHandler, self).status_update(status, resource, job_id, message)
         status_report = dict()
         # TODO: Update this to check resource["type"] once Clowder better supports dataset events
         status_report['file_id'] = resource["id"]
         status_report['extractor_id'] = self.extractor_info['name']
-        status_report['status'] = "%s: %s" % (status, message)
+        status_report['status'] = "(%s) %s: %s" % (job_id, status, message)
         status_report['start'] = pyclowder.utils.iso8601time()
         with self.lock:
             self.messages.append({"type": "status",
@@ -929,18 +932,18 @@ class RabbitMQHandler(Connector):
                                   "resource": resource,
                                   "message": message})
 
-    def message_ok(self, resource):
-        super(RabbitMQHandler, self).message_ok(resource)
+    def message_ok(self, resource, job_id):
+        super(RabbitMQHandler, self).message_ok(resource, job_id)
         with self.lock:
             self.messages.append({"type": "ok"})
 
-    def message_error(self, resource):
-        super(RabbitMQHandler, self).message_error(resource)
+    def message_error(self, resource, job_id):
+        super(RabbitMQHandler, self).message_error(resource, job_id)
         with self.lock:
             self.messages.append({"type": "error"})
 
-    def message_resubmit(self, resource, retry_count):
-        super(RabbitMQHandler, self).message_resubmit(resource, retry_count)
+    def message_resubmit(self, resource, job_id, retry_count):
+        super(RabbitMQHandler, self).message_resubmit(resource, job_id, retry_count)
         with self.lock:
             self.messages.append({"type": "resubmit", "retry_count": retry_count})
 
@@ -979,11 +982,11 @@ class HPCConnector(Connector):
     def alive(self):
         return self.logfile is not None
 
-    def status_update(self, status, resource, message):
+    def status_update(self, status, resource, job_id, message):
         """Store notification on log file with update"""
 
         logger = logging.getLogger(__name__)
-        logger.debug("[%s] : %s : %s", resource["id"], status, message)
+        logger.debug("[%s] (%s) : %s : %s", resource["id"], job_id, status, message)
 
         if self.logfile and os.path.isfile(self.logfile) is True:
             try:
@@ -991,6 +994,7 @@ class HPCConnector(Connector):
                     statusreport = dict()
                     statusreport['file_id'] = resource["id"]
                     statusreport['extractor_id'] = self.extractor_info['name']
+                    statusreport['job_id'] = job_id
                     statusreport['status'] = "%s: %s" % (status, message)
                     statusreport['start'] = time.strftime('%Y-%m-%dT%H:%M:%S')
                     log.write(json.dumps(statusreport) + '\n')
@@ -1018,7 +1022,7 @@ class LocalConnector(Connector):
         local_parameters["inputfile"] = self.input_file_path
         local_parameters["outputfile"] = self.output_file_path
 
-        # Set other parameters to emtpy string
+        # Set other parameters to empty string
         local_parameters["fileid"] = None
         local_parameters["id"] = None
         local_parameters["host"] = None
@@ -1043,7 +1047,7 @@ class LocalConnector(Connector):
         }
 
         # TODO: BD-1638 Call _process_message by generating pseudo JSON responses from get method
-        self.process_message(self, "", "", resource, local_parameters)
+        self.process_message(self, "", "", resource, "", local_parameters)
         self.completed_processing = True
 
     def alive(self):
