@@ -177,6 +177,7 @@ class Connector(object):
         intermediatefileid = body.get('intermediateId', '')
         datasetid = body.get('datasetId', '')
         filename = body.get('filename', '')
+        retry_count = body.get('retry_count', 0)
 
         # determine resource type; defaults to file
         resource_type = "file"
@@ -231,7 +232,7 @@ class Connector(object):
                     "id": datasetid
                 }
                 self.status_update(pyclowder.utils.StatusMessage.error, resource, msg)
-                self.message_error(resource)
+                self.message_resubmit(resource, retry_count)
                 return None
 
         elif resource_type == "file":
