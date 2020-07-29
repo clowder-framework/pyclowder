@@ -66,7 +66,7 @@ class Connector(object):
     registered_clowder = list()
 
     def __init__(self, extractor_name, extractor_info, check_message=None, process_message=None, ssl_verify=True,
-                 mounted_paths=None):
+                 mounted_paths=None, clowder_url=None):
         self.extractor_name = extractor_name
         self.extractor_info = extractor_info
         self.check_message = check_message
@@ -76,6 +76,7 @@ class Connector(object):
             self.mounted_paths = {}
         else:
             self.mounted_paths = mounted_paths
+        self.clowder_url = clowder_url
 
         filename = 'notifications.json'
         self.smtp_server = None
@@ -374,7 +375,7 @@ class Connector(object):
         if body.get('notifies'):
             emailaddrlist = body.get('notifies')
             logger.debug(emailaddrlist)
-        host = body.get('host', '')
+        host = self.clowder_url if self.clowder_url is not None else body.get('host', '')
         if host == '':
             return
         elif not host.endswith('/'):
@@ -623,9 +624,9 @@ class RabbitMQConnector(Connector):
     def __init__(self, extractor_name, extractor_info,
                  rabbitmq_uri, rabbitmq_exchange=None, rabbitmq_key=None, rabbitmq_queue=None,
                  check_message=None, process_message=None, ssl_verify=True, mounted_paths=None,
-                 heartbeat=5*60):
+                 heartbeat=5*60, clowder_url=None):
         super(RabbitMQConnector, self).__init__(extractor_name, extractor_info, check_message, process_message,
-                                                ssl_verify, mounted_paths)
+                                                ssl_verify, mounted_paths, clowder_url)
         self.rabbitmq_uri = rabbitmq_uri
         self.rabbitmq_exchange = rabbitmq_exchange
         self.rabbitmq_key = rabbitmq_key
@@ -638,7 +639,7 @@ class RabbitMQConnector(Connector):
         self.consumer_tag = None
         self.worker = None
         self.announcer = None
-        self.heartbeat = 5*60
+        self.heartbeat = heartbeat
 
     def connect(self):
         """connect to rabbitmq using URL parameters"""
