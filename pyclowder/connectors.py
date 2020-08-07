@@ -760,7 +760,10 @@ class RabbitMQConnector(Connector):
             if 'routing_key' not in json_body and method.routing_key:
                 json_body['routing_key'] = method.routing_key
 
-            job_id = json_body['jobid']
+            if 'jobid' not in json_body:
+                job_id = None
+            else:
+                job_id = json_body['jobid']
 
             self.worker = RabbitMQHandler(self.extractor_name, self.extractor_info, job_id, self.check_message,
                                           self.process_message, self.ssl_verify, self.mounted_paths,
