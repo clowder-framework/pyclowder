@@ -762,7 +762,7 @@ class RabbitMQConnector(Connector):
                 json_body['routing_key'] = method.routing_key
 
             self.worker = RabbitMQHandler(self.extractor_name, self.extractor_info, self.check_message,
-                                          self.process_message, self.ssl_verify, self.mounted_paths,
+                                          self.process_message, self.ssl_verify, self.mounted_paths, self.clowder_url,
                                           method, header, body)
             self.worker.start_thread(json_body)
 
@@ -837,9 +837,9 @@ class RabbitMQHandler(Connector):
     """
 
     def __init__(self, extractor_name, extractor_info, check_message=None, process_message=None, ssl_verify=True,
-                 mounted_paths=None, method=None, header=None, body=None):
+                 mounted_paths=None, clowder_url=None, method=None, header=None, body=None):
         super(RabbitMQHandler, self).__init__(extractor_name, extractor_info, check_message, process_message,
-                                              ssl_verify, mounted_paths)
+                                              ssl_verify, mounted_paths, clowder_url)
         self.method = method
         self.header = header
         self.body = body

@@ -161,7 +161,8 @@ class Extractor(object):
                                               rabbitmq_exchange=self.args.rabbitmq_exchange,
                                               rabbitmq_key=rabbitmq_key,
                                               rabbitmq_queue=self.args.rabbitmq_queuename,
-                                              mounted_paths=json.loads(self.args.mounted_paths))
+                                              mounted_paths=json.loads(self.args.mounted_paths),
+                                              clowder_url=self.args.clowder_url)
                     rconn.connect()
                     rconn.register_extractor(self.args.registration_endpoints)
                     connectors.append(rconn)
