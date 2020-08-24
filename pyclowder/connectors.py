@@ -49,6 +49,7 @@ import requests
 import pyclowder.datasets
 import pyclowder.files
 import pyclowder.utils
+import pyclowder.client
 
 import smtplib
 from email.mime.text import MIMEText
@@ -280,7 +281,8 @@ class Connector(object):
         Returns:
             (tmp directory created, tmp file created)
         """
-        file_md = pyclowder.files.download_metadata(self, host, secret_key, fileid)
+        api = pyclowder.files.FilesApi(host=host, key=secret_key)
+        file_md = api.get_metadata(fileid)
         md_name = os.path.basename(filepath)+"_metadata.json"
 
         md_dir = tempfile.mkdtemp(suffix=fileid)
@@ -301,8 +303,10 @@ class Connector(object):
         temp_link_dir = tempfile.mkdtemp()
         tmp_dirs_created.append(temp_link_dir)
 
+        api = pyclowder.datasets.DatasetsApi(host=host, key=secret_key)
+
         # first check if any files in dataset accessible locally
-        ds_file_list = pyclowder.datasets.get_file_list(self, host, secret_key, resource["id"])
+        ds_file_list = api.get_file_list(resource["id"])
         for ds_file in ds_file_list:
             file_path = self._check_for_local_file(ds_file)
             if not file_path:
@@ -325,10 +329,10 @@ class Connector(object):
 
         # If only some files found locally, check & download any that were missed
         if len(located_files) > 0:
+            files_api = pyclowder.files.FilesApi(host=host, key=secret_key)
             for ds_file in missing_files:
                 # Download file to temp directory
-                inputfile = pyclowder.files.download(self, host, secret_key, ds_file['id'], ds_file['id'],
-                                                     ds_file['file_ext'])
+                inputfile = files_api.download(ds_file['id'])
                 # Also get file metadata in format expected by extractor
                 (file_md_dir, file_md_tmp) = self._download_file_metadata(host, secret_key, ds_file['id'],
                                                                           ds_file['filepath'])
@@ -339,7 +343,7 @@ class Connector(object):
                 tmp_dirs_created.append(file_md_dir)
 
             # Also, get dataset metadata (normally included in dataset .zip download file)
-            ds_md = pyclowder.datasets.download_metadata(self, host, secret_key, resource["id"])
+            ds_md = api.get_metadata(resource["id"])
             md_name = "%s_dataset_metadata.json" % resource["id"]
             md_dir = tempfile.mkdtemp(suffix=resource["id"])
             (fd, md_file) = tempfile.mkstemp(suffix=md_name, dir=md_dir)
@@ -353,7 +357,7 @@ class Connector(object):
 
         # If we didn't find any files locally, download dataset .zip as normal
         else:
-            inputzip = pyclowder.datasets.download(self, host, secret_key, resource["id"])
+            inputzip = api.download(resource["id"])
             file_paths = pyclowder.utils.extract_zip_contents(inputzip)
             tmp_files_created += file_paths
             tmp_files_created.append(inputzip)
@@ -394,12 +398,15 @@ class Connector(object):
         # tell everybody we are starting to process the file
         self.status_update(pyclowder.utils.StatusMessage.start, resource, "Started processing")
 
+        # create client for the message
+        client = pyclowder.client.ClowderClient(host=host, key=secret_key, connector=self)
+
         # checks whether to process the file in this message or not
         # pylint: disable=too-many-nested-blocks
         try:
             check_result = pyclowder.utils.CheckMessage.download
             if self.check_message:
-                check_result = self.check_message(self, host, secret_key, resource, body)
+                check_result = self.check_message(client, resource, body)
             if check_result != pyclowder.utils.CheckMessage.ignore:
                 if self.process_message:
 
@@ -409,17 +416,16 @@ class Connector(object):
                         found_local = False
                         try:
                             if check_result != pyclowder.utils.CheckMessage.bypass:
-                                file_metadata = pyclowder.files.download_info(self, host, secret_key, resource["id"])
+                                api = pyclowder.files.FilesApi(client)
+                                file_metadata = api.get_info(resource["id"])
                                 file_path = self._check_for_local_file(file_metadata)
                                 if not file_path:
-                                    file_path = pyclowder.files.download(self, host, secret_key, resource["id"],
-                                                                         resource["intermediate_id"],
-                                                                         resource["file_ext"])
+                                    file_path = api.download(resource["id"])
                                 else:
                                     found_local = True
                                 resource['local_paths'] = [file_path]
 
-                            self.process_message(self, host, secret_key, resource, body)
+                            self.process_message(client, resource, body)
 
                             clowderurl = "%sfiles/%s" % (host, body.get('id', ''))
                             # notificatino of extraction job is done by email.
@@ -439,7 +445,7 @@ class Connector(object):
                                 (file_paths, tmp_files, tmp_dirs) = self._prepare_dataset(host, secret_key, resource)
                             resource['local_paths'] = file_paths
 
-                            self.process_message(self, host, secret_key, resource, body)
+                            self.process_message(client, resource, body)
                             clowderurl = "%sdatasets/%s" % (host, body.get('datasetId', ''))
                             # notificatino of extraction job is done by email.
                             self.email(emailaddrlist, clowderurl)
@@ -528,7 +534,7 @@ class Connector(object):
         the instance know the progress of the extractor.
 
         Keyword arguments:
-        status - START | PROCESSING | DONE | ERROR
+        status - pyclowder.utils.StatusMessage value or other string
         resource  - descriptor object with {"type", "id"} fields
         message - contents of the status update
         """
@@ -755,7 +761,12 @@ class RabbitMQConnector(Connector):
             if 'routing_key' not in json_body and method.routing_key:
                 json_body['routing_key'] = method.routing_key
 
-            self.worker = RabbitMQHandler(self.extractor_name, self.extractor_info, self.check_message,
+            if 'jobid' not in json_body:
+                job_id = None
+            else:
+                job_id = json_body['jobid']
+
+            self.worker = RabbitMQHandler(self.extractor_name, self.extractor_info, job_id, self.check_message,
                                           self.process_message, self.ssl_verify, self.mounted_paths,
                                           method, header, body)
             self.worker.start_thread(json_body)
@@ -830,13 +841,14 @@ class RabbitMQHandler(Connector):
     a queue of messages that the super- loop can access and send later.
     """
 
-    def __init__(self, extractor_name, extractor_info, check_message=None, process_message=None, ssl_verify=True,
+    def __init__(self, extractor_name, extractor_info, job_id, check_message=None, process_message=None, ssl_verify=True,
                  mounted_paths=None, method=None, header=None, body=None):
         super(RabbitMQHandler, self).__init__(extractor_name, extractor_info, check_message, process_message,
                                               ssl_verify, mounted_paths)
         self.method = method
         self.header = header
         self.body = body
+        self.job_id = job_id
         self.messages = []
         self.thread = None
         self.finished = False
@@ -915,6 +927,7 @@ class RabbitMQHandler(Connector):
         status_report = dict()
         # TODO: Update this to check resource["type"] once Clowder better supports dataset events
         status_report['file_id'] = resource["id"]
+        status_report['job_id'] = self.job_id
         status_report['extractor_id'] = self.extractor_info['name']
         status_report['status'] = "%s: %s" % (status, message)
         status_report['start'] = pyclowder.utils.iso8601time()
@@ -947,7 +960,8 @@ class HPCConnector(Connector):
     def __init__(self, extractor_name, extractor_info, picklefile,
                  check_message=None, process_message=None, ssl_verify=True, mounted_paths=None):
         super(HPCConnector, self).__init__(extractor_name, extractor_info, check_message, process_message,
-                                           ssl_verify, mounted_paths)
+                                           ssl_verify, job_id, mounted_paths)
+        self.job_id = job_id
         self.picklefile = picklefile
         self.logfile = None
 
@@ -986,6 +1000,7 @@ class HPCConnector(Connector):
                     statusreport = dict()
                     statusreport['file_id'] = resource["id"]
                     statusreport['extractor_id'] = self.extractor_info['name']
+                    statusreport['job_id'] = self.job_id
                     statusreport['status'] = "%s: %s" % (status, message)
                     statusreport['start'] = time.strftime('%Y-%m-%dT%H:%M:%S')
                     log.write(json.dumps(statusreport) + '\n')

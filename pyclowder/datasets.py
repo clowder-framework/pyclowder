@@ -24,18 +24,17 @@ class DatasetsApi(object):
             self.client = ClowderClient(host=host, key=key,
                                         username=username, password=password)
 
-    def add_file(self, dataset_id, file):
-        """Add a file to a dataset.
+    def add_file_to_dataset(self, dataset_id, filepath, mounted_paths={}, check_duplicate=False):
+        """Upload file to existing Clowder dataset.
 
         Keyword arguments:
-        dataset_id -- the dataset that is currently being processed
-        file -- path to file
+        dataset_id -- the dataset that the file should be associated with
+        filepath -- path to file
+        check_duplicate -- check if filename already exists in dataset and skip upload if so
+        mounted_paths -- dict mapping Clowder path : local path
         """
-        logging.debug("Uploading a file to dataset %s" % dataset_id)
-        try:
-            return self.client.post_file("/uploadToDataset/%s" % dataset_id, file)
-        except Exception as e:
-            logging.error("Error upload to dataset %s: %s" % (dataset_id, str(e)))
+
+        return FilesApi.add_file_to_dataset(dataset_id, filepath, mounted_paths, check_duplicate)
 
     def add_folder(self, dataset_id, folder, parent_type, parent_id):
         """Add a folder to a dataset.

@@ -29,11 +29,11 @@ class Echo(Extractor):
         logging.getLogger('pyclowder').setLevel(logging.DEBUG)
         logging.getLogger('__main__').setLevel(logging.DEBUG)
 
-    def check_message(self, connector, host, secret_key, resource, parameters):
+    def check_message(self, client, resource, parameters):
         """The extractor to not download the file."""
         return CheckMessage.bypass
 
-    def process_message(self, connector, host, secret_key, resource, parameters):
+    def process_message(self, client, resource, parameters):
         """Acual work is done here"""
         id = resource['id']
 
@@ -44,14 +44,14 @@ class Echo(Extractor):
                 rabbitmq[key] = value
 
         # store results as metadata
-        metadata = self.generate_metadata(rabbitmq, resource['type'], id, host)
+        metadata = self.generate_metadata(rabbitmq, resource['type'], id, client.host)
         logging.getLogger(__name__).debug(metadata)
 
         # create connection client to Clowder API
         if resource['type'] == 'file':
-            api = pyclowder.files.FilesApi(host=host, key=secret_key)
+            api = pyclowder.files.FilesApi(client)
         elif resource['type'] == 'dataset':
-            api = pyclowder.datasets.DatasetsApi(host=host, key=secret_key)
+            api = pyclowder.datasets.DatasetsApi(client)
 
         # upload metadata
         api.add_metadata(id, metadata)

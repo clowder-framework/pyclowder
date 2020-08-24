@@ -10,3 +10,6 @@ class SimplePythonExtractor(SimpleExtractor):
 
     def process_file(self, input_file):
         return self.extraction(input_file)
+
+    def process_dataset(self, input_files):
+        return self.extraction(input_files)

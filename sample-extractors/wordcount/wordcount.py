@@ -25,7 +25,7 @@ class WordCount(Extractor):
         logging.getLogger('pyclowder').setLevel(logging.DEBUG)
         logging.getLogger('__main__').setLevel(logging.DEBUG)
 
-    def process_message(self, connector, host, secret_key, resource, parameters):
+    def process_message(self, client, resource, parameters):
         # Process the file and upload the results
 
         logger = logging.getLogger(__name__)
@@ -43,11 +43,11 @@ class WordCount(Extractor):
             'words': words,
             'characters': characters
         }
-        metadata = self.generate_metadata(result, 'file', file_id, host)
+        metadata = self.generate_metadata(result, 'file', file_id, client.host)
         logger.debug(metadata)
 
         # upload metadata
-        api = pyclowder.files.FilesApi(host=host, key=secret_key)
+        api = pyclowder.files.FilesApi(client)
         api.add_metadata(file_id, metadata)
 
 
