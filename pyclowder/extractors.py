@@ -308,37 +308,98 @@ class SimpleExtractor(Extractor):
         self.logger = logging.getLogger('__main__')
         self.logger.setLevel(logging.INFO)
 
+    # TODO: Support check_message() in simple extractors
+
     def process_message(self, client, resource, parameters):
         """
-        Process a clowder message. This will download the file to local disk and call the
-        process_file to do the actual processing of the file. The resulting dict is then
+        Process a clowder message. This will download the file(s) to local disk and call
+        process_file or process_dataset to do the actual processing. The resulting dict is then
         parsed and based on the keys in the dict it will upload the results to the right
         location in clowder.
         """
-        input_file = resource["local_paths"][0]
-        file_id = resource['id']
+        if 'files' in resource:
+            type = 'dataset'
+            input_files = resource['local_paths']
+            dataset_id = resource['id']
 
-        # call the actual function that processes the file
-        if file_id and input_file:
+        elif 'local_paths' in resource:
+            type = 'file'
+            input_file = resource['local_paths'][0]
+            file_id = resource['id']
+            dataset_id = resource['parent']['id']
+        else:
+            # TODO: Eventually support other messages such as metadata.added
+            self.logger.error("Unknown resource type")
+            type = 'unknown'
+
+        # call the actual function that processes the message
+        dsapi = pyclowder.datasets.DatasetsApi(client)
+        if type == 'file' and file_id and input_file:
             result = self.process_file(input_file)
+            uuid = file_id
+            api = pyclowder.files.FilesApi(client)
+        elif type == 'dataset' and dataset_id and input_files:
+            result = self.process_dataset(input_files)
+            uuid = dataset_id
+            api = dsapi
         else:
             result = dict()
 
-        api = pyclowder.files.FilesApi(client)
-
-        # return information to clowder
         try:
+            # upload metadata to the processed file or dataset
             if 'metadata' in result.keys():
-                metadata = self.generate_metadata(result.get('metadata'), 'file', file_id, client.host)
+                metadata = self.generate_metadata(result.get('metadata'), type, uuid, client.host)
                 self.logger.info("upload metadata")
                 self.logger.debug(metadata)
-                api.add_metadata(file_id, metadata)
+                api.add_metadata(uuid, metadata)
+
+            # upload previews to the processed file
             if 'previews' in result.keys():
-                self.logger.info("upload previews")
-                for preview in result['previews']:
-                    if os.path.exists(str(preview)):
-                        self.logger.info("upload preview")
-                        api.add_preview(file_id, str(preview))
+                if type != 'file':
+                    # TODO: Add Clowder endpoint (& pyclowder method) to attach previews to datasets
+                    self.logger.error("previews not currently supported for resource type: %s" % type)
+                    self.logger.info("upload previews")
+                else:
+                    for preview in result['previews']:
+                        if os.path.exists(str(preview)):
+                            self.logger.info("upload preview")
+                            api.add_preview(uuid, str(preview))
+
+            # upload output files to the processed file's parent dataset or processed dataset
+            if 'outputs' in result.keys():
+                self.logger.info("upload output files")
+                if type == 'file' or type == 'dataset':
+                    for output in result['outputs']:
+                        if os.path.exists(str(output)):
+                            api.add_file_to_dataset(dataset_id, str(output))
+                else:
+                    self.logger.error("unable to upload outputs to resource type: %s" % type)
+
+            if 'new_dataset' in result.keys():
+                if type == 'dataset':
+                    nds = result['new_dataset']
+                    if 'name' not in nds.keys():
+                        self.logger.error("new datasets require a name")
+                    else:
+                        description = nds['description'] if 'description' in nds.keys() else ""
+                        new_dataset_id = dsapi.create(nds['name'], description)
+                        self.logger.info("created new dataset: %s" % new_dataset_id)
+
+                        if 'metadata' in nds.keys():
+                            self.logger.info("upload metadata to new dataset")
+                            metadata = self.generate_metadata(nds.get('metadata'), 'dataset', new_dataset_id, client.host)
+                            self.logger.debug(metadata)
+                            dsapi.add_metadata(new_dataset_id, metadata)
+
+                        if 'outputs' in nds.keys():
+                            self.logger.info("upload output files to new dataset")
+                            for output in nds['outputs']:
+                                if os.path.exists(str(output)):
+                                    dsapi.add_file_to_dataset(new_dataset_id, str(output))
+
+                        if 'previews' in nds.keys():
+                            # TODO: Add Clowder endpoint (& pyclowder method) to attach previews to datasets
+                            self.logger.error("previews not currently supported for resource type: %s" % type)
         finally:
             self.cleanup_data(result)
 
@@ -346,9 +407,29 @@ class SimpleExtractor(Extractor):
         """
         This function will process the file and return a dict that contains the result. This
         dict can have the following keys:
-            - metadata: the metadata to be associated with the file
-            - previews: files on disk with the preview to be uploaded
+            - metadata: the metadata to be associated with the processed file
+            - previews: images on disk with the preview to be uploaded to the processed file
+            - outputs: files on disk to be added to processed file's parent
         :param input_file: the file to be processed.
+        :return: the specially formatted dict.
+        """
+        return dict()
+
+    def process_dataset(self, input_files):
+        """
+        This function will process the file list and return a dict that contains the result. This
+        dict can have the following keys:
+            - metadata: the metadata to be associated with the processed dataset
+            - outputs: files on disk to be added to the dataset
+            - previews: images to be associated with the dataset
+            - new_dataset: a dict describing a new dataset to be created for the outputs, with the following keys:
+                - name: the name of the new dataset to be created (including adding the outputs,
+                        metadata and previews contained in new_dataset)
+                - description: description for the new dataset to be created
+                - previews: (see above)
+                - metadata: (see above)
+                - outputs: (see above)
+        :param input_files: the files to be processed.
         :return: the specially formatted dict.
         """
         return dict()
