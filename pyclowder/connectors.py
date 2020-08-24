@@ -375,11 +375,13 @@ class Connector(object):
         if body.get('notifies'):
             emailaddrlist = body.get('notifies')
             logger.debug(emailaddrlist)
-        host = self.clowder_url if self.clowder_url is not None else body.get('host', '')
-        if host == '':
+        # source_host is original from the message, host is remapped to CLOWDER_URL if given
+        source_host = body.get('host', '')
+        host = self.clowder_url if self.clowder_url is not None else source_host
+        if host == '' or source_host == '':
             return
-        elif not host.endswith('/'):
-            host += '/'
+        if not source_host.endswith('/'): source_host += '/'
+        if not host.endswith('/'): host += '/'
         secret_key = body.get('secretKey', '')
         retry_count = 0 if 'retry_count' not in body else body['retry_count']
         resource = self._build_resource(body, host, secret_key)
@@ -387,7 +389,7 @@ class Connector(object):
             return
 
         # register extractor
-        url = "%sapi/extractors" % host
+        url = "%sapi/extractors" % source_host
         if url not in Connector.registered_clowder:
             Connector.registered_clowder.append(url)
             self.register_extractor("%s?key=%s" % (url, secret_key))
@@ -400,7 +402,7 @@ class Connector(object):
         try:
             check_result = pyclowder.utils.CheckMessage.download
             if self.check_message:
-                check_result = self.check_message(self, host, secret_key, resource, body)
+                check_result = self.check_message(self, source_host, secret_key, resource, body)
             if check_result != pyclowder.utils.CheckMessage.ignore:
                 if self.process_message:
 
@@ -420,10 +422,10 @@ class Connector(object):
                                     found_local = True
                                 resource['local_paths'] = [file_path]
 
-                            self.process_message(self, host, secret_key, resource, body)
+                            self.process_message(self, source_host, secret_key, resource, body)
 
-                            clowderurl = "%sfiles/%s" % (host, body.get('id', ''))
-                            # notificatino of extraction job is done by email.
+                            clowderurl = "%sfiles/%s" % (source_host, body.get('id', ''))
+                            # notification of extraction job is done by email.
                             self.email(emailaddrlist, clowderurl)
                         finally:
                             if file_path is not None and not found_local:
@@ -440,8 +442,8 @@ class Connector(object):
                                 (file_paths, tmp_files, tmp_dirs) = self._prepare_dataset(host, secret_key, resource)
                             resource['local_paths'] = file_paths
 
-                            self.process_message(self, host, secret_key, resource, body)
-                            clowderurl = "%sdatasets/%s" % (host, body.get('datasetId', ''))
+                            self.process_message(self, source_host, secret_key, resource, body)
+                            clowderurl = "%sdatasets/%s" % (source_host, body.get('datasetId', ''))
                             # notificatino of extraction job is done by email.
                             self.email(emailaddrlist, clowderurl)
                         finally:
