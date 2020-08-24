@@ -761,7 +761,12 @@ class RabbitMQConnector(Connector):
             if 'routing_key' not in json_body and method.routing_key:
                 json_body['routing_key'] = method.routing_key
 
-            self.worker = RabbitMQHandler(self.extractor_name, self.extractor_info, self.check_message,
+            if 'jobid' not in json_body:
+                job_id = None
+            else:
+                job_id = json_body['jobid']
+
+            self.worker = RabbitMQHandler(self.extractor_name, self.extractor_info, job_id, self.check_message,
                                           self.process_message, self.ssl_verify, self.mounted_paths,
                                           method, header, body)
             self.worker.start_thread(json_body)
@@ -836,13 +841,14 @@ class RabbitMQHandler(Connector):
     a queue of messages that the super- loop can access and send later.
     """
 
-    def __init__(self, extractor_name, extractor_info, check_message=None, process_message=None, ssl_verify=True,
+    def __init__(self, extractor_name, extractor_info, job_id, check_message=None, process_message=None, ssl_verify=True,
                  mounted_paths=None, method=None, header=None, body=None):
         super(RabbitMQHandler, self).__init__(extractor_name, extractor_info, check_message, process_message,
                                               ssl_verify, mounted_paths)
         self.method = method
         self.header = header
         self.body = body
+        self.job_id = job_id
         self.messages = []
         self.thread = None
         self.finished = False
@@ -921,6 +927,15 @@ class RabbitMQHandler(Connector):
 
     def status_update(self, status, resource, message):
         super(RabbitMQHandler, self).status_update(status, resource, message)
+
+        status_report = dict()
+        # TODO: Update this to check resource["type"] once Clowder better supports dataset events
+        status_report['file_id'] = resource["id"]
+        status_report['job_id'] = self.job_id
+        status_report['extractor_id'] = self.extractor_info['name']
+        status_report['status'] = "%s: %s" % (status, message)
+        status_report['start'] = pyclowder.utils.iso8601time()
+
         with self.lock:
             # TODO: Remove 'status' from payload later and read from message_type and message in Clowder 2.0
             self.messages.append({"type": "status",
@@ -959,7 +974,8 @@ class HPCConnector(Connector):
     def __init__(self, extractor_name, extractor_info, picklefile,
                  check_message=None, process_message=None, ssl_verify=True, mounted_paths=None):
         super(HPCConnector, self).__init__(extractor_name, extractor_info, check_message, process_message,
-                                           ssl_verify, mounted_paths)
+                                           ssl_verify, job_id, mounted_paths)
+        self.job_id = job_id
         self.picklefile = picklefile
         self.logfile = None
 
@@ -998,6 +1014,7 @@ class HPCConnector(Connector):
                     statusreport = dict()
                     statusreport['file_id'] = resource["id"]
                     statusreport['extractor_id'] = self.extractor_info['name']
+                    statusreport['job_id'] = self.job_id
                     statusreport['status'] = "%s: %s" % (status, message)
                     statusreport['start'] = time.strftime('%Y-%m-%dT%H:%M:%S')
                     log.write(json.dumps(statusreport) + '\n')
