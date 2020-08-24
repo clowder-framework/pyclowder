@@ -343,7 +343,7 @@ class SimpleExtractor(Extractor):
         try:
             # upload metadata to the processed file or dataset
             if 'metadata' in result.keys():
-                self.logger.info("upload metadata")
+                self.logger.debug("upload metadata")
                 if type == 'file':
                     metadata = self.get_metadata(result.get('metadata'), 'file', file_id, host)
                     self.logger.debug(metadata)
@@ -357,19 +357,18 @@ class SimpleExtractor(Extractor):
 
             # upload previews to the processed file
             if 'previews' in result.keys():
-                self.logger.info("upload previews")
                 if type == 'file':
                     for preview in result['previews']:
                         if os.path.exists(str(preview)):
                             preview = {'file': preview}
-                            self.logger.info("upload preview")
+                            self.logger.debug("upload preview")
                             pyclowder.files.upload_preview(connector, host, secret_key, file_id, str(preview))
                 else:
                     # TODO: Add Clowder endpoint (& pyclowder method) to attach previews to datasets
                     self.logger.error("previews not currently supported for resource type: %s" % type)
 
             if 'tags' in result.keys():
-                self.logger.info("upload tags")
+                self.logger.debug("upload tags")
                 tags = {"tags": result["tags"]}
                 if type == 'file':
                     pyclowder.files.upload_tags(connector, host, secret_key, file_id, tags)
@@ -378,7 +377,7 @@ class SimpleExtractor(Extractor):
 
             # upload output files to the processed file's parent dataset or processed dataset
             if 'outputs' in result.keys():
-                self.logger.info("upload output files")
+                self.logger.debug("upload output files")
                 if type == 'file' or type == 'dataset':
                     for output in result['outputs']:
                         if os.path.exists(str(output)):
@@ -395,16 +394,16 @@ class SimpleExtractor(Extractor):
                         description = nds['description'] if 'description' in nds.keys() else ""
                         new_dataset_id = pyclowder.datasets.create_empty(connector, host, secret_key, nds['name'],
                                                                          description)
-                        self.logger.info("created new dataset: %s" % new_dataset_id)
+                        self.logger.debug("created new dataset: %s" % new_dataset_id)
 
                         if 'metadata' in nds.keys():
-                            self.logger.info("upload metadata to new dataset")
+                            self.logger.debug("upload metadata to new dataset")
                             metadata = self.get_metadata(nds.get('metadata'), 'dataset', new_dataset_id, host)
                             self.logger.debug(metadata)
                             pyclowder.datasets.upload_metadata(connector, host, secret_key, new_dataset_id, metadata)
 
                         if 'outputs' in nds.keys():
-                            self.logger.info("upload output files to new dataset")
+                            self.logger.debug("upload output files to new dataset")
                             for output in nds['outputs']:
                                 if os.path.exists(str(output)):
                                     pyclowder.files.upload_to_dataset(connector, host, secret_key, new_dataset_id,
