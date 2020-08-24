@@ -136,7 +136,7 @@ class FilesApi(object):
         return self.client.post("files/%s/extractions" % file_id,
                                 {"extractor": extractor_name})
 
-    def upload_to_dataset(self, dataset_id, filepath, mounted_paths={}, check_duplicate=False):
+    def add_file_to_dataset(self, dataset_id, filepath, mounted_paths={}, check_duplicate=False):
         """Upload file to existing Clowder dataset.
 
         Keyword arguments:
