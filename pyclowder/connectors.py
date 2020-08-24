@@ -928,14 +928,6 @@ class RabbitMQHandler(Connector):
     def status_update(self, status, resource, message):
         super(RabbitMQHandler, self).status_update(status, resource, message)
 
-        status_report = dict()
-        # TODO: Update this to check resource["type"] once Clowder better supports dataset events
-        status_report['file_id'] = resource["id"]
-        status_report['job_id'] = self.job_id
-        status_report['extractor_id'] = self.extractor_info['name']
-        status_report['status'] = "%s: %s" % (status, message)
-        status_report['start'] = pyclowder.utils.iso8601time()
-
         with self.lock:
             # TODO: Remove 'status' from payload later and read from message_type and message in Clowder 2.0
             self.messages.append({"type": "status",
@@ -943,6 +935,7 @@ class RabbitMQHandler(Connector):
                                   "payload": {
                                       "file_id":      resource["id"],
                                       "extractor_id": self.extractor_info['name'],
+                                      "job_id":       self.job_id,
                                       "status":       "%s: %s" % (status, message),
                                       "start":        pyclowder.utils.iso8601time(),
                                       "message_type": status,
