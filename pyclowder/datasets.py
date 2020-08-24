@@ -36,6 +36,23 @@ class DatasetsApi(object):
 
         return FilesApi.add_file_to_dataset(dataset_id, filepath, mounted_paths, check_duplicate)
 
+    def add_folder(self, dataset_id, folder, parent_type, parent_id):
+        """Add a folder to a dataset.
+
+        Keyword arguments:
+        dataset_id -- the dataset that is currently being processed
+        folder -- path to folder
+        parent_type -- type of parent dataset
+        """
+
+        body = {
+            "name": folder,
+            "parentId": parent_id,
+            "parentType": parent_type,
+        }
+
+        return self.client.post('/datasets/%s/newFolder' % dataset_id, body)
+
     def add_metadata(self, dataset_id, metadata):
         """Upload dataset JSON-LD metadata.
 
@@ -84,6 +101,16 @@ class DatasetsApi(object):
 
         return self.client.delete("datasets/%s" % dataset_id)
 
+    def delete_folder(self, dataset_id, folder_id):
+        """Delete a folder from a dataset.
+
+        Keyword arguments:
+        dataset_id -- id of dataset containing folder
+        folder_id -- id of folder to delete
+        """
+
+        return self.client.delete("/datasets/%s/deleteFolder/%s" % (dataset_id, folder_id))
+
     def download(self, dataset_id, output_file=None):
         """Download a dataset from Clowder as zip.
 
@@ -119,6 +146,15 @@ class DatasetsApi(object):
 
         return self.client.get("datasets/%s/files" % dataset_id)
 
+    def get_folder_list(self, dataset_id):
+        """Download list of dataset folders as JSON.
+
+                Keyword arguments:
+                dataset_id -- id of dataset to get folders for
+                """
+
+        return self.client.get("datasets/%s/folders" % dataset_id)
+
     def get_metadata(self, dataset_id, extractor_name=None):
         """Download dataset JSON-LD metadata from Clowder.
 
@@ -138,6 +174,21 @@ class DatasetsApi(object):
             return self.client.get("datasets")
         except Exception as e:
             logging.error("Error retrieving dataset list: %s", str(e))
+
+    def move_file_to_folder(self, dataset_id, folder_id, file_id):
+        """Move a file in the dataset to a folder within the same dataset.
+
+        Keyword arguments:
+        dataset_id -- the dataset to process
+        folder_id -- the folder to move the file into
+        file_id -- the file to move
+        """
+
+        body = {
+            'folderId/': folder_id
+        }
+
+        return self.client.post('/datasets/%s/moveFile/%s/%s' % (dataset_id, folder_id, file_id), body)
 
     def remove_metadata(self, dataset_id, extractor_name=None):
         """Delete dataset JSON-LD metadata, optionally filtered by extractor name.

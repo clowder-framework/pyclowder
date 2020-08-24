@@ -96,6 +96,14 @@ class FilesApi(object):
 
         return thumb['id']
 
+    def delete(self, file_id):
+        """Delete a file.
+
+        Keyword Arguments:
+        file_id -- id of file to delete
+        """
+        return self.client.delete("/files/%s" % file_id)
+
     def download(self, file_id):
         """Download a file.
 
