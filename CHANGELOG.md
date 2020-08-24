@@ -8,6 +8,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Added
 - Simple extractors now support datasets, can also create new datasets.
+- Ability to add tags from simple extractor to files and datasets.
 
 ## 2.2.3 - 2019-10-14
 

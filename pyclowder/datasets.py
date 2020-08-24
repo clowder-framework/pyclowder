@@ -257,6 +257,25 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
             submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, recursive)
 
 
+def upload_tags(connector, host, key, datasetid, tags):
+    """Upload dataset tag to Clowder.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    datasetid -- the dataset that is currently being processed
+    tags -- the tags to be uploaded
+    """
+
+    connector.status_update(StatusMessage.processing, {"type": "dataset", "id": datasetid}, "Uploading dataset tags.")
+
+    headers = {'Content-Type': 'application/json'}
+    url = '%sapi/datasets/%s/tags?key=%s' % (host, datasetid, key)
+    result = connector.post(url, headers=headers, data=json.dumps(tags),
+                            verify=connector.ssl_verify if connector else True)
+
+
 def upload_metadata(connector, host, key, datasetid, metadata):
     """Upload dataset JSON-LD metadata to Clowder.
 
