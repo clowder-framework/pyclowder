@@ -230,7 +230,6 @@ class Connector(object):
                     "type": "dataset",
                     "id": datasetid
                 }
-                self.status_update(pyclowder.utils.StatusMessage.error, resource, msg)
                 self.message_error(resource)
                 return None
 
@@ -392,7 +391,7 @@ class Connector(object):
             self.register_extractor("%s?key=%s" % (url, secret_key))
 
         # tell everybody we are starting to process the file
-        self.status_update(pyclowder.utils.StatusMessage.start, resource, "Started processing")
+        self.status_update(pyclowder.utils.StatusMessage.start.value, resource, "Started processing.")
 
         # checks whether to process the file in this message or not
         # pylint: disable=too-many-nested-blocks
@@ -456,41 +455,41 @@ class Connector(object):
                                     logger.exception("Error removing temporary dataset directory")
 
             else:
-                self.status_update(pyclowder.utils.StatusMessage.processing, resource, "Skipped in check_message")
+                self.status_update(pyclowder.utils.StatusMessage.skip.value, resource, "Skipped in check_message")
 
             self.message_ok(resource)
 
         except SystemExit as exc:
-            status = "sys.exit : " + str(exc)
-            logger.exception("[%s] %s", resource['id'], status)
-            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            self.message_resubmit(resource, retry_count)
+            message = str.format("sys.exit: {}", str(exc))
+            logger.exception("[%s] %s", resource['id'], message)
+            self.message_resubmit(resource, retry_count, message)
             raise
         except KeyboardInterrupt:
-            status = "keyboard interrupt"
-            logger.exception("[%s] %s", resource['id'], status)
-            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            self.message_resubmit(resource, retry_count)
+            message = "keyboard interrupt"
+            logger.exception("[%s] %s", resource['id'], message)
+            self.message_resubmit(resource, retry_count, message)
             raise
         except GeneratorExit:
-            status = "generator exit"
-            logger.exception("[%s] %s", resource['id'], status)
-            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            self.message_resubmit(resource, retry_count)
+            message = "generator exit"
+            logger.exception("[%s] %s", resource['id'], message)
+            self.message_resubmit(resource, retry_count, message)
             raise
         except subprocess.CalledProcessError as exc:
-            status = str.format("Error processing [exit code={}]\n{}", exc.returncode, exc.output)
-            logger.exception("[%s] %s", resource['id'], status)
-            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
-            self.message_error(resource)
+            message = str.format("Error in subprocess [exit code={}]:\n{}", exc.returncode, exc.output)
+            logger.exception("[%s] %s", resource['id'], message)
+            self.message_error(resource, message)
+        except PyClowderExtractionAbort as exc:
+            message = str.format("Aborting message: {}", exc.message)
+            logger.exception("[%s] %s", resource['id'], message)
+            self.message_error(resource, message)
         except Exception as exc:  # pylint: disable=broad-except
-            status = "Error processing : " + str(exc)
-            logger.exception("[%s] %s", resource['id'], status)
-            self.status_update(pyclowder.utils.StatusMessage.error, resource, status)
+            message = str(exc)
+            logger.exception("[%s] %s", resource['id'], message)
             if retry_count < 10:
-                self.message_resubmit(resource, retry_count + 1)
+                message = "(#%s) %s" % (retry_count+1, message)
+                self.message_resubmit(resource, retry_count+1, message)
             else:
-                self.message_error(resource)
+                self.message_error(resource, message)
 
     def register_extractor(self, endpoints):
         """Register extractor info with Clowder.
@@ -528,21 +527,23 @@ class Connector(object):
         the instance know the progress of the extractor.
 
         Keyword arguments:
-        status - START | PROCESSING | DONE | ERROR
+        status - pyclowder.utils.StatusMessage value
         resource  - descriptor object with {"type", "id"} fields
         message - contents of the status update
         """
         logging.getLogger(__name__).info("[%s] : %s: %s", resource["id"], status, message)
 
-    def message_ok(self, resource):
-        self.status_update(pyclowder.utils.StatusMessage.done, resource, "Done processing")
+    def message_ok(self, resource, message="Done processing."):
+        self.status_update(pyclowder.utils.StatusMessage.done.value, resource, message)
 
-    def message_error(self, resource):
-        self.status_update(pyclowder.utils.StatusMessage.error, resource, "Error processing message")
+    def message_error(self, resource, message="Error processing message."):
+        self.status_update(pyclowder.utils.StatusMessage.error.value, resource, message)
 
-    def message_resubmit(self, resource, retry_count):
-        self.status_update(pyclowder.utils.StatusMessage.processing, resource, "Resubmitting message (attempt #%s)"
-                           % retry_count)
+    def message_resubmit(self, resource, retry_count, message="Resubmitting message."):
+        self.status_update(pyclowder.utils.StatusMessage.retry.value, resource, message)
+
+    def message_process(self, resource, message):
+        self.status_update(pyclowder.utils.StatusMessage.processing.value, resource, message)
 
     def get(self, url, params=None, raise_status=True, **kwargs):
         """
@@ -877,19 +878,22 @@ class RabbitMQHandler(Connector):
             with self.lock:
                 msg = self.messages.pop(0)
 
+            # PROCESSING - Standard update message during extractor processing
             if msg["type"] == 'status':
                 if self.header.reply_to:
                     properties = pika.BasicProperties(delivery_mode=2, correlation_id=self.header.correlation_id)
                     channel.basic_publish(exchange='',
                                           routing_key=self.header.reply_to,
                                           properties=properties,
-                                          body=json.dumps(msg['status']))
+                                          body=json.dumps(msg['payload']))
 
+            # DONE - Extractor finished without error
             elif msg["type"] == 'ok':
                 channel.basic_ack(self.method.delivery_tag)
                 with self.lock:
                     self.finished = True
 
+            # ERROR - Extractor encountered error and message goes to error queue
             elif msg["type"] == 'error':
                 properties = pika.BasicProperties(delivery_mode=2, reply_to=self.header.reply_to)
                 channel.basic_publish(exchange='',
@@ -900,18 +904,18 @@ class RabbitMQHandler(Connector):
                 with self.lock:
                     self.finished = True
 
+            # RESUBMITTING - Extractor encountered error and message is resubmitted to same queue
             elif msg["type"] == 'resubmit':
-                retry_count = msg['retry_count']
-                queue = rabbitmq_queue
-                properties = pika.BasicProperties(delivery_mode=2, reply_to=self.header.reply_to)
                 jbody = json.loads(self.body)
-                jbody['retry_count'] = retry_count
+                jbody['retry_count'] = msg['retry_count']
                 if 'exchange' not in jbody and self.method.exchange:
                     jbody['exchange'] = self.method.exchange
-                if 'routing_key' not in jbody and self.method.routing_key and self.method.routing_key != queue:
+                if 'routing_key' not in jbody and self.method.routing_key and self.method.routing_key != rabbitmq_queue:
                     jbody['routing_key'] = self.method.routing_key
+
+                properties = pika.BasicProperties(delivery_mode=2, reply_to=self.header.reply_to)
                 channel.basic_publish(exchange='',
-                                      routing_key=queue,
+                                      routing_key=rabbitmq_queue,
                                       properties=properties,
                                       body=json.dumps(jbody))
                 channel.basic_ack(self.method.delivery_tag)
@@ -923,31 +927,35 @@ class RabbitMQHandler(Connector):
 
     def status_update(self, status, resource, message):
         super(RabbitMQHandler, self).status_update(status, resource, message)
-        status_report = dict()
-        # TODO: Update this to check resource["type"] once Clowder better supports dataset events
-        status_report['file_id'] = resource["id"]
-        status_report['job_id'] = self.job_id
-        status_report['extractor_id'] = self.extractor_info['name']
-        status_report['status'] = "%s: %s" % (status, message)
-        status_report['start'] = pyclowder.utils.iso8601time()
-        with self.lock:
-            self.messages.append({"type": "status",
-                                  "status": status_report,
-                                  "resource": resource,
-                                  "message": message})
 
-    def message_ok(self, resource):
-        super(RabbitMQHandler, self).message_ok(resource)
+        with self.lock:
+            # TODO: Remove 'status' from payload later and read from message_type and message in Clowder 2.0
+            self.messages.append({"type": "status",
+                                  "resource": resource,
+                                  "payload": {
+                                      "file_id":      resource["id"],
+                                      "extractor_id": self.extractor_info['name'],
+                                      "job_id":       self.job_id,
+                                      "status":       "%s: %s" % (status, message),
+                                      "start":        pyclowder.utils.iso8601time(),
+                                      "message_type": status,
+                                      "message":      message
+                                  }})
+
+    def message_ok(self, resource, message="Done processing."):
+        super(RabbitMQHandler, self).message_ok(resource, message)
         with self.lock:
             self.messages.append({"type": "ok"})
 
-    def message_error(self, resource):
-        super(RabbitMQHandler, self).message_error(resource)
+    def message_error(self, resource, message="Error processing message."):
+        super(RabbitMQHandler, self).message_error(resource, message)
         with self.lock:
             self.messages.append({"type": "error"})
 
-    def message_resubmit(self, resource, retry_count):
-        super(RabbitMQHandler, self).message_resubmit(resource, retry_count)
+    def message_resubmit(self, resource, retry_count, message=None):
+        if message is None:
+            message = "(#%s)" % retry_count
+        super(RabbitMQHandler, self).message_resubmit(resource, retry_count, message)
         with self.lock:
             self.messages.append({"type": "resubmit", "retry_count": retry_count})
 
@@ -1105,3 +1113,14 @@ class LocalConnector(Connector):
     def delete(self, url, raise_status=True, **kwargs):
         logging.getLogger(__name__).debug("DELETE: " + url)
         return None
+
+
+class PyClowderExtractionAbort(Exception):
+    """Raise exception that will not be subject to retry attempts (i.e. errors that are expected to fail again).
+
+    Attributes:
+        message -- explanation of the error
+    """
+
+    def __init__(self, message):
+        self.message = message

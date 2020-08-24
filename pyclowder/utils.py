@@ -44,10 +44,12 @@ class StatusMessage(Enum):
     full string will be STATUS: MESSAGE.
     """
 
-    start = "START"
+    start = "STARTED"
     processing = "PROCESSING"
-    done = "DONE"
+    done = "SUCCEEDED"
+    skip = "SKIPPED"
     error = "ERROR"
+    retry = "RESUBMITTED"
 
 
 def iso8601time():
