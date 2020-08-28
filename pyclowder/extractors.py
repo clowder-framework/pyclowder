@@ -209,7 +209,7 @@ class Extractor(object):
         for c in connectors:
             c.stop()
 
-    def get_metadata(self, content, resource_type, resource_id, server=None):
+    def generate_metadata(self, content, resource_type, resource_id, server=None):
         """Generate a metadata field.
 
         This will return a metadata dict that is valid JSON-LD. This will use the results as well as the information
@@ -265,7 +265,7 @@ class Extractor(object):
         return False
 
     # pylint: disable=no-self-use,unused-argument
-    def check_message(self, connector, host, secret_key, resource, parameters):
+    def check_message(self, client, resource, parameters):
         """Checks to see if the message needs to be processed.
 
         This will return one of the values from CheckMessage:
@@ -282,7 +282,7 @@ class Extractor(object):
         return CheckMessage.download
 
     # pylint: disable=no-self-use,unused-argument
-    def process_message(self, connector, host, secret_key, resource, parameters):
+    def process_message(self, client, resource, parameters):
         """Process the message and send results back to clowder.
 
         Args:
@@ -311,7 +311,7 @@ class SimpleExtractor(Extractor):
 
     # TODO: Support check_message() in simple extractors
 
-    def process_message(self, connector, host, secret_key, resource, parameters):
+    def process_message(self, client, resource, parameters):
         """
         Process a clowder message. This will download the file(s) to local disk and call
         process_file or process_dataset to do the actual processing. The resulting dict is then
@@ -330,42 +330,41 @@ class SimpleExtractor(Extractor):
             dataset_id = resource['parent']['id']
         else:
             # TODO: Eventually support other messages such as metadata.added
+            self.logger.error("Unknown resource type")
             type = 'unknown'
 
         # call the actual function that processes the message
+        dsapi = pyclowder.datasets.DatasetsApi(client)
         if type == 'file' and file_id and input_file:
             result = self.process_file(input_file)
+            uuid = file_id
+            api = pyclowder.files.FilesApi(client)
         elif type == 'dataset' and dataset_id and input_files:
             result = self.process_dataset(input_files)
+            uuid = dataset_id
+            api = dsapi
         else:
             result = dict()
 
         try:
             # upload metadata to the processed file or dataset
             if 'metadata' in result.keys():
-                self.logger.debug("upload metadata")
-                if type == 'file':
-                    metadata = self.get_metadata(result.get('metadata'), 'file', file_id, host)
-                    self.logger.debug(metadata)
-                    pyclowder.files.upload_metadata(connector, host, secret_key, file_id, metadata)
-                elif type == 'dataset':
-                    metadata = self.get_metadata(result.get('metadata'), 'dataset', dataset_id, host)
-                    self.logger.debug(metadata)
-                    pyclowder.datasets.upload_metadata(connector, host, secret_key, dataset_id, metadata)
-                else:
-                    self.logger.error("unable to attach metadata to resource type: %s" % type)
+                metadata = self.generate_metadata(result.get('metadata'), type, uuid, client.host)
+                self.logger.info("upload metadata")
+                self.logger.debug(metadata)
+                api.add_metadata(uuid, metadata)
 
             # upload previews to the processed file
             if 'previews' in result.keys():
-                if type == 'file':
-                    for preview in result['previews']:
-                        if os.path.exists(str(preview)):
-                            preview = {'file': preview}
-                            self.logger.debug("upload preview")
-                            pyclowder.files.upload_preview(connector, host, secret_key, file_id, str(preview))
-                else:
+                if type != 'file':
                     # TODO: Add Clowder endpoint (& pyclowder method) to attach previews to datasets
                     self.logger.error("previews not currently supported for resource type: %s" % type)
+                    self.logger.info("upload previews")
+                else:
+                    for preview in result['previews']:
+                        if os.path.exists(str(preview)):
+                            self.logger.info("upload preview")
+                            api.add_preview(uuid, str(preview))
 
             if 'tags' in result.keys():
                 self.logger.debug("upload tags")
@@ -381,7 +380,7 @@ class SimpleExtractor(Extractor):
                 if type == 'file' or type == 'dataset':
                     for output in result['outputs']:
                         if os.path.exists(str(output)):
-                            pyclowder.files.upload_to_dataset(connector, host, secret_key, dataset_id, str(output))
+                            api.add_file_to_dataset(dataset_id, str(output))
                 else:
                     self.logger.error("unable to upload outputs to resource type: %s" % type)
 
@@ -392,27 +391,24 @@ class SimpleExtractor(Extractor):
                         self.logger.error("new datasets require a name")
                     else:
                         description = nds['description'] if 'description' in nds.keys() else ""
-                        new_dataset_id = pyclowder.datasets.create_empty(connector, host, secret_key, nds['name'],
-                                                                         description)
-                        self.logger.debug("created new dataset: %s" % new_dataset_id)
+                        new_dataset_id = dsapi.create(nds['name'], description)
+                        self.logger.info("created new dataset: %s" % new_dataset_id)
 
                         if 'metadata' in nds.keys():
-                            self.logger.debug("upload metadata to new dataset")
-                            metadata = self.get_metadata(nds.get('metadata'), 'dataset', new_dataset_id, host)
+                            self.logger.info("upload metadata to new dataset")
+                            metadata = self.generate_metadata(nds.get('metadata'), 'dataset', new_dataset_id, client.host)
                             self.logger.debug(metadata)
-                            pyclowder.datasets.upload_metadata(connector, host, secret_key, new_dataset_id, metadata)
+                            dsapi.add_metadata(new_dataset_id, metadata)
 
                         if 'outputs' in nds.keys():
                             self.logger.debug("upload output files to new dataset")
                             for output in nds['outputs']:
                                 if os.path.exists(str(output)):
-                                    pyclowder.files.upload_to_dataset(connector, host, secret_key, new_dataset_id,
-                                                                      str(output))
+                                    dsapi.add_file_to_dataset(new_dataset_id, str(output))
 
                         if 'previews' in nds.keys():
                             # TODO: Add Clowder endpoint (& pyclowder method) to attach previews to datasets
                             self.logger.error("previews not currently supported for resource type: %s" % type)
-
         finally:
             self.cleanup_data(result)
 

@@ -49,6 +49,7 @@ import requests
 import pyclowder.datasets
 import pyclowder.files
 import pyclowder.utils
+import pyclowder.client
 
 import smtplib
 from email.mime.text import MIMEText
@@ -279,7 +280,8 @@ class Connector(object):
         Returns:
             (tmp directory created, tmp file created)
         """
-        file_md = pyclowder.files.download_metadata(self, host, secret_key, fileid)
+        api = pyclowder.files.FilesApi(host=host, key=secret_key)
+        file_md = api.get_metadata(fileid)
         md_name = os.path.basename(filepath)+"_metadata.json"
 
         md_dir = tempfile.mkdtemp(suffix=fileid)
@@ -300,8 +302,10 @@ class Connector(object):
         temp_link_dir = tempfile.mkdtemp()
         tmp_dirs_created.append(temp_link_dir)
 
+        api = pyclowder.datasets.DatasetsApi(host=host, key=secret_key)
+
         # first check if any files in dataset accessible locally
-        ds_file_list = pyclowder.datasets.get_file_list(self, host, secret_key, resource["id"])
+        ds_file_list = api.get_file_list(resource["id"])
         for ds_file in ds_file_list:
             file_path = self._check_for_local_file(ds_file)
             if not file_path:
@@ -324,10 +328,10 @@ class Connector(object):
 
         # If only some files found locally, check & download any that were missed
         if len(located_files) > 0:
+            files_api = pyclowder.files.FilesApi(host=host, key=secret_key)
             for ds_file in missing_files:
                 # Download file to temp directory
-                inputfile = pyclowder.files.download(self, host, secret_key, ds_file['id'], ds_file['id'],
-                                                     ds_file['file_ext'])
+                inputfile = files_api.download(ds_file['id'])
                 # Also get file metadata in format expected by extractor
                 (file_md_dir, file_md_tmp) = self._download_file_metadata(host, secret_key, ds_file['id'],
                                                                           ds_file['filepath'])
@@ -338,7 +342,7 @@ class Connector(object):
                 tmp_dirs_created.append(file_md_dir)
 
             # Also, get dataset metadata (normally included in dataset .zip download file)
-            ds_md = pyclowder.datasets.download_metadata(self, host, secret_key, resource["id"])
+            ds_md = api.get_metadata(resource["id"])
             md_name = "%s_dataset_metadata.json" % resource["id"]
             md_dir = tempfile.mkdtemp(suffix=resource["id"])
             (fd, md_file) = tempfile.mkstemp(suffix=md_name, dir=md_dir)
@@ -352,7 +356,7 @@ class Connector(object):
 
         # If we didn't find any files locally, download dataset .zip as normal
         else:
-            inputzip = pyclowder.datasets.download(self, host, secret_key, resource["id"])
+            inputzip = api.download(resource["id"])
             file_paths = pyclowder.utils.extract_zip_contents(inputzip)
             tmp_files_created += file_paths
             tmp_files_created.append(inputzip)
@@ -393,12 +397,15 @@ class Connector(object):
         # tell everybody we are starting to process the file
         self.status_update(pyclowder.utils.StatusMessage.start.value, resource, "Started processing.")
 
+        # create client for the message
+        client = pyclowder.client.ClowderClient(host=host, key=secret_key, connector=self)
+
         # checks whether to process the file in this message or not
         # pylint: disable=too-many-nested-blocks
         try:
             check_result = pyclowder.utils.CheckMessage.download
             if self.check_message:
-                check_result = self.check_message(self, host, secret_key, resource, body)
+                check_result = self.check_message(client, resource, body)
             if check_result != pyclowder.utils.CheckMessage.ignore:
                 if self.process_message:
 
@@ -408,17 +415,16 @@ class Connector(object):
                         found_local = False
                         try:
                             if check_result != pyclowder.utils.CheckMessage.bypass:
-                                file_metadata = pyclowder.files.download_info(self, host, secret_key, resource["id"])
+                                api = pyclowder.files.FilesApi(client)
+                                file_metadata = api.get_info(resource["id"])
                                 file_path = self._check_for_local_file(file_metadata)
                                 if not file_path:
-                                    file_path = pyclowder.files.download(self, host, secret_key, resource["id"],
-                                                                         resource["intermediate_id"],
-                                                                         resource["file_ext"])
+                                    file_path = api.download(resource["id"])
                                 else:
                                     found_local = True
                                 resource['local_paths'] = [file_path]
 
-                            self.process_message(self, host, secret_key, resource, body)
+                            self.process_message(client, resource, body)
 
                             clowderurl = "%sfiles/%s" % (host, body.get('id', ''))
                             # notificatino of extraction job is done by email.
@@ -438,7 +444,7 @@ class Connector(object):
                                 (file_paths, tmp_files, tmp_dirs) = self._prepare_dataset(host, secret_key, resource)
                             resource['local_paths'] = file_paths
 
-                            self.process_message(self, host, secret_key, resource, body)
+                            self.process_message(client, resource, body)
                             clowderurl = "%sdatasets/%s" % (host, body.get('datasetId', ''))
                             # notificatino of extraction job is done by email.
                             self.email(emailaddrlist, clowderurl)
@@ -639,7 +645,7 @@ class RabbitMQConnector(Connector):
         self.consumer_tag = None
         self.worker = None
         self.announcer = None
-        self.heartbeat = 5*60
+        self.heartbeat = heartbeat
 
     def connect(self):
         """connect to rabbitmq using URL parameters"""
@@ -655,9 +661,8 @@ class RabbitMQConnector(Connector):
         self.channel.basic_qos(prefetch_count=1)
 
         # declare the queue in case it does not exist
-        self.channel.queue_declare(queue=self.rabbitmq_queue, durable=True)
-        self.channel.queue_declare(queue='extractors.' + self.rabbitmq_queue, durable=True)
-        self.channel.queue_declare(queue='error.'+self.rabbitmq_queue, durable=True)
+        self.channel.queue_declare(queue=self.extractor_name, durable=True)
+        self.channel.queue_declare(queue='error.'+self.extractor_name, durable=True)
 
         # register with an exchange
         if self.rabbitmq_exchange:
@@ -668,18 +673,14 @@ class RabbitMQConnector(Connector):
             # connect queue and exchange
             if self.rabbitmq_key:
                 if isinstance(self.rabbitmq_key, str):
-                    self.channel.queue_bind(queue=self.rabbitmq_queue,
+                    self.channel.queue_bind(queue=self.extractor_name,
                                             exchange=self.rabbitmq_exchange,
                                             routing_key=self.rabbitmq_key)
                 else:
                     for key in self.rabbitmq_key:
-                        self.channel.queue_bind(queue=self.rabbitmq_queue,
+                        self.channel.queue_bind(queue=self.extractor_name,
                                                 exchange=self.rabbitmq_exchange,
                                                 routing_key=key)
-
-            self.channel.queue_bind(queue=self.rabbitmq_queue,
-                                    exchange=self.rabbitmq_exchange,
-                                    routing_key="extractors." + self.extractor_name)
 
         # start the extractor announcer
         self.announcer = RabbitMQBroadcast(self.rabbitmq_uri, self.extractor_info, self.rabbitmq_queue, self.heartbeat)
@@ -897,7 +898,7 @@ class RabbitMQHandler(Connector):
             elif msg["type"] == 'error':
                 properties = pika.BasicProperties(delivery_mode=2, reply_to=self.header.reply_to)
                 channel.basic_publish(exchange='',
-                                      routing_key='error.' + rabbitmq_queue,
+                                      routing_key='error.' + self.extractor_name,
                                       properties=properties,
                                       body=self.body)
                 channel.basic_ack(self.method.delivery_tag)

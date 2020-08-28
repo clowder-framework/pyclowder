@@ -10,6 +10,7 @@ import os
 import tempfile
 
 import requests
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 
 class ClowderClient(object):
@@ -36,6 +37,7 @@ class ClowderClient(object):
         :param int retries: Number of times to retry before giving up.
         :param float timeout: Number of seconds to try to connect, and wait between retries.
         :param boolean ssl: Should ssl certificates be validated, default is true
+        :param Connector connector: PyClowder connector to process status updates
          """
 
         # clone operator
@@ -48,6 +50,7 @@ class ClowderClient(object):
             self.retries = kwargs.get('retries', client.retries)
             self.timeout = kwargs.get('timeout', client.timeout)
             self.ssl = kwargs.get('ssl', client.ssl)
+            self.connector = kwargs.get('connector', client.connector)
         else:
             self.host = kwargs.get('host', 'http://localhost:9000')
             self.key = kwargs.get('key', None)
@@ -56,6 +59,7 @@ class ClowderClient(object):
             self.retries = kwargs.get('retries', 0)
             self.timeout = kwargs.get('timeout', 5)
             self.ssl = kwargs.get('ssl', True)
+            self.connector = kwargs.get('connector', None)
 
         # make sure the host does not end with a slash
         self.host = self.host.rstrip('/')
@@ -157,7 +161,7 @@ class ClowderClient(object):
         if params is None:
             params = dict()
         if headers is None:
-            headers = {'content-type': 'application/json'}
+            headers = {}
         if self.username and self.password:
             auth = (self.username, self.password)
             params['key'] = None
@@ -255,7 +259,14 @@ class ClowderClient(object):
             auth = None
         while True:
             try:
-                response = requests.post(url, files={"File": open(filename, 'rb')}, headers=headers, params=params,
+                m = MultipartEncoder(
+                    fields={'file': (filename, open(filename, 'rb'))}
+                )
+                if headers is None:
+                    headers = {}
+                if 'Content-Type' not in headers:
+                    headers['Content-Type'] = m.content_type
+                response = requests.post(url, data=m, headers=headers, params=params,
                                          auth=auth, timeout=self.timeout, verify=self.ssl)
                 response.raise_for_status()
                 return response.json()
@@ -266,3 +277,17 @@ class ClowderClient(object):
                     raise e
                 else:
                     self.logger.debug("Error calling POST url %s: %s" % (url, str(e)))
+
+    def status_update(self, status, resource, message):
+        """
+        Convenience wrapper for the client's connector.
+
+        :param status: pyclowder.utils.StatusMessage value or other string
+        :param resource: descriptor object with {"type", "id"} fields
+        :param message: contents of the status update
+        """
+
+        if self.connector is not None:
+            self.connector.status_update(status, resource, message)
+        else:
+            self.logger.debug("No connector defined for the client to send status_update")

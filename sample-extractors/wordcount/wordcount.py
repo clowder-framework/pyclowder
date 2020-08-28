@@ -25,7 +25,7 @@ class WordCount(Extractor):
         logging.getLogger('pyclowder').setLevel(logging.DEBUG)
         logging.getLogger('__main__').setLevel(logging.DEBUG)
 
-    def process_message(self, connector, host, secret_key, resource, parameters):
+    def process_message(self, client, resource, parameters):
         # Process the file and upload the results
 
         logger = logging.getLogger(__name__)
@@ -48,13 +48,13 @@ class WordCount(Extractor):
             'words': words,
             'characters': characters
         }
-        metadata = self.get_metadata(result, 'file', file_id, host)
 
-        # Normal logs will appear in the extractor log, but NOT in the Clowder UI.
+        metadata = self.generate_metadata(result, 'file', file_id, client.host)
         logger.debug(metadata)
 
-        # Upload metadata to original file
-        pyclowder.files.upload_metadata(connector, host, secret_key, file_id, metadata)
+        # upload metadata
+        api = pyclowder.files.FilesApi(client)
+        api.add_metadata(file_id, metadata)
 
 if __name__ == "__main__":
     extractor = WordCount()
