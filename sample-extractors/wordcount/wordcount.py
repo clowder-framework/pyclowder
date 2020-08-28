@@ -32,24 +32,29 @@ class WordCount(Extractor):
         inputfile = resource["local_paths"][0]
         file_id = resource['id']
 
-        # call actual program
+        # These process messages will appear in the Clowder UI under Extractions.
+        connector.message_process(resource, "Loading contents of file...")
+
+        # Call actual program
         result = subprocess.check_output(['wc', inputfile], stderr=subprocess.STDOUT)
         result = result.decode('utf-8')
         (lines, words, characters, _) = result.split()
 
-        # store results as metadata
+        connector.message_process(resource, "Found %s lines and %s words..." % (lines, words))
+
+        # Store results as metadata
         result = {
             'lines': lines,
             'words': words,
             'characters': characters
         }
+
         metadata = self.generate_metadata(result, 'file', file_id, client.host)
         logger.debug(metadata)
 
         # upload metadata
         api = pyclowder.files.FilesApi(client)
         api.add_metadata(file_id, metadata)
-
 
 if __name__ == "__main__":
     extractor = WordCount()

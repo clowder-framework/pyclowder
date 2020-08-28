@@ -22,6 +22,7 @@ import time
 from pyclowder.connectors import RabbitMQConnector, HPCConnector, LocalConnector
 from pyclowder.utils import CheckMessage, setup_logging
 import pyclowder.files
+import pyclowder.datasets
 
 
 class Extractor(object):
@@ -365,9 +366,17 @@ class SimpleExtractor(Extractor):
                             self.logger.info("upload preview")
                             api.add_preview(uuid, str(preview))
 
+            if 'tags' in result.keys():
+                self.logger.debug("upload tags")
+                tags = {"tags": result["tags"]}
+                if type == 'file':
+                    pyclowder.files.upload_tags(connector, host, secret_key, file_id, tags)
+                else:
+                    pyclowder.datasets.upload_tags(connector, host, secret_key, dataset_id, tags)
+
             # upload output files to the processed file's parent dataset or processed dataset
             if 'outputs' in result.keys():
-                self.logger.info("upload output files")
+                self.logger.debug("upload output files")
                 if type == 'file' or type == 'dataset':
                     for output in result['outputs']:
                         if os.path.exists(str(output)):
@@ -392,7 +401,7 @@ class SimpleExtractor(Extractor):
                             dsapi.add_metadata(new_dataset_id, metadata)
 
                         if 'outputs' in nds.keys():
-                            self.logger.info("upload output files to new dataset")
+                            self.logger.debug("upload output files to new dataset")
                             for output in nds['outputs']:
                                 if os.path.exists(str(output)):
                                     dsapi.add_file_to_dataset(new_dataset_id, str(output))

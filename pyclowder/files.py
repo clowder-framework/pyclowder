@@ -9,6 +9,7 @@ import requests
 from urllib3.filepost import encode_multipart_formdata
 from pyclowder.client import ClowderClient
 
+
 # Some sources of urllib3 support warning suppression, but not all
 try:
     from urllib3 import disable_warnings
@@ -19,9 +20,7 @@ except:
 
 
 class FilesApi(object):
-    """
-        API to manage the REST CRUD endpoints for files.
-    """
+    """API to manage the REST CRUD endpoints for files."""
 
     def __init__(self, client=None, host=None, key=None,
                  username=None, password=None):

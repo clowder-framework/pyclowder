@@ -10,9 +10,7 @@ from pyclowder.files import FilesApi
 
 
 class DatasetsApi(object):
-    """
-        API to manage the REST CRUD endpoints for datasets.
-    """
+    """API to manage the REST CRUD endpoints for datasets."""
 
     def __init__(self, client=None, host=None, key=None,
                  username=None, password=None):

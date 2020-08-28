@@ -8,9 +8,7 @@ from pylowder.client import ClowderClient
 
 
 class SectionsApi(object):
-    """
-        API to manage the REST CRUD endpoints for sections.
-    """
+    """API to manage the REST CRUD endpoints for sections."""
 
     def __init__(self, client=None, host=None, key=None,
                  username=None, password=None):
