@@ -9,7 +9,7 @@ def description():
 
 
 setup(name='pyclowder',
-      version='2.2.3',
+      version='2.3.0',
       packages=find_packages(),
       description='Python SDK for the Clowder Data Management System',
       long_description=description(),
@@ -32,10 +32,8 @@ setup(name='pyclowder',
       keywords=['clowder', 'data management system'],
 
       install_requires=[
-          'enum34==1.1.6',
-          'pika==1.0.0',
-          'PyYAML==5.1',
-          'requests==2.21.0',
+          'pika==1.1.0',
+          'requests==2.24.0',
           'requests-toolbelt==0.9.1',
       ],
 
