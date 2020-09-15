@@ -6,9 +6,19 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 2.3.0 - 2020-09-15
 
+Removed develop branch, all pull requests will need to be against master from now
+forward. Please update version number in setup.py in each PR.
+
 ### Added
 - Simple extractors now support datasets, can also create new datasets.
 - Ability to add tags from simple extractor to files and datasets.
+- Ability to add additional files (outputs) to dataset in simple extractor.
+- Use pipenv to manage dependencies.
+- Add job_id to each status message returned by pyclowder.
+- PyClowderExtractionAbort to indicate the message shoudl not be retried.
+
+### Changed
+- Better handling of status messages
 
 ## 2.2.3 - 2019-10-14
 
