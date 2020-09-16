@@ -9,6 +9,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 Removed develop branch, all pull requests will need to be against master from now
 forward. Please update version number in setup.py in each PR.
 
+From this version no more docker images are build, please use pip install to
+install pyclowder.
+
 ### Added
 - Simple extractors now support datasets, can also create new datasets.
 - Ability to add tags from simple extractor to files and datasets.
