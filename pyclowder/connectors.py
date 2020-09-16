@@ -964,7 +964,7 @@ class HPCConnector(Connector):
     """Takes pickle files and processes them."""
 
     # pylint: disable=too-many-arguments
-    def __init__(self, extractor_name, extractor_info, picklefile,
+    def __init__(self, extractor_name, extractor_info, picklefile, job_id=None,
                  check_message=None, process_message=None, ssl_verify=True, mounted_paths=None):
         super(HPCConnector, self).__init__(extractor_name, extractor_info, check_message, process_message,
                                            ssl_verify, mounted_paths)
