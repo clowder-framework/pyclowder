@@ -16,9 +16,9 @@ setup(name='pyclowder',
       author='Rob Kooper',
       author_email='kooper@illinois.edu',
 
-      url='https://clowder.ncsa.illinois.edu',
+      url='https://clowderframework.org',
       project_urls={
-        'Source': 'https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder.git',
+        'Source': 'https://github.com/clowder-framework/pyclowder',
       },
 
       license='BSD',
