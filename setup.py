@@ -33,6 +33,7 @@ setup(name='pyclowder',
 
       install_requires=[
           'pika==1.1.0',
+          'PyYAML==5.1',
           'requests==2.24.0',
           'requests-toolbelt==0.9.1',
       ],
