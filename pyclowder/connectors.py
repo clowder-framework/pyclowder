@@ -967,7 +967,7 @@ class HPCConnector(Connector):
     def __init__(self, extractor_name, extractor_info, picklefile,
                  check_message=None, process_message=None, ssl_verify=True, mounted_paths=None):
         super(HPCConnector, self).__init__(extractor_name, extractor_info, check_message, process_message,
-                                           ssl_verify, job_id, mounted_paths)
+                                           ssl_verify, mounted_paths)
         self.job_id = job_id
         self.picklefile = picklefile
         self.logfile = None

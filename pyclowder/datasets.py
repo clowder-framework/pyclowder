@@ -12,6 +12,7 @@ import requests
 
 from pyclowder.client import ClowderClient
 from pyclowder.collections import get_datasets, get_child_collections, delete as delete_collection
+from pyclowder.utils import StatusMessage
 
 
 def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
