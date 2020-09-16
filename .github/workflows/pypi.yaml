@@ -1,3 +1,5 @@
+name: Publish Python package
+
 on:
    push:
      tags:
