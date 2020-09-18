@@ -4,7 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 2.3.1 - 2020-09-18
+
+With this version we no longer gurantee support for versions of python below 3.
+
+### Fixed
+- There was an issue where status messages could cause an exception. This would prevent most extractors from running correctly.
+
 ## 2.3.0 - 2020-09-15
+
+**CRITICAL BUG IN THIS VERSION. PLEASE USE VERSION 2.3.1**
 
 Removed develop branch, all pull requests will need to be against master from now
 forward. Please update version number in setup.py in each PR.

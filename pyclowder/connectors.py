@@ -391,7 +391,7 @@ class Connector(object):
             self.register_extractor("%s?key=%s" % (url, secret_key))
 
         # tell everybody we are starting to process the file
-        self.status_update(pyclowder.utils.StatusMessage.start.value, resource, "Started processing.")
+        self.status_update(pyclowder.utils.StatusMessage.start, resource, "Started processing.")
 
         # checks whether to process the file in this message or not
         # pylint: disable=too-many-nested-blocks
@@ -455,7 +455,7 @@ class Connector(object):
                                     logger.exception("Error removing temporary dataset directory")
 
             else:
-                self.status_update(pyclowder.utils.StatusMessage.skip.value, resource, "Skipped in check_message")
+                self.status_update(pyclowder.utils.StatusMessage.skip, resource, "Skipped in check_message")
 
             self.message_ok(resource)
 
@@ -534,16 +534,16 @@ class Connector(object):
         logging.getLogger(__name__).info("[%s] : %s: %s", resource["id"], status, message)
 
     def message_ok(self, resource, message="Done processing."):
-        self.status_update(pyclowder.utils.StatusMessage.done.value, resource, message)
+        self.status_update(pyclowder.utils.StatusMessage.done, resource, message)
 
     def message_error(self, resource, message="Error processing message."):
-        self.status_update(pyclowder.utils.StatusMessage.error.value, resource, message)
+        self.status_update(pyclowder.utils.StatusMessage.error, resource, message)
 
     def message_resubmit(self, resource, retry_count, message="Resubmitting message."):
-        self.status_update(pyclowder.utils.StatusMessage.retry.value, resource, message)
+        self.status_update(pyclowder.utils.StatusMessage.retry, resource, message)
 
     def message_process(self, resource, message):
-        self.status_update(pyclowder.utils.StatusMessage.processing.value, resource, message)
+        self.status_update(pyclowder.utils.StatusMessage.processing, resource, message)
 
     def get(self, url, params=None, raise_status=True, **kwargs):
         """
@@ -938,7 +938,7 @@ class RabbitMQHandler(Connector):
                                       "job_id":       self.job_id,
                                       "status":       "%s: %s" % (status, message),
                                       "start":        pyclowder.utils.iso8601time(),
-                                      "message_type": status,
+                                      "message_type": "%s" % status,
                                       "message":      message
                                   }})
 
