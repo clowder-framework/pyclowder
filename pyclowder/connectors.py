@@ -728,6 +728,9 @@ class RabbitMQConnector(Connector):
                     self.connection.close()
                 except Exception:
                     logging.getLogger(__name__).exception("Error while closing connection.")
+            if self.announcer:
+                self.announcer.stop_thread()
+
             self.connection = None
 
     def stop(self):
@@ -808,6 +811,9 @@ class RabbitMQBroadcast:
         self.thread.setDaemon(True)
         self.thread.start()
 
+    def stop_thread(self):
+        self.thread = None
+
     def send_heartbeat(self):
         # create the message we will send
         message = {
@@ -868,6 +874,7 @@ class RabbitMQHandler(Connector):
         """
         self.thread = threading.Thread(target=self._process_message, args=(json_body,))
         self.thread.start()
+        self.thread.setDaemon(True)
 
     def is_finished(self):
         with self.lock:
