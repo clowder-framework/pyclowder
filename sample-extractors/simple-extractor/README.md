@@ -18,12 +18,13 @@ you have to write your extractor the normal way using [PyClowder](https://openso
 
 To write an extractor using the Simple Extractor, you need to have your Python program available. The main function of 
 this Python program is supposed to take an input file path as its parameter. It needs to return a Python dictionary that 
-can contain either metadata information ("metadata"), details about file previews ("previews") or both. For example:
+can contain either metadata information ("metadata"), details about file previews ("previews"), tags for the file ("tags) or all. For example:
 
 ``` json
 {   
     "metadata": dict(),
-    "previews": array() 
+    "previews": array(), 
+    "tags": array()
 }
 ```
 

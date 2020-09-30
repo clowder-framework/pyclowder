@@ -8,7 +8,6 @@ import logging
 import requests
 
 from pyclowder.client import ClowderClient
-from pyclowder.utils import StatusMessage
 
 
 def create_empty(connector, host, key, collectionname, description, parentid=None, spaceid=None):
@@ -121,8 +120,7 @@ def upload_preview(connector, host, key, collectionid, previewfile, previewmetad
                     section this preview should be associated with.
     """
 
-    connector.status_update(StatusMessage.processing, {"type": "collection", "id": collectionid},
-                            "Uploading collection preview.")
+    connector.message_process({"type": "collection", "id": collectionid}, "Uploading collection preview.")
 
     logger = logging.getLogger(__name__)
     headers = {'Content-Type': 'application/json'}

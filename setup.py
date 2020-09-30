@@ -9,16 +9,16 @@ def description():
 
 
 setup(name='pyclowder',
-      version='2.2.3',
+      version='2.3.1',
       packages=find_packages(),
       description='Python SDK for the Clowder Data Management System',
       long_description=description(),
       author='Rob Kooper',
       author_email='kooper@illinois.edu',
 
-      url='https://clowder.ncsa.illinois.edu',
+      url='https://clowderframework.org',
       project_urls={
-        'Source': 'https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder.git',
+        'Source': 'https://github.com/clowder-framework/pyclowder',
       },
 
       license='BSD',
@@ -33,9 +33,9 @@ setup(name='pyclowder',
 
       install_requires=[
           'enum34==1.1.6',
-          'pika==1.0.0',
+          'pika==1.1.0',
           'PyYAML==5.1',
-          'requests==2.21.0',
+          'requests==2.24.0',
           'requests-toolbelt==0.9.1',
       ],
 
