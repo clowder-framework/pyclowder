@@ -10,6 +10,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 - When rabbitmq restarts the extractor would not stop and restart, resulting 
   in the extractor no longer receiving any messages. #17
 
+### Added
+- Can specify url to use for extractor downloads, this is helpful for instances
+  that have access to the internal URL for clowder, for example in docker/kubernetes.
+  
 ### Removed
 - Removed ability to run multiple connectors in the same python process. If
   parallelism is needed, use multiple processes (or containers).

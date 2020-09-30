@@ -66,7 +66,7 @@ class Connector(object):
     registered_clowder = list()
 
     def __init__(self, extractor_name, extractor_info, check_message=None, process_message=None, ssl_verify=True,
-                 mounted_paths=None):
+                 mounted_paths=None, clowder_url=None):
         self.extractor_name = extractor_name
         self.extractor_info = extractor_info
         self.check_message = check_message
@@ -76,6 +76,7 @@ class Connector(object):
             self.mounted_paths = {}
         else:
             self.mounted_paths = mounted_paths
+        self.clowder_url = clowder_url
 
         filename = 'notifications.json'
         self.smtp_server = None
@@ -373,11 +374,13 @@ class Connector(object):
         if body.get('notifies'):
             emailaddrlist = body.get('notifies')
             logger.debug(emailaddrlist)
-        host = body.get('host', '')
-        if host == '':
+        # source_host is original from the message, host is remapped to CLOWDER_URL if given
+        source_host = body.get('host', '')
+        host = self.clowder_url if self.clowder_url is not None else source_host
+        if host == '' or source_host == '':
             return
-        elif not host.endswith('/'):
-            host += '/'
+        if not source_host.endswith('/'): source_host += '/'
+        if not host.endswith('/'): host += '/'
         secret_key = body.get('secretKey', '')
         retry_count = 0 if 'retry_count' not in body else body['retry_count']
         resource = self._build_resource(body, host, secret_key)
@@ -385,7 +388,7 @@ class Connector(object):
             return
 
         # register extractor
-        url = "%sapi/extractors" % host
+        url = "%sapi/extractors" % source_host
         if url not in Connector.registered_clowder:
             Connector.registered_clowder.append(url)
             self.register_extractor("%s?key=%s" % (url, secret_key))
@@ -398,7 +401,7 @@ class Connector(object):
         try:
             check_result = pyclowder.utils.CheckMessage.download
             if self.check_message:
-                check_result = self.check_message(self, host, secret_key, resource, body)
+                check_result = self.check_message(self, source_host, secret_key, resource, body)
             if check_result != pyclowder.utils.CheckMessage.ignore:
                 if self.process_message:
 
@@ -418,10 +421,10 @@ class Connector(object):
                                     found_local = True
                                 resource['local_paths'] = [file_path]
 
-                            self.process_message(self, host, secret_key, resource, body)
+                            self.process_message(self, source_host, secret_key, resource, body)
 
-                            clowderurl = "%sfiles/%s" % (host, body.get('id', ''))
-                            # notificatino of extraction job is done by email.
+                            clowderurl = "%sfiles/%s" % (source_host, body.get('id', ''))
+                            # notification of extraction job is done by email.
                             self.email(emailaddrlist, clowderurl)
                         finally:
                             if file_path is not None and not found_local:
@@ -438,8 +441,8 @@ class Connector(object):
                                 (file_paths, tmp_files, tmp_dirs) = self._prepare_dataset(host, secret_key, resource)
                             resource['local_paths'] = file_paths
 
-                            self.process_message(self, host, secret_key, resource, body)
-                            clowderurl = "%sdatasets/%s" % (host, body.get('datasetId', ''))
+                            self.process_message(self, source_host, secret_key, resource, body)
+                            clowderurl = "%sdatasets/%s" % (source_host, body.get('datasetId', ''))
                             # notificatino of extraction job is done by email.
                             self.email(emailaddrlist, clowderurl)
                         finally:
@@ -624,9 +627,9 @@ class RabbitMQConnector(Connector):
     def __init__(self, extractor_name, extractor_info,
                  rabbitmq_uri, rabbitmq_exchange=None, rabbitmq_key=None, rabbitmq_queue=None,
                  check_message=None, process_message=None, ssl_verify=True, mounted_paths=None,
-                 heartbeat=5*60):
+                 heartbeat=5*60, clowder_url=None):
         super(RabbitMQConnector, self).__init__(extractor_name, extractor_info, check_message, process_message,
-                                                ssl_verify, mounted_paths)
+                                                ssl_verify, mounted_paths, clowder_url)
         self.rabbitmq_uri = rabbitmq_uri
         self.rabbitmq_exchange = rabbitmq_exchange
         self.rabbitmq_key = rabbitmq_key
@@ -639,7 +642,7 @@ class RabbitMQConnector(Connector):
         self.consumer_tag = None
         self.worker = None
         self.announcer = None
-        self.heartbeat = 5*60
+        self.heartbeat = heartbeat
 
     def connect(self):
         """connect to rabbitmq using URL parameters"""
@@ -770,7 +773,7 @@ class RabbitMQConnector(Connector):
                 job_id = json_body['jobid']
 
             self.worker = RabbitMQHandler(self.extractor_name, self.extractor_info, job_id, self.check_message,
-                                          self.process_message, self.ssl_verify, self.mounted_paths,
+                                          self.process_message, self.ssl_verify, self.mounted_paths, self.clowder_url,
                                           method, header, body)
             self.worker.start_thread(json_body)
 
@@ -848,9 +851,10 @@ class RabbitMQHandler(Connector):
     """
 
     def __init__(self, extractor_name, extractor_info, job_id, check_message=None, process_message=None, ssl_verify=True,
-                 mounted_paths=None, method=None, header=None, body=None):
+                 mounted_paths=None, clowder_url=None, method=None, header=None, body=None):
+
         super(RabbitMQHandler, self).__init__(extractor_name, extractor_info, check_message, process_message,
-                                              ssl_verify, mounted_paths)
+                                              ssl_verify, mounted_paths, clowder_url)
         self.method = method
         self.header = header
         self.body = body
