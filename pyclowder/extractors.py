@@ -64,6 +64,7 @@ class Extractor(object):
             rabbitmq_queuename = self.extractor_info['name']
         rabbitmq_uri = os.getenv('RABBITMQ_URI', "amqp://guest:guest@127.0.0.1/%2f")
         rabbitmq_exchange = os.getenv('RABBITMQ_EXCHANGE', "clowder")
+        clowder_url = os.getenv("CLOWDER_URL", "")
         registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
         logging_config = os.getenv("LOGGING")
         mounted_paths = os.getenv("MOUNTED_PATHS", "{}")
@@ -85,6 +86,8 @@ class Extractor(object):
         self.parser.add_argument('--pickle', nargs='*', dest="hpc_picklefile",
                                  default=None, action='append',
                                  help='pickle file that needs to be processed (only needed for HPC)')
+        self.parser.add_argument('--clowderURL', nargs='?', dest='clowder_url', default=clowder_url,
+                                 help='Clowder host URL')
         self.parser.add_argument('--register', '-r', nargs='?', dest="registration_endpoints",
                                  default=registration_endpoints,
                                  help='Clowder registration URL (default=%s)' % registration_endpoints)
@@ -159,7 +162,8 @@ class Extractor(object):
                                               rabbitmq_exchange=self.args.rabbitmq_exchange,
                                               rabbitmq_key=rabbitmq_key,
                                               rabbitmq_queue=self.args.rabbitmq_queuename,
-                                              mounted_paths=json.loads(self.args.mounted_paths))
+                                              mounted_paths=json.loads(self.args.mounted_paths),
+                                              clowder_url=self.args.clowder_url)
                     rconn.connect()
                     rconn.register_extractor(self.args.registration_endpoints)
                     connectors.append(rconn)
