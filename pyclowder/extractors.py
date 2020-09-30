@@ -81,8 +81,6 @@ class Extractor(object):
                                  help='connector to use (default=RabbitMQ)')
         self.parser.add_argument('--logging', '-l', nargs='?', default=logging_config,
                                  help='file or url or logging coonfiguration (default=None)')
-        self.parser.add_argument('--num', '-n', type=int, nargs='?', default=1,
-                                 help='number of parallel instances (default=1)')
         self.parser.add_argument('--pickle', nargs='*', dest="hpc_picklefile",
                                  default=None, action='append',
                                  help='pickle file that needs to be processed (only needed for HPC)')
@@ -129,32 +127,32 @@ class Extractor(object):
     def start(self):
         """Create the connector and start listening.
 
-        Based on the num command line argument this will start multiple instances of a connector and run each of them
-        in their own thread. Once the connector(s) are created this function will go into a endless loop until either
+        Start a single instance of a connector and run it in their own thread.
+        Once the connector(s) are created this function will go into a endless loop until either
         all connectors have stopped or the user kills the program.
         """
         logger = logging.getLogger(__name__)
-        connectors = list()
-        for connum in range(self.args.num):
-            if self.args.connector == "RabbitMQ":
-                if 'rabbitmq_uri' not in self.args:
-                    logger.error("Missing URI for RabbitMQ")
-                else:
-                    rabbitmq_key = []
-                    if not self.args.nobind:
-                        for key, value in self.extractor_info['process'].items():
-                            for mt in value:
-                                # Replace trailing '*' with '#'
-                                mt = re.sub('(\*$)', '#', mt)
-                                if mt.find('*') > -1:
-                                    logger.error("Invalid '*' found in rabbitmq_key: %s" % mt)
-                                else:
-                                    if mt == "":
-                                        rabbitmq_key.append("*.%s.#" % key)
-                                    else:
-                                        rabbitmq_key.append("*.%s.%s" % (key, mt.replace("/", ".")))
+        connector = None
 
-                    rconn = RabbitMQConnector(self.args.rabbitmq_queuename,
+        if self.args.connector == "RabbitMQ":
+            if 'rabbitmq_uri' not in self.args:
+                logger.error("Missing URI for RabbitMQ")
+            else:
+                rabbitmq_key = []
+                if not self.args.nobind:
+                    for key, value in self.extractor_info['process'].items():
+                        for mt in value:
+                            # Replace trailing '*' with '#'
+                            mt = re.sub('(\*$)', '#', mt)
+                            if mt.find('*') > -1:
+                                logger.error("Invalid '*' found in rabbitmq_key: %s" % mt)
+                            else:
+                                if mt == "":
+                                    rabbitmq_key.append("*.%s.#" % key)
+                                else:
+                                    rabbitmq_key.append("*.%s.%s" % (key, mt.replace("/", ".")))
+
+                connector = RabbitMQConnector(self.args.rabbitmq_queuename,
                                               self.extractor_info,
                                               check_message=self.check_message,
                                               process_message=self.process_message,
@@ -164,54 +162,50 @@ class Extractor(object):
                                               rabbitmq_queue=self.args.rabbitmq_queuename,
                                               mounted_paths=json.loads(self.args.mounted_paths),
                                               clowder_url=self.args.clowder_url)
-                    rconn.connect()
-                    rconn.register_extractor(self.args.registration_endpoints)
-                    connectors.append(rconn)
-                    threading.Thread(target=rconn.listen, name="Connector-" + str(connum)).start()
-            elif self.args.connector == "HPC":
-                if 'hpc_picklefile' not in self.args:
-                    logger.error("Missing hpc_picklefile for HPCExtractor")
-                else:
-                    hconn = HPCConnector(self.extractor_info['name'],
+                connector.connect()
+                connector.register_extractor(self.args.registration_endpoints)
+                threading.Thread(target=connector.listen, name="RabbitMQConnector").start()
+
+        elif self.args.connector == "HPC":
+            if 'hpc_picklefile' not in self.args:
+                logger.error("Missing hpc_picklefile for HPCExtractor")
+            else:
+                connector = HPCConnector(self.extractor_info['name'],
                                          self.extractor_info,
                                          check_message=self.check_message,
                                          process_message=self.process_message,
                                          picklefile=self.args.hpc_picklefile,
                                          mounted_paths=json.loads(self.args.mounted_paths))
-                    hconn.register_extractor(self.args.registration_endpoints)
-                    connectors.append(hconn)
-                    threading.Thread(target=hconn.listen, name="Connector-" + str(connum)).start()
-            elif self.args.connector == "Local":
+                connector.register_extractor(self.args.registration_endpoints)
+                threading.Thread(target=connector.listen, name="HPCConnector").start()
 
-                if self.args.input_file_path is None:
-                    logger.error("Environment variable INPUT_FILE_PATH or parameter --input-file-path is not set. "
-                                 "Please try again after setting one of these")
-                elif not os.path.isfile(self.args.input_file_path):
-                    logger.error("Local input file is not a regular file. Please check the path.")
-                else:
-                    local_connector = LocalConnector(self.extractor_info['name'],
-                                                     self.extractor_info,
-                                                     self.args.input_file_path,
-                                                     process_message=self.process_message,
-                                                     output_file_path=self.args.output_file_path)
-                    connectors.append(local_connector)
-                    threading.Thread(target=local_connector.listen, name="Connector-" + str(connum)).start()
+        elif self.args.connector == "Local":
+            if self.args.input_file_path is None:
+                logger.error("Environment variable INPUT_FILE_PATH or parameter "
+                             "--input-file-path is not set. Please try again after "
+                             "setting one of these")
+            elif not os.path.isfile(self.args.input_file_path):
+                logger.error("Local input file is not a regular file. Please check the path.")
             else:
-                logger.error("Could not create instance of %s connector.", self.args.connector)
-                sys.exit(-1)
+                connector = LocalConnector(self.extractor_info['name'],
+                                           self.extractor_info,
+                                           self.args.input_file_path,
+                                           process_message=self.process_message,
+                                           output_file_path=self.args.output_file_path)
+                threading.Thread(target=connector.listen, name="LocalConnector").start()
+        else:
+            logger.error("Could not create instance of %s connector.", self.args.connector)
+            sys.exit(-1)
 
         logger.info("Waiting for messages. To exit press CTRL+C")
         try:
-            while connectors:
+            while connector.alive():
                 time.sleep(1)
-                connectors = filter(lambda x: x.alive(), connectors)
         except KeyboardInterrupt:
             pass
         except BaseException:
             logger.exception("Error while consuming messages.")
-
-        for c in connectors:
-            c.stop()
+        connector.stop()
 
     def get_metadata(self, content, resource_type, resource_id, server=None):
         """Generate a metadata field.

@@ -4,12 +4,27 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 2.3.2 - 2020-09-24
+
+### Fixed
+- When rabbitmq restarts the extractor would not stop and restart, resulting 
+  in the extractor no longer receiving any messages. #17
+
+### Added
+- Can specify url to use for extractor downloads, this is helpful for instances
+  that have access to the internal URL for clowder, for example in docker/kubernetes.
+  
+### Removed
+- Removed ability to run multiple connectors in the same python process. If
+  parallelism is needed, use multiple processes (or containers).
+
 ## 2.3.1 - 2020-09-18
 
 With this version we no longer gurantee support for versions of python below 3.
 
 ### Fixed
-- There was an issue where status messages could cause an exception. This would prevent most extractors from running correctly.
+- There was an issue where status messages could cause an exception. This would
+  prevent most extractors from running correctly.
 
 ## 2.3.0 - 2020-09-15
 
