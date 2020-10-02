@@ -877,8 +877,8 @@ class RabbitMQHandler(Connector):
         }
         """
         self.thread = threading.Thread(target=self._process_message, args=(json_body,))
-        self.thread.start()
         self.thread.setDaemon(True)
+        self.thread.start()
 
     def is_finished(self):
         with self.lock:
