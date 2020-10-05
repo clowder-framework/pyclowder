@@ -376,8 +376,9 @@ class Connector(object):
             logger.debug(emailaddrlist)
         # source_host is original from the message, host is remapped to CLOWDER_URL if given
         source_host = body.get('host', '')
-        host = self.clowder_url if self.clowder_url is not None else source_host
+        host = self.clowder_url if self.clowder_url else source_host
         if host == '' or source_host == '':
+            logging.error("Host is empty, this is bad.")
             return
         if not source_host.endswith('/'): source_host += '/'
         if not host.endswith('/'): host += '/'
@@ -385,6 +386,7 @@ class Connector(object):
         retry_count = 0 if 'retry_count' not in body else body['retry_count']
         resource = self._build_resource(body, host, secret_key)
         if not resource:
+            logging.error("No resource found, this is bad.")
             return
 
         # register extractor
