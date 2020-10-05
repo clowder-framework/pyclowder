@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 2.3.4 - 2020-10-04
+
+### Fixed
+- Extractor would not run in case clowder_url was ""
+
 ## 2.3.3 - 2020-10-02
 
 ### Fixed
