@@ -661,7 +661,6 @@ class RabbitMQConnector(Connector):
 
         # declare the queue in case it does not exist
         self.channel.queue_declare(queue=self.rabbitmq_queue, durable=True)
-        self.channel.queue_declare(queue='extractors.' + self.rabbitmq_queue, durable=True)
         self.channel.queue_declare(queue='error.'+self.rabbitmq_queue, durable=True)
 
         # register with an exchange
