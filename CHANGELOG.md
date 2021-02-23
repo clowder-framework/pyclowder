@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 2.4.0 - 2021-02-22
+
+### Changed
+- clowder is no longer the default exchange. Exchanges are no longer used and
+  this is deprecated.
+- fix check for thread is_alive, fixes warning in python 3.9
+
+### Removed
+- Removed the extractors.<queue_name> since it was not used.
+
 ## 2.3.4 - 2020-10-04
 
 ### Fixed
