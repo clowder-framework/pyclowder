@@ -6,11 +6,6 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 2.4.0 - 2021-02-22
 
-### Added
-- Can now use STREAM=pycurl as environment variable to download file
-  using pycurl instead of requests. Sometimes requests hangs when
-  setting up a SSL connection.
-
 ### Changed
 - clowder is no longer the default exchange. Exchanges are no longer used and
   this is deprecated.

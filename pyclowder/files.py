@@ -10,8 +10,6 @@ import tempfile
 
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
-import pycurl
-import certifi
 from urllib3.filepost import encode_multipart_formdata
 
 from pyclowder.datasets import get_file_list
@@ -46,26 +44,15 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
         intermediatefileid = fileid
 
     url = '%sapi/files/%s?key=%s' % (host, intermediatefileid, key)
+    result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
+
     (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
 
     try:
-        if os.getenv('STREAM', '').lower() == 'pycurl':
-            with os.fdopen(inputfile, "wb") as outputfile:
-                c = pycurl.Curl()
-                if connector and not connector.ssl_verify:
-                    c.setopt(pycurl.SSL_VERIFYPEER, 0)
-                    c.setopt(pycurl.SSL_VERIFYHOST, 0)
-                c.setopt(c.URL, url)
-                c.setopt(c.WRITEDATA, outputfile)
-                c.setopt(c.CAINFO, certifi.where())
-                c.perform()
-                c.close()
-        else:
-            result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
-            with os.fdopen(inputfile, "wb") as outputfile:
-                for chunk in result.iter_content(chunk_size=10 * 1024):
-                    outputfile.write(chunk)
-            return inputfilename
+        with os.fdopen(inputfile, "wb") as outputfile:
+            for chunk in result.iter_content(chunk_size=10*1024):
+                outputfile.write(chunk)
+        return inputfilename
     except Exception:
         os.remove(inputfilename)
         raise
