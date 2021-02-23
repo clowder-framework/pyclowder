@@ -14,6 +14,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - clowder is no longer the default exchange. Exchanges are no longer used and
   this is deprecated.
+- fix check for thread is_alive, fixes warning in python 3.9
 
 ### Removed
 - Removed the extractors.<queue_name> since it was not used.
