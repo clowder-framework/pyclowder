@@ -884,7 +884,7 @@ class RabbitMQHandler(Connector):
 
     def is_finished(self):
         with self.lock:
-            return self.thread and not self.thread.isAlive() and self.finished and len(self.messages) == 0
+            return self.thread and not self.thread.is_alive() and self.finished and len(self.messages) == 0
 
     def process_messages(self, channel, rabbitmq_queue):
         while self.messages:
