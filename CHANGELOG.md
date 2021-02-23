@@ -4,14 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 2.4.1 - 2021-02-22
+## 2.4.0 - 2021-02-22
 
 ### Added
 - Can now use STREAM=pycurl as environment variable to download file
   using pycurl instead of requests. Sometimes requests hangs when
   setting up a SSL connection.
-
-## 2.4.0 - 2020-10-12
 
 ### Changed
 - clowder is no longer the default exchange. Exchanges are no longer used and
