@@ -235,21 +235,17 @@ To use the latest version of pyClowder we recommend choosing a base image of you
 
 ```
 # Base image
-FROM ubuntu:20.04
+FROM python:3-slim
 
 # Creating workdir
 WORKDIR /home/clowder
 
-# Adding necessary code to container under workdir
-COPY <MY.CODE>.py extractor_info.json /home/clowder/
-
-# Install pip
-RUN apt-get update && \
-    apt-get install -y python3-pip
-
 # Install pyClowder and any other python dependencies
 COPY requirements.txt .
 RUN pip3 install -r requirements.txt
+
+# Adding necessary code to container under workdir
+COPY <MY.CODE>.py extractor_info.json /home/clowder/
 
 # Command to be run when container is run
 CMD python3 <MY.CODE>.py
