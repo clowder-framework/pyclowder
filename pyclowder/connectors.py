@@ -813,7 +813,7 @@ class RabbitMQBroadcast:
         self.channel.exchange_declare(exchange='extractors', exchange_type='fanout', durable=True)
 
         self.thread = threading.Thread(target=self.send_heartbeat)
-        self.thread.setDaemon(True)
+        self.thread.daemon = True
         self.thread.start()
 
     def stop_thread(self):
@@ -879,7 +879,7 @@ class RabbitMQHandler(Connector):
         }
         """
         self.thread = threading.Thread(target=self._process_message, args=(json_body,))
-        self.thread.setDaemon(True)
+        self.thread.daemon = True
         self.thread.start()
 
     def is_finished(self):
