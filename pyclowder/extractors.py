@@ -295,11 +295,12 @@ class SimpleExtractor(Extractor):
     Simple extractor. All that is needed to be done is extend the process_file function.
     """
 
-    def __init__(self):
+    def __init__(self,function=None):
         """
         Initialize the extractor and setup the logger.
         """
         Extractor.__init__(self)
+        self.extract_func = function
         self.setup()
 
         # setup logging for the exctractor
@@ -424,7 +425,7 @@ class SimpleExtractor(Extractor):
         :param input_file: the file to be processed.
         :return: the specially formatted dict.
         """
-        return dict()
+        return self.extract_func(input_file)
 
     def process_dataset(self, input_files):
         """
@@ -443,7 +444,7 @@ class SimpleExtractor(Extractor):
         :param input_files: the files to be processed.
         :return: the specially formatted dict.
         """
-        return dict()
+        return self.extract_func(input_files)
 
     def cleanup_data(self, result):
         """
@@ -459,3 +460,6 @@ class SimpleExtractor(Extractor):
         for preview in result.get("previews", []):
             if os.path.exists(preview):
                 os.remove(preview)
+
+    def __call__(self):
+        self.start()
