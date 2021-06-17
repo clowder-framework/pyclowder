@@ -425,7 +425,10 @@ class SimpleExtractor(Extractor):
         :param input_file: the file to be processed.
         :return: the specially formatted dict.
         """
-        return self.extract_func(input_file)
+        if self.extract_func:
+            return self.extract_func(input_file)
+        else:
+            return dict()
 
     def process_dataset(self, input_files):
         """
@@ -444,7 +447,10 @@ class SimpleExtractor(Extractor):
         :param input_files: the files to be processed.
         :return: the specially formatted dict.
         """
-        return self.extract_func(input_files)
+        if self.extract_func:
+            return self.extract_func(input_files)
+        else:
+            return dict()
 
     def cleanup_data(self, result):
         """
