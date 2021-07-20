@@ -66,7 +66,7 @@ class Connector(object):
     registered_clowder = list()
 
     def __init__(self, extractor_name, extractor_info, check_message=None, process_message=None, ssl_verify=True,
-                 mounted_paths=None, clowder_url=None):
+                 mounted_paths=None, clowder_url=None, max_retry=10):
         self.extractor_name = extractor_name
         self.extractor_info = extractor_info
         self.check_message = check_message
@@ -77,6 +77,7 @@ class Connector(object):
         else:
             self.mounted_paths = mounted_paths
         self.clowder_url = clowder_url
+        self.max_retry = max_retry
 
         filename = 'notifications.json'
         self.smtp_server = None
@@ -490,7 +491,7 @@ class Connector(object):
         except Exception as exc:  # pylint: disable=broad-except
             message = str(exc)
             logger.exception("[%s] %s", resource['id'], message)
-            if retry_count < 10:
+            if retry_count < self.max_retry:
                 message = "(#%s) %s" % (retry_count+1, message)
                 self.message_resubmit(resource, retry_count+1, message)
             else:
@@ -629,9 +630,9 @@ class RabbitMQConnector(Connector):
     def __init__(self, extractor_name, extractor_info,
                  rabbitmq_uri, rabbitmq_exchange=None, rabbitmq_key=None, rabbitmq_queue=None,
                  check_message=None, process_message=None, ssl_verify=True, mounted_paths=None,
-                 heartbeat=5*60, clowder_url=None):
+                 heartbeat=5*60, clowder_url=None, max_retry=10):
         super(RabbitMQConnector, self).__init__(extractor_name, extractor_info, check_message, process_message,
-                                                ssl_verify, mounted_paths, clowder_url)
+                                                ssl_verify, mounted_paths, clowder_url, max_retry)
         self.rabbitmq_uri = rabbitmq_uri
         self.rabbitmq_exchange = rabbitmq_exchange
         self.rabbitmq_key = rabbitmq_key
@@ -852,10 +853,10 @@ class RabbitMQHandler(Connector):
     """
 
     def __init__(self, extractor_name, extractor_info, job_id, check_message=None, process_message=None, ssl_verify=True,
-                 mounted_paths=None, clowder_url=None, method=None, header=None, body=None):
+                 mounted_paths=None, clowder_url=None, method=None, header=None, body=None, max_retry=10):
 
         super(RabbitMQHandler, self).__init__(extractor_name, extractor_info, check_message, process_message,
-                                              ssl_verify, mounted_paths, clowder_url)
+                                              ssl_verify, mounted_paths, clowder_url, max_retry)
         self.method = method
         self.header = header
         self.body = body
@@ -977,9 +978,9 @@ class HPCConnector(Connector):
 
     # pylint: disable=too-many-arguments
     def __init__(self, extractor_name, extractor_info, picklefile, job_id=None,
-                 check_message=None, process_message=None, ssl_verify=True, mounted_paths=None):
+                 check_message=None, process_message=None, ssl_verify=True, mounted_paths=None, max_retry=10):
         super(HPCConnector, self).__init__(extractor_name, extractor_info, check_message, process_message,
-                                           ssl_verify, mounted_paths)
+                                           ssl_verify, mounted_paths, max_retry=max_retry)
         self.job_id = job_id
         self.picklefile = picklefile
         self.logfile = None
@@ -1036,8 +1037,8 @@ class LocalConnector(Connector):
 
     """
 
-    def __init__(self, extractor_name, extractor_info, input_file_path, process_message=None, output_file_path=None):
-        super(LocalConnector, self).__init__(extractor_name, extractor_info, process_message=process_message)
+    def __init__(self, extractor_name, extractor_info, input_file_path, process_message=None, output_file_path=None, max_retry=10):
+        super(LocalConnector, self).__init__(extractor_name, extractor_info, process_message=process_message, max_retry=max_retry)
         self.input_file_path = input_file_path
         self.output_file_path = output_file_path
         self.completed_processing = False

@@ -73,6 +73,7 @@ class Extractor(object):
         connector_default = "RabbitMQ"
         if os.getenv('LOCAL_PROCESSING', "False").lower() == "true":
             connector_default = "Local"
+        max_retry = os.getenv('CLOWDER_MAX_RETRY', 10)
 
         # create the actual extractor
         self.parser = argparse.ArgumentParser(description=self.extractor_info['description'])
@@ -108,6 +109,8 @@ class Extractor(object):
         self.parser.add_argument('--version', action='version', version='%(prog)s 1.0')
         self.parser.add_argument('--no-bind', dest="nobind", action='store_true',
                                  help='instance will bind itself to RabbitMQ by name but NOT file type')
+        self.parser.add_argument('--max-retry', dest='max_retry', default=max_retry,
+                                 help='Maximum number of retries if an error happens in the extractor')
 
     def setup(self):
         """Parse command line arguments and so some setup
@@ -161,7 +164,8 @@ class Extractor(object):
                                               rabbitmq_key=rabbitmq_key,
                                               rabbitmq_queue=self.args.rabbitmq_queuename,
                                               mounted_paths=json.loads(self.args.mounted_paths),
-                                              clowder_url=self.args.clowder_url)
+                                              clowder_url=self.args.clowder_url,
+                                              max_retry=self.args.max_retry)
                 connector.connect()
                 connector.register_extractor(self.args.registration_endpoints)
                 threading.Thread(target=connector.listen, name="RabbitMQConnector").start()
@@ -175,7 +179,8 @@ class Extractor(object):
                                          check_message=self.check_message,
                                          process_message=self.process_message,
                                          picklefile=self.args.hpc_picklefile,
-                                         mounted_paths=json.loads(self.args.mounted_paths))
+                                         mounted_paths=json.loads(self.args.mounted_paths),
+                                         max_retry=self.args.max_retry)
                 connector.register_extractor(self.args.registration_endpoints)
                 threading.Thread(target=connector.listen, name="HPCConnector").start()
 
@@ -191,7 +196,8 @@ class Extractor(object):
                                            self.extractor_info,
                                            self.args.input_file_path,
                                            process_message=self.process_message,
-                                           output_file_path=self.args.output_file_path)
+                                           output_file_path=self.args.output_file_path,
+                                           max_retry=self.args.max_retry)
                 threading.Thread(target=connector.listen, name="LocalConnector").start()
         else:
             logger.error("Could not create instance of %s connector.", self.args.connector)
