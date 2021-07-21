@@ -7,6 +7,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## unreleased
 
 ### Changed
+- updated all of the requirements to latest versions
 - updated github actions to automatically create releases
 
 ## 2.4.0 - 2021-02-22
