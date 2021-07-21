@@ -9,6 +9,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Add `--max_retry` CLI flag and `CLOWDER_MAX_RETRY` environment variable.
 
+### Changed
+- updated all of the requirements to latest versions
+- updated github actions to automatically create releases
+
 ## 2.4.0 - 2021-02-22
 
 ### Changed
