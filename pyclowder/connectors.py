@@ -661,7 +661,6 @@ class RabbitMQConnector(Connector):
 
         # declare the queue in case it does not exist
         self.channel.queue_declare(queue=self.rabbitmq_queue, durable=True)
-        self.channel.queue_declare(queue='extractors.' + self.rabbitmq_queue, durable=True)
         self.channel.queue_declare(queue='error.'+self.rabbitmq_queue, durable=True)
 
         # register with an exchange
@@ -884,7 +883,7 @@ class RabbitMQHandler(Connector):
 
     def is_finished(self):
         with self.lock:
-            return self.thread and not self.thread.isAlive() and self.finished and len(self.messages) == 0
+            return self.thread and not self.thread.is_alive() and self.finished and len(self.messages) == 0
 
     def process_messages(self, channel, rabbitmq_queue):
         while self.messages:

@@ -47,6 +47,7 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
 
     (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
+
     try:
         with os.fdopen(inputfile, "wb") as outputfile:
             for chunk in result.iter_content(chunk_size=10*1024):

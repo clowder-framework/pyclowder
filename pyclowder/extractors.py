@@ -63,7 +63,7 @@ class Extractor(object):
         if not rabbitmq_queuename:
             rabbitmq_queuename = self.extractor_info['name']
         rabbitmq_uri = os.getenv('RABBITMQ_URI', "amqp://guest:guest@127.0.0.1/%2f")
-        rabbitmq_exchange = os.getenv('RABBITMQ_EXCHANGE', "clowder")
+        rabbitmq_exchange = os.getenv('RABBITMQ_EXCHANGE', "")
         clowder_url = os.getenv("CLOWDER_URL", "")
         registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
         logging_config = os.getenv("LOGGING")
@@ -143,7 +143,7 @@ class Extractor(object):
                     for key, value in self.extractor_info['process'].items():
                         for mt in value:
                             # Replace trailing '*' with '#'
-                            mt = re.sub('(\*$)', '#', mt)
+                            mt = re.sub(r'(\*$)', '#', mt)
                             if mt.find('*') > -1:
                                 logger.error("Invalid '*' found in rabbitmq_key: %s" % mt)
                             else:
