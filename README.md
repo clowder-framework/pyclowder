@@ -12,17 +12,24 @@ create new extractors.
 
 ## Setup
 
+Install using pip (for most recent versions see: https://pypi.org/project/pyclowder/):
+
+```
+pip install pyclowder==2.4.0
+```
+
 Install pyClowder on your system by cloning this repo:
 
 ```
-git clone https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder.git
+git clone https://github.com/clowder-framework/pyclowder.git
 cd pyclowder
 pip install -r requirements.txt
 python setup.py install
+
 ```
-or directly from Bitbucket:
+or directly from GitHub:
 ```
-pip install -r https://opensource.ncsa.illinois.edu/bitbucket/projects/CATS/repos/pyclowder/raw/requirements.txt git+https://opensource.ncsa.illinois.edu/bitbucket/scm/cats/pyclowder.git
+pip install -r https://raw.githubusercontent.com/clowder-framework/pyclowder/master/requirements.txt git+https://github.com/clowder-framework/pyclowder.git
 ```
 
 ## Example Extractor
@@ -224,6 +231,25 @@ the docker container.
 If you need any python packages installed you will need to create file called requiremenets.txt. If this file exists
 the docker build process will use `pip install -r requirements.txt` to install these packages.
 
+To use the latest version of pyClowder we recommend choosing a base image of your choice and install pyClowder by adding it to the requirements.txt file. An example Dockerfile is below:
+
+```
+# Base image
+FROM python:3-slim
+
+# Creating workdir
+WORKDIR /home/clowder
+
+# Install pyClowder and any other python dependencies
+COPY requirements.txt .
+RUN pip3 install -r requirements.txt
+
+# Adding necessary code to container under workdir
+COPY <MY.CODE>.py extractor_info.json /home/clowder/
+
+# Command to be run when container is run
+CMD python3 <MY.CODE>.py
+```
 ## SimpleExtractor
 Motivation: design and implement a simple extractor to bridge Python developer and knowledge of PyClowder library. It requires little effort for Python developers to wrap their python code into Clowder's extractors.
 
