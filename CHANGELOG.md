@@ -4,7 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## unreleased
+## UNRELEASED
+
+### Added
+- Add `--max_retry` CLI flag and `CLOWDER_MAX_RETRY` environment variable.
 
 ### Changed
 - updated all of the requirements to latest versions

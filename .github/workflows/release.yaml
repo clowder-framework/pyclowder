@@ -3,7 +3,6 @@ name: Create Release
 on:
   push:
     branches:
-      - main
       - master
 
 jobs:
@@ -27,7 +26,7 @@ jobs:
           echo "::set-output name=changelog::$changelog"
 
       - name: create release
-        if: steps.release_info.outputs.version != 'unreleased'
+        if: github.event_name == 'push' && env.BRANCH == 'master' && steps.release_info.outputs.version != 'unreleased'
         uses: actions/create-release@v1
         id: create_release
         env:
