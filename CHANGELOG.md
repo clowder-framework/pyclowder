@@ -12,6 +12,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Changed
 - updated all of the requirements to latest versions
 - updated github actions to automatically create releases
+- use thread.daemon = True to fix python 3.10
 
 ## 2.4.0 - 2021-02-22
 
