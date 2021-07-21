@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+  pull_request:
 
 jobs:
   publish:
@@ -49,7 +50,7 @@ jobs:
           python setup.py sdist bdist_wheel
 
       - name: Publish distribution to PyPI
-        if: steps.release_info.outputs.version != 'unreleased'
+        if: github.event_name == 'push' && env.BRANCH == 'master' && steps.release_info.outputs.version != 'unreleased'
         uses: pypa/gh-action-pypi-publish@master
         with:
           password: ${{ secrets.pypi_password }}
