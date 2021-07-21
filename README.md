@@ -15,7 +15,7 @@ create new extractors.
 Install using pip (for most recent versions see: https://pypi.org/project/pyclowder/):
 
 ```
-pip install pyclowder==2.4.0
+pip install pyclowder==2.4.1
 ```
 
 Install pyClowder on your system by cloning this repo:

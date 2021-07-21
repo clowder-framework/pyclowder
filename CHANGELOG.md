@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## UNRELEASED
+## 2.4.1 - 2021-07-21
 
 ### Added
 - Add `--max_retry` CLI flag and `CLOWDER_MAX_RETRY` environment variable.
