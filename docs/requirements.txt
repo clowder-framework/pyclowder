@@ -1,4 +1,4 @@
-enum34==1.1.6
-Sphinx==1.6.2
-pika==0.10.0
-PyYAML==5.1
+enum34==1.1.10
+Sphinx==4.1.1
+pika==1.2.0
+PyYAML==5.4.1
