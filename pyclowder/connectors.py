@@ -357,6 +357,10 @@ class Connector(object):
 
         # If we didn't find any files locally, download dataset .zip as normal
         else:
+            file_paths = []
+            tmp_files_created = []
+            tmp_dirs_created = []
+            logger.info("we found no files")
             try:
                 inputzip = pyclowder.datasets.download(self, host, secret_key, resource["id"])
                 file_paths = pyclowder.utils.extract_zip_contents(inputzip)
@@ -377,7 +381,7 @@ class Connector(object):
         file should be downloaded. Finally it will call the actual process_message function.
         """
 
-        d
+        logger = logging.getLogger(__name__)
         emailaddrlist = None
         if body.get('notifies'):
             emailaddrlist = body.get('notifies')
