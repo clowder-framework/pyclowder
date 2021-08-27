@@ -296,6 +296,8 @@ class Connector(object):
 
         logger = logging.getLogger(__name__)
 
+        file_paths = []
+
         located_files = []
         missing_files = []
         tmp_files_created = []
