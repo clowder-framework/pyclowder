@@ -357,9 +357,6 @@ class Connector(object):
 
         # If we didn't find any files locally, download dataset .zip as normal
         else:
-            file_paths = []
-            tmp_files_created = []
-            tmp_dirs_created = []
             logger.info("we found no files")
             try:
                 inputzip = pyclowder.datasets.download(self, host, secret_key, resource["id"])
