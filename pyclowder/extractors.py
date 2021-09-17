@@ -173,7 +173,6 @@ class Extractor(object):
                                               max_retry=self.args.max_retry,
                                               extractor_key=self.args.extractor_key)
                 connector.connect()
-                logger.info("new version check OK")
                 connector.register_extractor(self.args.registration_endpoints)
                 threading.Thread(target=connector.listen, name="RabbitMQConnector").start()
 
