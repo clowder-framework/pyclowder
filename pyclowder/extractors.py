@@ -66,6 +66,7 @@ class Extractor(object):
         rabbitmq_exchange = os.getenv('RABBITMQ_EXCHANGE', "")
         clowder_url = os.getenv("CLOWDER_URL", "")
         registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
+        extractor_key = os.getenv("EXTRACTOR_KEY", "")
         logging_config = os.getenv("LOGGING")
         mounted_paths = os.getenv("MOUNTED_PATHS", "{}")
         input_file_path = os.getenv("INPUT_FILE_PATH")
@@ -90,6 +91,9 @@ class Extractor(object):
         self.parser.add_argument('--register', '-r', nargs='?', dest="registration_endpoints",
                                  default=registration_endpoints,
                                  help='Clowder registration URL (default=%s)' % registration_endpoints)
+        self.parser.add_argument('--key', '-k', dest="extractor_key",
+                                 default=extractor_key,
+                                 help='Unique key to use for extractor queue ID (sets extractor to private)')
         self.parser.add_argument('--rabbitmqURI', nargs='?', dest='rabbitmq_uri', default=rabbitmq_uri,
                                  help='rabbitMQ URI (default=%s)' % rabbitmq_uri.replace("%", "%%"))
         self.parser.add_argument('--rabbitmqQUEUE', nargs='?', dest='rabbitmq_queuename',
@@ -155,6 +159,7 @@ class Extractor(object):
                                 else:
                                     rabbitmq_key.append("*.%s.%s" % (key, mt.replace("/", ".")))
 
+                logger.info('Creating connector with key '+self.args.extractor_key)
                 connector = RabbitMQConnector(self.args.rabbitmq_queuename,
                                               self.extractor_info,
                                               check_message=self.check_message,
@@ -165,8 +170,10 @@ class Extractor(object):
                                               rabbitmq_queue=self.args.rabbitmq_queuename,
                                               mounted_paths=json.loads(self.args.mounted_paths),
                                               clowder_url=self.args.clowder_url,
-                                              max_retry=self.args.max_retry)
+                                              max_retry=self.args.max_retry,
+                                              extractor_key=self.args.extractor_key)
                 connector.connect()
+                logger.info("new version check OK")
                 connector.register_extractor(self.args.registration_endpoints)
                 threading.Thread(target=connector.listen, name="RabbitMQConnector").start()
 

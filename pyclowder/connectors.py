@@ -66,7 +66,7 @@ class Connector(object):
     registered_clowder = list()
 
     def __init__(self, extractor_name, extractor_info, check_message=None, process_message=None, ssl_verify=True,
-                 mounted_paths=None, clowder_url=None, max_retry=10):
+                 mounted_paths=None, clowder_url=None, max_retry=10, extractor_key=None):
         self.extractor_name = extractor_name
         self.extractor_info = extractor_info
         self.check_message = check_message
@@ -77,6 +77,7 @@ class Connector(object):
         else:
             self.mounted_paths = mounted_paths
         self.clowder_url = clowder_url
+        self.extractor_key = extractor_key
         self.max_retry = max_retry
 
         filename = 'notifications.json'
@@ -391,10 +392,16 @@ class Connector(object):
             return
 
         # register extractor
-        url = "%sapi/extractors" % source_host
-        if url not in Connector.registered_clowder:
-            Connector.registered_clowder.append(url)
-            self.register_extractor("%s?key=%s" % (url, secret_key))
+        if self.extractor_key is None:
+            url = "%sapi/extractors" % source_host
+            if url not in Connector.registered_clowder:
+                Connector.registered_clowder.append(url)
+                self.register_extractor("%s?key=%s" % (url, secret_key))
+        else:
+            url = "%sapi/extractors/private/%s" % (source_host, self.extractor_key)
+            if url not in Connector.registered_clowder:
+                Connector.registered_clowder.append(url)
+                self.register_extractor("%s?key=%s" % (url, secret_key))
 
         # tell everybody we are starting to process the file
         self.status_update(pyclowder.utils.StatusMessage.start, resource, "Started processing.")
@@ -630,7 +637,7 @@ class RabbitMQConnector(Connector):
     def __init__(self, extractor_name, extractor_info,
                  rabbitmq_uri, rabbitmq_exchange=None, rabbitmq_key=None, rabbitmq_queue=None,
                  check_message=None, process_message=None, ssl_verify=True, mounted_paths=None,
-                 heartbeat=5*60, clowder_url=None, max_retry=10):
+                 heartbeat=5*60, clowder_url=None, max_retry=10, extractor_key=None):
         super(RabbitMQConnector, self).__init__(extractor_name, extractor_info, check_message, process_message,
                                                 ssl_verify, mounted_paths, clowder_url, max_retry)
         self.rabbitmq_uri = rabbitmq_uri
@@ -640,6 +647,9 @@ class RabbitMQConnector(Connector):
             self.rabbitmq_queue = extractor_info['name']
         else:
             self.rabbitmq_queue = rabbitmq_queue
+        self.extractor_key = extractor_key
+        if extractor_key is not None:
+            self.rabbitmq_queue += extractor_key
         self.channel = None
         self.connection = None
         self.consumer_tag = None
