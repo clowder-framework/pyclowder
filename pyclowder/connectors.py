@@ -516,12 +516,8 @@ class Connector(object):
         data = self.extractor_info
         if self.extractor_key is not None and len(self.extractor_key) > 0:
             data["unique_key"] = self.extractor_key
-            logger.info("Registering extractor with key "+self.extractor_key)
-            logger.info(endpoints)
 
         for url in endpoints.split(','):
-            logger.info(url)
-            logger.info("submitting...")
             if "unique_key" in data:
                 if url.find("?") > -1: url += "&user=%s" % self.clowder_email
                 else: url += "?user=%s" % self.clowder_email # TODO: This will not work, need an auth key matching email
