@@ -66,7 +66,7 @@ class Connector(object):
     registered_clowder = list()
 
     def __init__(self, extractor_name, extractor_info, check_message=None, process_message=None, ssl_verify=True,
-                 mounted_paths=None, clowder_url=None, max_retry=10, extractor_key=None):
+                 mounted_paths=None, clowder_url=None, max_retry=10, extractor_key=None, clowder_email=None):
         self.extractor_name = extractor_name
         self.extractor_info = extractor_info
         self.check_message = check_message
@@ -77,6 +77,7 @@ class Connector(object):
         else:
             self.mounted_paths = mounted_paths
         self.clowder_url = clowder_url
+        self.clowder_email = clowder_email
         self.extractor_key = extractor_key
         self.max_retry = max_retry
 
@@ -392,16 +393,10 @@ class Connector(object):
             return
 
         # register extractor
-        if self.extractor_key is None:
-            url = "%sapi/extractors" % source_host
-            if url not in Connector.registered_clowder:
-                Connector.registered_clowder.append(url)
-                self.register_extractor("%s?key=%s" % (url, secret_key))
-        else:
-            url = "%sapi/extractors/private/%s" % (source_host, self.extractor_key)
-            if url not in Connector.registered_clowder:
-                Connector.registered_clowder.append(url)
-                self.register_extractor("%s?key=%s" % (url, secret_key))
+        url = "%sapi/extractors" % source_host
+        if url not in Connector.registered_clowder:
+            self.register_extractor("%s?key=%s" % (url, secret_key))
+            Connector.registered_clowder.append(url)
 
         # tell everybody we are starting to process the file
         self.status_update(pyclowder.utils.StatusMessage.start, resource, "Started processing.")
@@ -519,18 +514,25 @@ class Connector(object):
 
         headers = {'Content-Type': 'application/json'}
         data = self.extractor_info
+        if self.extractor_key is not None and len(self.extractor_key) > 0:
+            data["unique_key"] = self.extractor_key
+            logger.info("Registering extractor with key "+self.extractor_key)
+            logger.info(endpoints)
 
         for url in endpoints.split(','):
-            if url not in Connector.registered_clowder:
-                Connector.registered_clowder.append(url)
-                try:
-                    result = requests.post(url.strip(), headers=headers,
-                                           data=json.dumps(data),
-                                           verify=self.ssl_verify)
-                    result.raise_for_status()
-                    logger.debug("Registering extractor with %s : %s", url, result.text)
-                except Exception as exc:  # pylint: disable=broad-except
-                    logger.exception('Error in registering extractor: ' + str(exc))
+            logger.info(url)
+            logger.info("submitting...")
+            if "unique_key" in data:
+                if url.find("?") > -1: url += "&user=%s" % self.clowder_email
+                else: url += "?user=%s" % self.clowder_email # TODO: This will not work, need an auth key matching email
+            try:
+                result = requests.post(url.strip(), headers=headers,
+                                       data=json.dumps(data),
+                                       verify=self.ssl_verify)
+                result.raise_for_status()
+                logger.info("Registering extractor as %s : %s", url, result.text)
+            except Exception as exc:  # pylint: disable=broad-except
+                logger.exception('Error in registering extractor: ' + str(exc))
 
     # pylint: disable=no-self-use
     def status_update(self, status, resource, message):
@@ -637,9 +639,9 @@ class RabbitMQConnector(Connector):
     def __init__(self, extractor_name, extractor_info,
                  rabbitmq_uri, rabbitmq_exchange=None, rabbitmq_key=None, rabbitmq_queue=None,
                  check_message=None, process_message=None, ssl_verify=True, mounted_paths=None,
-                 heartbeat=5*60, clowder_url=None, max_retry=10, extractor_key=None):
+                 heartbeat=10, clowder_url=None, max_retry=10, extractor_key=None, clowder_email=None):
         super(RabbitMQConnector, self).__init__(extractor_name, extractor_info, check_message, process_message,
-                                                ssl_verify, mounted_paths, clowder_url, max_retry)
+                                                ssl_verify, mounted_paths, clowder_url, max_retry, extractor_key, clowder_email)
         self.rabbitmq_uri = rabbitmq_uri
         self.rabbitmq_exchange = rabbitmq_exchange
         self.rabbitmq_key = rabbitmq_key
@@ -649,7 +651,7 @@ class RabbitMQConnector(Connector):
             self.rabbitmq_queue = rabbitmq_queue
         self.extractor_key = extractor_key
         if extractor_key is not None:
-            self.rabbitmq_queue += extractor_key
+            self.rabbitmq_queue += ".UK__" + extractor_key
         self.channel = None
         self.connection = None
         self.consumer_tag = None
@@ -697,7 +699,7 @@ class RabbitMQConnector(Connector):
                                     routing_key="extractors." + self.extractor_name)
 
         # start the extractor announcer
-        self.announcer = RabbitMQBroadcast(self.rabbitmq_uri, self.extractor_info, self.rabbitmq_queue, self.heartbeat)
+        self.announcer = RabbitMQBroadcast(self.rabbitmq_uri, self.extractor_info, self.clowder_email, self.rabbitmq_queue, self.heartbeat)
         self.announcer.start_thread()
 
     def listen(self):
@@ -801,10 +803,11 @@ class RabbitMQConnector(Connector):
 
 
 class RabbitMQBroadcast:
-    def __init__(self, rabbitmq_uri, extractor_info, rabbitmq_queue, heartbeat):
+    def __init__(self, rabbitmq_uri, extractor_info, clowder_email, rabbitmq_queue, heartbeat):
         self.active = True
         self.rabbitmq_uri = rabbitmq_uri
         self.extractor_info = extractor_info
+        self.clowder_email = clowder_email
         self.rabbitmq_queue = rabbitmq_queue
         self.heartbeat = heartbeat
         self.id = str(uuid.uuid4())
@@ -834,6 +837,7 @@ class RabbitMQBroadcast:
         message = {
             'id': self.id,
             'queue': self.rabbitmq_queue,
+            'owner': self.clowder_email,
             'extractor_info': self.extractor_info
         }
         next_heartbeat = time.time()
@@ -841,6 +845,8 @@ class RabbitMQBroadcast:
             try:
                 self.channel.connection.process_data_events()
                 if time.time() >= next_heartbeat:
+                    logging.getLogger(__name__).info("Sending heartbeat...")
+                    logging.getLogger(__name__).info(message)
                     self.channel.basic_publish(exchange='extractors', routing_key='', body=json.dumps(message))
                     next_heartbeat = time.time() + self.heartbeat
             except SystemExit:

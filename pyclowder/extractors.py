@@ -67,6 +67,7 @@ class Extractor(object):
         clowder_url = os.getenv("CLOWDER_URL", "")
         registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
         extractor_key = os.getenv("EXTRACTOR_KEY", "")
+        clowder_email = os.getenv("CLOWDER_EMAIL", "")
         logging_config = os.getenv("LOGGING")
         mounted_paths = os.getenv("MOUNTED_PATHS", "{}")
         input_file_path = os.getenv("INPUT_FILE_PATH")
@@ -94,6 +95,9 @@ class Extractor(object):
         self.parser.add_argument('--key', '-k', dest="extractor_key",
                                  default=extractor_key,
                                  help='Unique key to use for extractor queue ID (sets extractor to private)')
+        self.parser.add_argument('--user', '-u', dest="clowder_email",
+                                 default=clowder_email,
+                                 help='Email address of Clowder user who will initially be assigned ownership (ignored if no --key provided)')
         self.parser.add_argument('--rabbitmqURI', nargs='?', dest='rabbitmq_uri', default=rabbitmq_uri,
                                  help='rabbitMQ URI (default=%s)' % rabbitmq_uri.replace("%", "%%"))
         self.parser.add_argument('--rabbitmqQUEUE', nargs='?', dest='rabbitmq_queuename',
@@ -159,7 +163,6 @@ class Extractor(object):
                                 else:
                                     rabbitmq_key.append("*.%s.%s" % (key, mt.replace("/", ".")))
 
-                logger.info('Creating connector with key '+self.args.extractor_key)
                 connector = RabbitMQConnector(self.args.rabbitmq_queuename,
                                               self.extractor_info,
                                               check_message=self.check_message,
@@ -171,9 +174,17 @@ class Extractor(object):
                                               mounted_paths=json.loads(self.args.mounted_paths),
                                               clowder_url=self.args.clowder_url,
                                               max_retry=self.args.max_retry,
-                                              extractor_key=self.args.extractor_key)
+                                              extractor_key=self.args.extractor_key,
+                                              clowder_email=self.args.clowder_email)
                 connector.connect()
                 connector.register_extractor(self.args.registration_endpoints)
+
+                # TODO: register extractor initially without _process_message?
+                url = "%sapi/extractors" % self.args.clowder_url
+                if url not in connector.registered_clowder:
+                    connector.register_extractor("%s" % (url))
+                    connector.registered_clowder.append(url)
+
                 threading.Thread(target=connector.listen, name="RabbitMQConnector").start()
 
         elif self.args.connector == "HPC":
