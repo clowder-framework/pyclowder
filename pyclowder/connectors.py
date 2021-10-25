@@ -646,7 +646,7 @@ class RabbitMQConnector(Connector):
         else:
             self.rabbitmq_queue = rabbitmq_queue
         self.extractor_key = extractor_key
-        if extractor_key is not None:
+        if extractor_key is not None and len(extractor_key) > 0:
             self.rabbitmq_queue = "private.%s.%s" % (extractor_key, self.rabbitmq_queue)
         self.channel = None
         self.connection = None
