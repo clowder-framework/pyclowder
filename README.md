@@ -26,9 +26,7 @@ cd pyclowder
 pip install -r requirements.txt
 python setup.py install
 ```
-
 or directly from GitHub:
-
 ```
 pip install -r https://raw.githubusercontent.com/clowder-framework/pyclowder/master/requirements.txt git+https://github.com/clowder-framework/pyclowder.git
 ```
@@ -162,7 +160,7 @@ extractor_info.json, and instead bind only by extractor name. Assuming no other 
 extractor instance will then only be triggered via manual or direct messages (i.e. using extractor name), and not by
 upload events in Clowder.
 
-Note however that if any other instances of the extractor are running on the same RabbitMQ queue without --no-bind,
+Note however that if any other instances of the extractor are running on the same RabbitMQ queue without --no-bind, 
 they will still bind by file type as normal regardless of previously existing instances with --no-bind, so use caution
 when running multiple instances of one extractor while using --no-bind.
 
@@ -179,8 +177,8 @@ process_message.
 The RabbitMQ connector connects to a RabbitMQ instance, creates a queue and binds itself to that queue. Any message in
 the queue will be fetched and passed to the check_message and process_message. This connector takes three parameters:
 
-- rabbitmq_uri [REQUIRED] : the uri of the RabbitMQ server
-- rabbitmq_exchange [OPTIONAL] : the exchange to which to bind the queue
+* rabbitmq_uri [REQUIRED] : the uri of the RabbitMQ server
+* rabbitmq_exchange [OPTIONAL] : the exchange to which to bind the queue
 
 ## HPCConnector
 
@@ -189,18 +187,18 @@ Once all pickle files are processed the extractor will stop. The pickle file is 
 argument, the logfile that is being monitored to send feedback back to clowder. This connector takes a single argument
 (which can be list):
 
-- picklefile [REQUIRED] : a single file, or list of files that are the pickled messages to be processed.
+* picklefile [REQUIRED] : a single file, or list of files that are the pickled messages to be processed.
 
 ## LocalConnector
 
-The Local connector will execute an extractor as a standalone program. This can be used to process files that are
-present in a local hard drive. After extracting the metadata, it stores the generated metadata in an output file in the
+The Local connector will execute an extractor as a standalone program. This can be used to process files that are 
+present in a local hard drive. After extracting the metadata, it stores the generated metadata in an output file in the 
 local drive. This connector takes two arguments:
 
-- --input-file-path [REQUIRED] : Full path of the local input file that needs to be processed.
-- --output-file-path [OPTIONAL] : Full path of the output file (.json) to store the generated metadata. If no output
-  file path is provided, it will create a new file with the name <input_file_with_extension>.json in the same directory
-  as that of the input file.
+* --input-file-path [REQUIRED] : Full path of the local input file that needs to be processed.
+* --output-file-path [OPTIONAL] : Full path of the output file (.json) to store the generated metadata. If no output 
+file path is provided, it will create a new file with the name <input_file_with_extension>.json in the same directory 
+as that of the input file.
 
 # Clowder API wrappers
 
@@ -255,53 +253,49 @@ COPY <MY.CODE>.py extractor_info.json /home/clowder/
 # Command to be run when container is run
 CMD python3 <MY.CODE>.py
 ```
-
 ## SimpleExtractor
-
 Motivation: design and implement a simple extractor to bridge Python developer and knowledge of PyClowder library. It requires little effort for Python developers to wrap their python code into Clowder's extractors.
 
 Simple extractors take developer defined main function as input parameter to do extraction and then parse and pack extraction's output into Simple extractor defined metadata data-struct and submit back to Clowder.
 
 Users' function must have to return a ``dict'' object containing metdata and previews.
-
 ```markdown
 result = {
-'metadata': {},
-'previews': [
-'filename',
-{'file': 'filename'},
-{'file': 'filename', 'metadata': {}, 'mimetype': 'image/jpeg'}
-]}
+  'metadata': {},
+  'previews': [
+      'filename',
+      {'file': 'filename'},
+      {'file': 'filename', 'metadata': {}, 'mimetype': 'image/jpeg'}
+  ]}
 ```
 
-### Example:
-
+### Example: 
 `wordcount-simpleextractor` is the simplest example to illustrate how to wrap existing Python code as a Simple Extractor.
 
 wordcount.py is regular python file which is defined and provided by Python developers. In the code, wordcount invoke `wc` command to process input file to extract lines, words, characters. It packs metadata into python dict.
-
 ```markdown
 import subprocess
-
-def wordcount(input*file):
-result = subprocess.check_output(['wc', input_file], stderr=subprocess.STDOUT)
-(lines, words, characters, *) = result.split()
-metadata = {
-'lines': lines,
-'words': words,
-'characters': characters
-}
-result = {
-'metadata': metadata
-}
-return result
+  
+def wordcount(input_file):
+    result = subprocess.check_output(['wc', input_file], stderr=subprocess.STDOUT)
+    (lines, words, characters, _) = result.split()
+    metadata = {
+        'lines': lines,
+        'words': words,
+        'characters': characters
+    }
+    result = {
+        'metadata': metadata
+    }
+    return result
 ```
 
 To build wordcount as a Simpel extractor docker image, users just simply assign two environment variables in Dockerfile shown below. EXTRACTION_FUNC is environment variable and has to be assigned as extraction function, where in wordcount.py, the extraction function is `wordcount`. Environment variable EXTRACTION_MODULE is the name of module file containing the definition of extraction function.
-
 ```markdown
 FROM clowder/extractors-simple-extractor:onbuild
 
 ENV EXTRACTION_FUNC="wordcount"
 ENV EXTRACTION_MODULE="wordcount"
 ```
+
+
