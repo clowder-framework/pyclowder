@@ -22,7 +22,11 @@ docker run -t -i --rm --net clowder_clowder -e "RABBITMQ_URI=amqp://guest:guest@
 
 Then open the Clowder web app and run the wordcount extractor on a .txt file (or similar)! Done.
 
-### Details
+### Python and Docker details
+
+You may use any version of Python 3. Simply edit the first line of the `Dockerfile`, by default it uses `FROM python:3.8`.
+
+Docker flags:
 
 - `--net` links the extractor to the Clowder Docker network (run `docker network ls` to identify your own.)
 - `-e RABBITMQ_URI=` sets the environment variables can be used to control what RabbitMQ server and exchange it will bind itself to. Setting the `RABBITMQ_EXCHANGE` may also help.
