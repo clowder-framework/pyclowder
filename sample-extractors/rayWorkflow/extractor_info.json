@@ -1,0 +1,30 @@
+{
+  "@context": "http://clowder.ncsa.illinois.edu/contexts/extractors.jsonld",
+  "name": "ncsa.rayWorkflow",
+  "version": "2.0",
+  "description": "Runs a dummy Ray.io Workflow, without extracting any files from Clowder. Hopefully soon it will actually extract files.",
+  "author": "Kastan Day <kvday2@illinois.edu>",
+  "contributors": [],
+  "contexts": [
+    {
+      "lines": "http://clowder.ncsa.illinois.edu/metadata/ncsa.wordcount#lines",
+      "words": "http://clowder.ncsa.illinois.edu/metadata/ncsa.wordcount#words",
+      "characters": "http://clowder.ncsa.illinois.edu/metadata/ncsa.wordcount#characters"
+    }
+  ],
+  "repository": [
+    {
+      "repType": "git",
+      "repUrl": "https://github.com/clowder-framework/pyclowder"
+    }
+  ],
+  "process": {
+    "file": [
+      "text/*",
+      "application/json"
+    ]
+  },
+  "external_services": [],
+  "dependencies": [],
+  "bibtex": []
+}
