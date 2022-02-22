@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ### Changed
 - update wordcount extractor to not use docker image
+- using piptools for requirements
 
 ## 2.4.1 - 2021-07-21
 
