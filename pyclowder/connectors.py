@@ -293,11 +293,9 @@ class Connector(object):
         return (md_dir, md_file)
 
     def _prepare_dataset(self, host, secret_key, resource):
-
         logger = logging.getLogger(__name__)
 
         file_paths = []
-
         located_files = []
         missing_files = []
         tmp_files_created = []
@@ -359,15 +357,13 @@ class Connector(object):
 
         # If we didn't find any files locally, download dataset .zip as normal
         else:
-            logger.info("we found no files")
             try:
                 inputzip = pyclowder.datasets.download(self, host, secret_key, resource["id"])
                 file_paths = pyclowder.utils.extract_zip_contents(inputzip)
                 tmp_files_created += file_paths
                 tmp_files_created.append(inputzip)
             except Exception as e:
-                logger.debug("No files found and download failed")
-                logger.debug(e)
+                logger.exception("No files found and download failed")
 
         return (file_paths, tmp_files_created, tmp_dirs_created)
 
