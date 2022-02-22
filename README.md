@@ -25,12 +25,15 @@ git clone https://github.com/clowder-framework/pyclowder.git
 cd pyclowder
 pip install -r requirements.txt
 python setup.py install
-
 ```
 or directly from GitHub:
 ```
 pip install -r https://raw.githubusercontent.com/clowder-framework/pyclowder/master/requirements.txt git+https://github.com/clowder-framework/pyclowder.git
 ```
+
+## Quickstart example
+
+See the [README](https://github.com/clowder-framework/pyclowder/tree/master/sample-extractors/wordcount#readme) in `sample-extractors/wordcount`. Using Docker, no install is required.
 
 ## Example Extractor
 
