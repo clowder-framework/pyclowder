@@ -15,6 +15,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## 2.4.1 - 2021-07-21
 
+### Fixed
+- extractor would fail on empty dataset download [#36](https://github.com/clowder-framework/pyclowder/issues/36)
+
 ### Added
 - Add `--max_retry` CLI flag and `CLOWDER_MAX_RETRY` environment variable.
 
