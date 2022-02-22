@@ -6,6 +6,9 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
 
+### Fixed
+- extractor would fail on empty dataset download [#36](https://github.com/clowder-framework/pyclowder/issues/36)
+
 ### Added
 - ability to set the heartbeat for an extractractor [#42](https://github.com/clowder-framework/pyclowder/issues/42)
 
