@@ -292,7 +292,7 @@ def wordcount(input_file):
     return result
 ```
 
-To build wordcount as a Simple extractor docker image, users just simply assign two environment variables in Dockerfile shown below. EXTRACTION_FUNC is environment variable and has to be assigned as extraction function, where in wordcount.py, the extraction function is `wordcount`. Environment variable EXTRACTION_MODULE is the name of module file containing the definition of extraction function.
+To build wordcount as a an extractor docker image, users just simply assign two environment variables in Dockerfile shown below. EXTRACTION_FUNC is environment variable and has to be assigned as extraction function, where in wordcount.py, the extraction function is `wordcount`. Environment variable EXTRACTION_MODULE is the name of module file containing the definition of extraction function.
 ```markdown
 FROM clowder/extractors-simple-extractor:onbuild
 
