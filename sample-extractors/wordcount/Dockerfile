@@ -1,4 +1,8 @@
-ARG PYCLOWDER_PYTHON=""
-FROM clowder/pyclowder${PYCLOWDER_PYTHON}:onbuild
+FROM python:3.8
 
-ENV MAIN_SCRIPT="wordcount.py"
+WORKDIR /extractor
+COPY requirements.txt ./
+RUN pip install -r requirements.txt
+
+COPY wordcount.py extractor_info.json ./
+CMD python wordcount.py

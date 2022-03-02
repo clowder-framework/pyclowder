@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Fixed
+- extractor would fail on empty dataset download [#36](https://github.com/clowder-framework/pyclowder/issues/36)
+
+### Added
+- ability to set the heartbeat for an extractractor [#42](https://github.com/clowder-framework/pyclowder/issues/42)
+
+### Changed
+- update wordcount extractor to not use docker image
+- using piptools for requirements
+
 ## 2.4.1 - 2021-07-21
 
 ### Added
