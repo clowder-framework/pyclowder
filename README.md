@@ -217,6 +217,8 @@ We recommend following the instructions at [clowder/generator](https://github.co
 
 You can also use the pyclowder:onbuild Docker image to easily convert your extractor into a docker container. This image is no longer maintained so it is recommeded to either use the clowder/generator linked above or build your own Dockerfile by choosing your own base image and installing pyClowder as described below.
 
+
+**This is deprecated and the onbuild image is no longer maintained**
 If you build the extractor as using the pyclowder:onbuild image, you will only need the following Dockerfile
 
 ```
