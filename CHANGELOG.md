@@ -1,8 +1,13 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](http://keepachangelog.com/) 
+The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
+
+## 2.5.1 - 2022-03-04
+
+### Changed
+- updated pypi documentation
 
 ## 2.5.0 - 2022-03-04
 
@@ -49,13 +54,13 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ## 2.3.2 - 2020-09-24
 
 ### Fixed
-- When rabbitmq restarts the extractor would not stop and restart, resulting 
+- When rabbitmq restarts the extractor would not stop and restart, resulting
   in the extractor no longer receiving any messages. #17
 
 ### Added
 - Can specify url to use for extractor downloads, this is helpful for instances
   that have access to the internal URL for clowder, for example in docker/kubernetes.
-  
+
 ### Removed
 - Removed ability to run multiple connectors in the same python process. If
   parallelism is needed, use multiple processes (or containers).
@@ -141,7 +146,7 @@ install pyclowder.
 
 ### Fixed
 - Error decoding json body from Clowder when filename had special characters
-  [CATSPYC-18] (https://opensource.ncsa.illinois.edu/jira/browse/CATSPYC-18) 
+  [CATSPYC-18] (https://opensource.ncsa.illinois.edu/jira/browse/CATSPYC-18)
 - RABBITMQ_QUEUE variable/flag was ignored when set and would connect
   to default queue.
 
