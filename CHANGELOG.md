@@ -4,7 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## 2.5.0 - 2022-03-02
+## 2.5.0 - 2022-03-04
 
 ### Fixed
 - extractor would fail on empty dataset download [#36](https://github.com/clowder-framework/pyclowder/issues/36)
