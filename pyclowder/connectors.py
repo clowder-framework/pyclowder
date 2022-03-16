@@ -288,7 +288,7 @@ class Connector(object):
         (fd, md_file) = tempfile.mkstemp(suffix=md_name, dir=md_dir)
 
         with os.fdopen(fd, "wb") as tmp_file:
-            tmp_file.write(json.dumps(file_md))
+            json.dumps(file_md, tmp_file)
 
         return (md_dir, md_file)
 
