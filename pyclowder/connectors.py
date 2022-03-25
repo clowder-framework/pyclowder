@@ -287,8 +287,9 @@ class Connector(object):
         md_dir = tempfile.mkdtemp(suffix=fileid)
         (fd, md_file) = tempfile.mkstemp(suffix=md_name, dir=md_dir)
 
-        with os.fdopen(fd, "wb") as tmp_file:
-            json.dumps(file_md, tmp_file)
+        with os.fdopen(fd, "w+") as tmp_file:
+            # json.dump(file_md, tmp_file)
+            tmp_file.write(json.dumps(file_md))
 
         return (md_dir, md_file)
 
@@ -347,7 +348,7 @@ class Connector(object):
             md_name = "%s_dataset_metadata.json" % resource["id"]
             md_dir = tempfile.mkdtemp(suffix=resource["id"])
             (fd, md_file) = tempfile.mkstemp(suffix=md_name, dir=md_dir)
-            with os.fdopen(fd, "wb") as tmp_file:
+            with os.fdopen(fd, "w+") as tmp_file:
                 tmp_file.write(json.dumps(ds_md))
             located_files.append(md_file)
             tmp_files_created.append(md_file)
