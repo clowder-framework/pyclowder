@@ -2,7 +2,7 @@
   "@context": "http://clowder.ncsa.illinois.edu/contexts/extractors.jsonld",
   "name": "ncsa.rayWorkflow",
   "version": "2.0",
-  "description": "Runs a dummy Ray.io Workflow, without extracting any files from Clowder. Hopefully soon it will actually extract files.",
+  "description": "Runs a demo Ray.io Workflow using sklearn.",
   "author": "Kastan Day <kvday2@illinois.edu>",
   "contributors": [],
   "contexts": [

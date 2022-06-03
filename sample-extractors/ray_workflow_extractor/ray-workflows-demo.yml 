@@ -1,0 +1,45 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: extractor-ray-workflows-demo
+  namespace: clowder
+  labels:
+    app: extractor-ray-workflows-demo
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: extractor-ray-workflows-demo
+  template:
+    metadata:
+      labels:
+        app: extractor-ray-workflows-demo
+    spec:
+      initContainers:
+        - name: check-rabbitmq
+          image: clowder/check:1.10.0
+          imagePullPolicy: Always
+          command:
+            - ./check_rabbitmq
+          env:
+            - name: RABBITMQ_URI
+              valueFrom:
+                secretKeyRef:
+                  key: rabbitmq-uri
+                  name: clowder
+      containers:
+        - name: maple_cpu_kastan
+          image: kastanday/maple_cpu_kastan
+          resources:
+            limits:
+              memory: 8Gi
+            requests:
+              memory: 4Gi
+          env:
+            - name: RABBITMQ_URI
+              valueFrom:
+                secretKeyRef:
+                  key: rabbitmq-uri
+                  name: clowder
+            - name: RABBITMQ_EXCHANGE
+              value: clowder

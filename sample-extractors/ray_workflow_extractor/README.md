@@ -11,7 +11,7 @@ This extractor is ready to be run as a docker container, the only dependency is 
 ```
 # from this directory, run:
 
-docker build -t clowder_wordcount .
+docker build -t kastanday/clowder_ray_extractor_demo .
 ```
 
 3. Finally run the extractor:
@@ -20,14 +20,21 @@ docker build -t clowder_wordcount .
 docker run -t -i --rm --net clowder_clowder -e "RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672/%2f" --name "wordcount" clowder_wordcount
 ```
 
-Now you can open the Clowder web app and run the wordcount extractor on a `.txt` file (or similar). Done!
+```
+docker run -t -i --rm --net clowder_clowder -e "RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672/%2f" --name "ray_workflow_demo"  --shm-size=1gb kastanday/clowder_ray_extractor_demo
+```
+
+Now you can open the Clowder web app and run the wordcount extractor on a `.txt` or `.json` file. Done!
 
 ### Details
 
+- `--name` assigns the container a name visible in Docker Desktop.
 - `--net` links the extractor to the Clowder Docker network (run `docker network ls` to identify your own.)
 - `-e RABBITMQ_URI=` sets the environment variables can be used to control what RabbitMQ server and exchange it will bind itself to. Setting the `RABBITMQ_EXCHANGE` may also help.
   - You can also use `--link` to link the extractor to a RabbitMQ container.
-- `--name` assigns the container a name visible in Docker Desktop.
+- `--rm` removes the filesystem after the container is shut down. No files local to the container will be saved.
+- `-it` runs the container [_interactively_](https://stackoverflow.com/questions/48368411/what-is-docker-run-it-flag).
+- `--shm-size=1gb` increases the size of memory swap (`/dev/shm`), improving stability and performance using Ray.
 
 ## Troubleshooting
 
