@@ -1,0 +1,4 @@
+name: MAPLE
+channels:
+  - defaults
+prefix: /home/kastan/anaconda3/envs/MAPLE

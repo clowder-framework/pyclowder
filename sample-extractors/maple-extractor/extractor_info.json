@@ -1,0 +1,27 @@
+{
+  "@context": "http://clowder.ncsa.illinois.edu/contexts/extractors.jsonld",
+  "name": "ncsa.mapleExtractor",
+  "version": "0.1",
+  "description": "Accept a single .tif image and perform MAPLE ML analysis, returning a set of shape files.",
+  "author": "Kastan Day <kvday2@illinois.edu>",
+  "contributors": [],
+  "contexts": [
+    {
+      "getting_started": "https://clowder-framework.readthedocs.io/en/latest/userguide/installing_clowder.html"
+    }
+  ],
+  "repository": [
+    {
+      "repType": "git",
+      "repUrl": "https://github.com/clowder-framework/pyclowder"
+    }
+  ],
+  "process": {
+    "dataset": [
+      "manual.submission"
+    ]
+  },
+  "external_services": [],
+  "dependencies": [],
+  "bibtex": []
+}
