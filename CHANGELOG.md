@@ -4,6 +4,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 2.6.0 - 2022-06-14
+
+This will change how clowder sees the extractors. If you have an extractor, and you specify
+the queue name (eiter as command line argument or environment variable) the name of the
+extractor shown in clowder, will be the name of the queue.
+
+### Changed
+- when you set the RABBITMQ_QUEUE it will change the name of the extractor as well in the
+  extractor_info document. [#47](https://github.com/clowder-framework/pyclowder/issues/47)
+
 ## 2.5.1 - 2022-03-04
 
 ### Changed

@@ -123,6 +123,10 @@ class Extractor(object):
         """
         self.args = self.parser.parse_args()
 
+        # fix extractor_info based on the queue name
+        if self.args.rabbitmq_queuename and self.extractor_info['name'] != self.args.rabbitmq_queuename:
+            self.extractor_info['name'] = self.args.rabbitmq_queuename
+
         # use command line option for ssl_verify
         if 'sslverify' in self.args:
             self.ssl_verify = self.args.sslverify
