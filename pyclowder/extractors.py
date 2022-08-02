@@ -73,8 +73,8 @@ class Extractor(object):
         connector_default = "RabbitMQ"
         if os.getenv('LOCAL_PROCESSING', "False").lower() == "true":
             connector_default = "Local"
-        max_retry = os.getenv('CLOWDER_MAX_RETRY', 10)
-        heartbeat = os.getenv('HEARTBEAT', 5*60)
+        max_retry = int(os.getenv('MAX_RETRY', 10))
+        heartbeat = int(os.getenv('HEARTBEAT', 5*60))
 
         # create the actual extractor
         self.parser = argparse.ArgumentParser(description=self.extractor_info['description'])
@@ -111,7 +111,7 @@ class Extractor(object):
         self.parser.add_argument('--no-bind', dest="nobind", action='store_true',
                                  help='instance will bind itself to RabbitMQ by name but NOT file type')
         self.parser.add_argument('--max-retry', dest='max_retry', default=max_retry,
-                                 help='Maximum number of retries if an error happens in the extractor')
+                                 help='Maximum number of retries if an error happens in the extractor (default=%d)' % max_retry)
         self.parser.add_argument('--heartbeat', dest='heartbeat', default=heartbeat,
                                  help='Time in seconds between extractor heartbeats (default=%d)' % heartbeat)
 

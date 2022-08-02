@@ -10,9 +10,13 @@ This will change how clowder sees the extractors. If you have an extractor, and 
 the queue name (eiter as command line argument or environment variable) the name of the
 extractor shown in clowder, will be the name of the queue.
 
+### Fixed
+- both heartbeat and nax_retry need to be converted to in, not string
+
 ### Changed
 - when you set the RABBITMQ_QUEUE it will change the name of the extractor as well in the
   extractor_info document. [#47](https://github.com/clowder-framework/pyclowder/issues/47)
+- environment variable CLOWDER_MAX_RETRY is now MAX_RETRY
 
 ## 2.5.1 - 2022-03-04
 
