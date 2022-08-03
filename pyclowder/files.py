@@ -285,7 +285,7 @@ def upload_thumbnail(connector, host, key, fileid, thumbnail):
     return thumbnailid
 
 
-def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate=False):
+def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate=False, folder_id=None):
     """Upload file to existing Clowder dataset.
 
     Keyword arguments:
@@ -311,6 +311,8 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
             return _upload_to_dataset_local(connector, host, key, datasetid, filepath)
 
     url = '%sapi/uploadToDataset/%s?key=%s' % (host, datasetid, key)
+    if folder_id:
+        url += "&folder_id=%s" % folder_id
 
     if os.path.exists(filepath):
         filename = os.path.basename(filepath)
