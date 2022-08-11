@@ -58,6 +58,40 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
         raise
 
 
+# pylint: disable=too-many-arguments
+def download_v2(connector, host, token, fileid, intermediatefileid=None, ext=""):
+    """Download file to be processed from Clowder.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    fileid -- the file that is currently being processed
+    intermediatefileid -- either same as fileid, or the intermediate file to be used
+    ext -- the file extension, the downloaded file will end with this extension
+    """
+
+    connector.message_process({"type": "file", "id": fileid}, "Downloading file.")
+
+    # TODO: intermediateid doesn't really seem to be used here, can we remove entirely?
+    if not intermediatefileid:
+        intermediatefileid = fileid
+
+    url = '%sapi/v2/files/%s' % (host, intermediatefileid)
+    headers = {"Authorization": "Bearer " + token}
+    result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
+
+    (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
+
+    try:
+        with os.fdopen(inputfile, "wb") as outputfile:
+            for chunk in result.iter_content(chunk_size=10*1024):
+                outputfile.write(chunk)
+        return inputfilename
+    except Exception:
+        os.remove(inputfilename)
+        raise
+
 def download_info(connector, host, key, fileid):
     """Download file summary metadata from Clowder.
 
@@ -69,9 +103,27 @@ def download_info(connector, host, key, fileid):
     """
 
     url = '%sapi/files/%s/metadata?key=%s' % (host, fileid, key)
+    headers = {"Authorization": "Bearer " + token}
 
     # fetch data
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
+
+    return result.json()
+
+def download_info_v2(connector, host, token, fileid):
+    """Download file summary metadata from Clowder.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    fileid -- the file to fetch metadata of
+    """
+
+    url = '%sapi/v2/files/%s/metadata' % (host, fileid)
+    headers = {"Authorization": "Bearer " + token}
+    # fetch data
+    result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
 
     return result.json()
 
