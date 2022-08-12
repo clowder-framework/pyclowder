@@ -211,14 +211,23 @@ def upload_metadata(connector, host, key, fileid, metadata):
     metadata -- the metadata to be uploaded
     """
 
-    connector.message_process({"type": "file", "id": fileid}, "Uploading file metadata.")
+    if clowder_version >= 2.0:
+        connector.message_process({"type": "file", "id": fileid}, "Uploading file metadata.")
 
-    headers = {'Content-Type': 'application/json'}
-    # TODO if version 2.0
+        headers = {'Content-Type': 'application/json',
+                   'Authorization':'Bearer ' + key}
+        print(metadata)
+        url = '%sapi/v2/files/%s/metadata' % (host, fileid)
+        result = connector.post(url, headers=headers, data=json.dumps(metadata),
+                                verify=connector.ssl_verify if connector else True)
+    else:
+        connector.message_process({"type": "file", "id": fileid}, "Uploading file metadata.")
 
-    url = '%sapi/files/%s/metadata.jsonld?key=%s' % (host, fileid, key)
-    result = connector.post(url, headers=headers, data=json.dumps(metadata),
-                            verify=connector.ssl_verify if connector else True)
+        headers = {'Content-Type': 'application/json'}
+
+        url = '%sapi/files/%s/metadata.jsonld?key=%s' % (host, fileid, key)
+        result = connector.post(url, headers=headers, data=json.dumps(metadata),
+                                verify=connector.ssl_verify if connector else True)
 
 
 # pylint: disable=too-many-arguments

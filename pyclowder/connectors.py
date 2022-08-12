@@ -409,6 +409,8 @@ class Connector(object):
         if not source_host.endswith('/'): source_host += '/'
         if not host.endswith('/'): host += '/'
         secret_key = body.get('secretKey', '')
+        if clowder_version >= 2.0:
+            secret_key = body.get('token', '')
         token = body.get('token', ' ')
         retry_count = 0 if 'retry_count' not in body else body['retry_count']
         resource = self._build_resource(body, host, secret_key)
