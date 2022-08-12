@@ -15,6 +15,10 @@ from urllib3.filepost import encode_multipart_formdata
 from pyclowder.datasets import get_file_list
 from pyclowder.collections import get_datasets, get_child_collections
 
+from dotenv import load_dotenv
+load_dotenv()
+clowder_version = float(os.getenv('clowder_version'))
+
 # Some sources of urllib3 support warning suppression, but not all
 try:
     from urllib3 import disable_warnings
@@ -25,7 +29,7 @@ except:
 
 
 # pylint: disable=too-many-arguments
-def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
+def download(connector, host, key, fileid, intermediatefileid=None, ext="", token=None):
     """Download file to be processed from Clowder.
 
     Keyword arguments:
@@ -39,60 +43,44 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
 
     connector.message_process({"type": "file", "id": fileid}, "Downloading file.")
 
-    # TODO: intermediateid doesn't really seem to be used here, can we remove entirely?
-    if not intermediatefileid:
-        intermediatefileid = fileid
 
-    url = '%sapi/files/%s?key=%s' % (host, intermediatefileid, key)
-    result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
-
-    (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
-
-    try:
-        with os.fdopen(inputfile, "wb") as outputfile:
-            for chunk in result.iter_content(chunk_size=10*1024):
-                outputfile.write(chunk)
-        return inputfilename
-    except Exception:
-        os.remove(inputfilename)
-        raise
-
-
-# pylint: disable=too-many-arguments
-def download_v2(connector, host, token, fileid, intermediatefileid=None, ext=""):
-    """Download file to be processed from Clowder.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    fileid -- the file that is currently being processed
-    intermediatefileid -- either same as fileid, or the intermediate file to be used
-    ext -- the file extension, the downloaded file will end with this extension
-    """
-
-    connector.message_process({"type": "file", "id": fileid}, "Downloading file.")
 
     # TODO: intermediateid doesn't really seem to be used here, can we remove entirely?
     if not intermediatefileid:
         intermediatefileid = fileid
 
-    url = '%sapi/v2/files/%s' % (host, intermediatefileid)
-    headers = {"Authorization": "Bearer " + token}
-    result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
+    if clowder_version >= 2.0:
+        url = '%sapi/v2/files/%s' % (host, intermediatefileid)
+        headers = {"Authorization": "Bearer " + token}
+        result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
 
-    (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
+        (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
 
-    try:
-        with os.fdopen(inputfile, "wb") as outputfile:
-            for chunk in result.iter_content(chunk_size=10*1024):
-                outputfile.write(chunk)
-        return inputfilename
-    except Exception:
-        os.remove(inputfilename)
-        raise
+        try:
+            with os.fdopen(inputfile, "wb") as outputfile:
+                for chunk in result.iter_content(chunk_size=10 * 1024):
+                    outputfile.write(chunk)
+            return inputfilename
+        except Exception:
+            os.remove(inputfilename)
+            raise
+    else:
+        url = '%sapi/files/%s?key=%s' % (host, intermediatefileid, key)
+        result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
 
-def download_info(connector, host, key, fileid):
+        (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
+
+        try:
+            with os.fdopen(inputfile, "wb") as outputfile:
+                for chunk in result.iter_content(chunk_size=10*1024):
+                    outputfile.write(chunk)
+            return inputfilename
+        except Exception:
+            os.remove(inputfilename)
+            raise
+
+
+def download_info(connector, host, key, fileid, token=None):
     """Download file summary metadata from Clowder.
 
     Keyword arguments:
@@ -102,30 +90,21 @@ def download_info(connector, host, key, fileid):
     fileid -- the file to fetch metadata of
     """
 
-    url = '%sapi/files/%s/metadata?key=%s' % (host, fileid, key)
-    headers = {"Authorization": "Bearer " + token}
+    if clowder_version >= 2.0:
+        url = '%sapi/v2/files/%s/metadata' % (host, fileid)
+        headers = {"Authorization": "Bearer " + token}
+        # fetch data
+        result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
 
-    # fetch data
-    result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
+        return result.json()
+    else:
+        url = '%sapi/files/%s/metadata?key=%s' % (host, fileid, key)
+        headers = {"Authorization": "Bearer " + token}
 
-    return result.json()
+        # fetch data
+        result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
 
-def download_info_v2(connector, host, token, fileid):
-    """Download file summary metadata from Clowder.
-
-    Keyword arguments:
-    connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
-    fileid -- the file to fetch metadata of
-    """
-
-    url = '%sapi/v2/files/%s/metadata' % (host, fileid)
-    headers = {"Authorization": "Bearer " + token}
-    # fetch data
-    result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
-
-    return result.json()
+        return result.json()
 
 
 def download_metadata(connector, host, key, fileid, extractor=None):
@@ -235,6 +214,8 @@ def upload_metadata(connector, host, key, fileid, metadata):
     connector.message_process({"type": "file", "id": fileid}, "Uploading file metadata.")
 
     headers = {'Content-Type': 'application/json'}
+    # TODO if version 2.0
+
     url = '%sapi/files/%s/metadata.jsonld?key=%s' % (host, fileid, key)
     result = connector.post(url, headers=headers, data=json.dumps(metadata),
                             verify=connector.ssl_verify if connector else True)
