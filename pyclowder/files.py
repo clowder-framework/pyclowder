@@ -213,7 +213,6 @@ def upload_metadata(connector, host, key, fileid, metadata):
 
     if clowder_version >= 2.0:
         connector.message_process({"type": "file", "id": fileid}, "Uploading file metadata.")
-        as_json = json.dumps(metadata)
 
         headers = {'Content-Type': 'application/json',
                    'Authorization':'Bearer ' + key}
