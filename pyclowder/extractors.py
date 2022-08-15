@@ -24,6 +24,10 @@ from pyclowder.utils import CheckMessage, setup_logging
 import pyclowder.files
 import pyclowder.datasets
 
+from dotenv import load_dotenv
+load_dotenv()
+clowder_version = float(os.getenv('clowder_version'))
+
 
 class Extractor(object):
     """Basic extractor.
@@ -245,22 +249,30 @@ class Extractor(object):
             for k in content:
                 if not self._check_key(k, self.extractor_info['contexts']):
                     logger.debug("Simple check could not find %s in contexts" % k)
-
-        return {
-            '@context': [context_url] + self.extractor_info['contexts'],
-            'attachedTo': {
-                'resourceType': resource_type,
-                'id': resource_id
-            },
-            'agent': {
-                '@type': 'cat:extractor',
-                'extractor_id': '%sextractors/%s/%s' %
-                                (server, self.extractor_info['name'], self.extractor_info['version']),
-                'version': self.extractor_info['version'],
-                'name': self.extractor_info['name']
-            },
-            'content': content
-        }
+        # TODO generate clowder2.0 extractor info
+        if clowder_version >= 2.0:
+            md = dict()
+            md["file_version"] = 1
+            md["context"] = self.extractor_info["contexts"][0]
+            md["context_url"] = context_url
+            md["contents"] = content
+            return md
+        else:
+            return {
+                '@context': [context_url] + self.extractor_info['contexts'],
+                'attachedTo': {
+                    'resourceType': resource_type,
+                    'id': resource_id
+                },
+                'agent': {
+                    '@type': 'cat:extractor',
+                    'extractor_id': '%sextractors/%s/%s' %
+                                    (server, self.extractor_info['name'], self.extractor_info['version']),
+                    'version': self.extractor_info['version'],
+                    'name': self.extractor_info['name']
+                },
+                'content': content
+            }
 
     def _check_key(self, key, obj):
         if key in obj:
