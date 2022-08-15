@@ -55,6 +55,7 @@ class Extractor(object):
         try:
             with open(filename) as info_file:
                 self.extractor_info = json.load(info_file)
+                new_info = self._get_extractor_info_v2()
         except Exception:  # pylint: disable=broad-except
             print("Error loading extractor_info.json")
             traceback.print_exc()
@@ -225,6 +226,16 @@ class Extractor(object):
             logger.exception("Error while consuming messages.")
         connector.stop()
 
+    def _get_extractor_info_v2(self):
+        current_extractor_info = self.extractor_info.copy()
+        repository = self.extractor_info['repository'][0]
+        new_repository = dict()
+        new_repository['repository_url'] = repository['repUrl']
+        new_repository['repository_type'] = repository['repType']
+        current_extractor_info['repository'] = new_repository
+        return current_extractor_info
+
+
     def get_metadata(self, content, resource_type, resource_id, server=None):
         """Generate a metadata field.
 
@@ -251,11 +262,13 @@ class Extractor(object):
                     logger.debug("Simple check could not find %s in contexts" % k)
         # TODO generate clowder2.0 extractor info
         if clowder_version >= 2.0:
+            new_extractor_info = self._get_extractor_info_v2()
             md = dict()
             md["file_version"] = 1
             md["context"] = self.extractor_info["contexts"][0]
             md["context_url"] = context_url
             md["contents"] = content
+            md["extractor_info"] = new_extractor_info
             return md
         else:
             return {
