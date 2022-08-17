@@ -519,8 +519,12 @@ class Connector(object):
 
         for url in endpoints.split(','):
             if "unique_key" in data:
-                if url.find("?") > -1: url += "&user=%s" % self.clowder_email
-                else: url += "?user=%s" % self.clowder_email # TODO: This will not work, need an auth key matching email
+                if url.find("?") > -1:
+                    url += "&user=%s" % self.clowder_email
+                else:
+                    logger.info("Unable to register extractor without an API key.")
+                    return
+                    #url += "?user=%s" % self.clowder_email # TODO: This will not work, need an auth key matching email
             try:
                 result = requests.post(url.strip(), headers=headers,
                                        data=json.dumps(data),
