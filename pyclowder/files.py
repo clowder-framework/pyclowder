@@ -14,7 +14,7 @@ from urllib3.filepost import encode_multipart_formdata
 
 from pyclowder.datasets import get_file_list
 from pyclowder.collections import get_datasets, get_child_collections
-import api.v2.files as v2files
+import pyclowder.api.v2.files as v2files
 
 from dotenv import load_dotenv
 load_dotenv()
@@ -42,7 +42,8 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext="", toke
     ext -- the file extension, the downloaded file will end with this extension
     """
     if clowder_version >= 2.0:
-        v2files.download(connector, host, key, fileid, intermediatefileid, ext, token)
+        inputfilename = v2files.download(connector, host, key, fileid, intermediatefileid, ext, token)
+        return inputfilename
     else:
         connector.message_process({"type": "file", "id": fileid}, "Downloading file.")
 
@@ -77,7 +78,8 @@ def download_info(connector, host, key, fileid, token=None):
     """
 
     if clowder_version >= 2.0:
-        v2files.download_info(conector, host, key, fileid, token)
+        result = v2files.download_info(connector, host, key, fileid, token)
+        return result.json()
     else:
         url = '%sapi/files/%s/metadata?key=%s' % (host, fileid, key)
         headers = {"Authorization": "Bearer " + token}

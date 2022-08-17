@@ -80,7 +80,7 @@ def download_info(connector, host, key, fileid, token=None):
     # fetch data
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
 
-    return result.json()
+    return result
 
 
 def download_metadata(connector, host, key, fileid, extractor=None, token=None):
