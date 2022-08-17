@@ -199,7 +199,15 @@ def upload_metadata(connector, host, key, fileid, metadata):
     """
 
     if clowder_version >= 2.0:
-        v2files.upload_metadata(connector, host, key, fileid, metadata)
+        connector.message_process({"type": "file", "id": fileid}, "Uploading file metadata.")
+        as_json = json.dumps(metadata)
+
+        headers = {'Content-Type': 'application/json',
+                   'Authorization': 'Bearer ' + key}
+        print(metadata)
+        url = '%sapi/v2/files/%s/metadata' % (host, fileid)
+        result = connector.post(url, headers=headers, data=json.dumps(metadata),
+                                verify=connector.ssl_verify if connector else True)
     else:
         connector.message_process({"type": "file", "id": fileid}, "Uploading file metadata.")
 

@@ -228,11 +228,16 @@ class Extractor(object):
 
     def _get_extractor_info_v2(self):
         current_extractor_info = self.extractor_info.copy()
-        repository = self.extractor_info['repository'][0]
-        new_repository = dict()
-        new_repository['repository_url'] = repository['repUrl']
-        new_repository['repository_type'] = repository['repType']
-        current_extractor_info['repository'] = new_repository
+        old_repository = self.extractor_info['repository']
+        new_repository_list = []
+        for repo in old_repository:
+            repo_type = repo['repType']
+            repo_url = repo['repUrl']
+            new_repo = dict()
+            new_repo['repository_url'] = repo_url
+            new_repo['repository_type'] = repo_type
+            new_repository_list.append(new_repo)
+        current_extractor_info['repository'] = new_repository_list
         return current_extractor_info
 
 
