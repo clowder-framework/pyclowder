@@ -202,7 +202,7 @@ def upload_metadata(connector, host, key, fileid, metadata, token=None):
     url = '%sapi/v2/files/%s/metadata' % (host, fileid)
     result = connector.post(url, headers=headers, data=json.dumps(metadata),
                             verify=connector.ssl_verify if connector else True)
-    print('done')
+
 
 
 # TODO not implemented in v2
