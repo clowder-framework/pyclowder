@@ -217,7 +217,7 @@ def remove_metadata(connector, host, key, datasetid, extractor=None):
     url = '%sapi/v2/datasets/%s/metadata' % (host, datasetid)
 
     # fetch data
-    result = requests.delete(url, stream=True, headers=headers
+    result = requests.delete(url, stream=True, headers=headers,
                              verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
