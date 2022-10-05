@@ -166,7 +166,7 @@ def get_info(connector, host, key, datasetid, token=None):
     else:
         headers = {"Authorization": "Bearer " + key}
 
-    url = "%sapi/v2/datasets/%s?key=%s" % (host, datasetid)
+    url = "%sapi/v2/datasets/%s" % (host, datasetid)
 
     result = requests.get(url, headers=headers,
                           verify=connector.ssl_verify if connector else True)
@@ -175,7 +175,7 @@ def get_info(connector, host, key, datasetid, token=None):
     return json.loads(result.text)
 
 
-def get_file_list(connector, host, key, datasetid):
+def get_file_list(connector, host, key, datasetid, token=None):
     """Get list of files in a dataset as JSON object.
 
     Keyword arguments:
