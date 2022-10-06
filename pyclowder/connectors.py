@@ -214,8 +214,12 @@ class Connector(object):
         # determine what to download (if needed) and add relevant data to resource
         if resource_type == "dataset":
             try:
-                datasetinfo = pyclowder.datasets.get_info(self, host, secret_key, datasetid)
-                filelist = pyclowder.datasets.get_file_list(self, host, secret_key, datasetid)
+                if float(os.getenv('clowder_version')) == 2.0:
+                    datasetinfo = pyclowder.datasets.get_info(self, host, secret_key, datasetid, token)
+                    filelist = pyclowder.datasets.get_file_list(self, host, secret_key, datasetid, token)
+                else:
+                    datasetinfo = pyclowder.datasets.get_info(self, host, secret_key, datasetid)
+                    filelist = pyclowder.datasets.get_file_list(self, host, secret_key, datasetid)
                 triggering_file = None
                 for f in filelist:
                     if f['id'] == fileid:
