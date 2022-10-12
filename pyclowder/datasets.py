@@ -34,40 +34,9 @@ def create_empty(connector, host, key, datasetname, description, parentid=None, 
     """
     if clowder_version >= 2.0:
         datasetid = v2datasets.create_empty(connector, host, key, datasetname, description, parentid, spaceid, token)
-        return datasetid
     else:
-        logger = logging.getLogger(__name__)
-
-        url = '%sapi/datasets/createempty?key=%s' % (host, key)
-
-        if parentid:
-            if spaceid:
-                result = requests.post(url, headers={"Content-Type": "application/json"},
-                                       data=json.dumps({"name": datasetname, "description": description,
-                                                        "collection": [parentid], "space": [spaceid]}),
-                                       verify=connector.ssl_verify if connector else True)
-            else:
-                result = requests.post(url, headers={"Content-Type": "application/json"},
-                                       data=json.dumps({"name": datasetname, "description": description,
-                                                        "collection": [parentid]}),
-                                       verify=connector.ssl_verify if connector else True)
-        else:
-            if spaceid:
-                result = requests.post(url, headers={"Content-Type": "application/json"},
-                                       data=json.dumps({"name": datasetname, "description": description,
-                                                        "space": [spaceid]}),
-                                       verify=connector.ssl_verify if connector else True)
-            else:
-                result = requests.post(url, headers={"Content-Type": "application/json"},
-                                       data=json.dumps({"name": datasetname, "description": description}),
-                                       verify=connector.ssl_verify if connector else True)
-
-        result.raise_for_status()
-
-        datasetid = result.json()['id']
-        logger.debug("dataset id = [%s]", datasetid)
-
-        return datasetid
+        datasetid = v1datasets.create_empty(connector, host, key, datasetname, description, parentid, spaceid)
+    return datasetid
 
 
 def delete(connector, host, key, datasetid, token=None):
@@ -81,10 +50,8 @@ def delete(connector, host, key, datasetid, token=None):
     """
     if clowder_version >= 2.0:
         result = v2datasets.delete(connector, host, key, datasetid, token)
-        return result
-    url = "%sapi/datasets/%s?key=%s" % (host, datasetid, key)
-
-    result = requests.delete(url, verify=connector.ssl_verify if connector else True)
+    else:
+        result = v2datasets.delete(connector, host, key, datasetid)
     result.raise_for_status()
 
     return json.loads(result.text)
@@ -125,10 +92,9 @@ def download(connector, host, key, datasetid, token=None):
     """
     if clowder_version >= 2.0:
         zipfile = v2datasets.download(connector, host, key, datasetid, token)
-        return zipfile
     else:
         zipfile = v1datasets.download(connector, host, key, datasetid)
-        return zipfile
+    return zipfile
 
 
 def download_metadata(connector, host, key, datasetid, extractor=None, token=None):
@@ -160,10 +126,9 @@ def get_info(connector, host, key, datasetid, token=None):
     """
     if clowder_version >= 2.0:
         info = v2datasets.get_info(connector, host, key, datasetid, token)
-        return info
     else:
         info = v1datasets.get_info(connector, host, key, datasetid)
-        return info
+    return info
 
 
 def get_file_list(connector, host, key, datasetid, token=None):
@@ -177,10 +142,9 @@ def get_file_list(connector, host, key, datasetid, token=None):
     """
     if clowder_version >= 2.0:
         file_list = v2datasets.get_file_list(connector, host, key, datasetid, token)
-        return file_list
     else:
         file_list = v1datasets.get_file_list(connector, host, key, datasetid)
-        return file_list
+    return file_list
 
 
 def remove_metadata(connector, host, key, datasetid, extractor=None, token=None):
