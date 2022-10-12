@@ -1,3 +1,19 @@
+import json
+import logging
+import os
+import tempfile
+
+import requests
+import pyclowder.api.v2.datasets as v2datasets
+import pyclowder.api.v1.datasets as v1datasets
+from pyclowder.client import ClowderClient
+from pyclowder.collections import get_datasets, get_child_collections, delete as delete_collection
+from pyclowder.utils import StatusMessage
+
+from dotenv import load_dotenv
+load_dotenv()
+clowder_version = float(os.getenv('clowder_version'))
+
 
 def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None, token=None):
     """Create a new dataset in Clowder.
