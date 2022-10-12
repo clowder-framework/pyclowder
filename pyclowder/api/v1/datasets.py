@@ -15,7 +15,7 @@ load_dotenv()
 clowder_version = float(os.getenv('clowder_version'))
 
 
-def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None, token=None):
+def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
     """Create a new dataset in Clowder.
 
     Keyword arguments:
@@ -60,7 +60,7 @@ def create_empty(connector, host, key, datasetname, description, parentid=None, 
 
     return datasetid
 
-def delete(connector, host, key, datasetid, token=None):
+def delete(connector, host, key, datasetid):
     """Delete dataset from Clowder.
 
     Keyword arguments:
@@ -102,7 +102,7 @@ def delete_by_collection(connector, host, key, collectionid, recursive=True, del
     if delete_colls:
         delete_collection(connector, host, key, collectionid)
 
-def download(connector, host, key, datasetid, token=None):
+def download(connector, host, key, datasetid):
     """Download dataset to be processed from Clowder as zip file.
 
     Keyword arguments:
@@ -126,7 +126,7 @@ def download(connector, host, key, datasetid, token=None):
 
     return zipfile
 
-def download_metadata(connector, host, key, datasetid, extractor=None, token=None):
+def download_metadata(connector, host, key, datasetid, extractor=None):
     """Download dataset JSON-LD metadata from Clowder.
 
     Keyword arguments:
@@ -148,7 +148,7 @@ def download_metadata(connector, host, key, datasetid, extractor=None, token=Non
 
     return result.json()
 
-def get_info(connector, host, key, datasetid, token=None):
+def get_info(connector, host, key, datasetid):
     """Get basic dataset information from UUID.
 
     Keyword arguments:
@@ -167,7 +167,7 @@ def get_info(connector, host, key, datasetid, token=None):
 
     return json.loads(result.text)
 
-def get_file_list(connector, host, key, datasetid, token=None):
+def get_file_list(connector, host, key, datasetid):
     """Get list of files in a dataset as JSON object.
 
     Keyword arguments:
@@ -206,7 +206,7 @@ def remove_metadata(connector, host, key, datasetid, extractor=None):
                              verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
-def submit_extraction(connector, host, key, datasetid, extractorname, token=None):
+def submit_extraction(connector, host, key, datasetid, extractorname):
     """Submit dataset for extraction by given extractor.
 
     Keyword arguments:
@@ -272,7 +272,7 @@ def upload_tags(connector, host, key, datasetid, tags):
                             verify=connector.ssl_verify if connector else True)
 
 
-def upload_metadata(connector, host, key, datasetid, metadata, token=None):
+def upload_metadata(connector, host, key, datasetid, metadata):
     """Upload dataset JSON-LD metadata to Clowder.
 
     Keyword arguments:
