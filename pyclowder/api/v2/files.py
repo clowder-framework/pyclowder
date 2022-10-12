@@ -101,7 +101,7 @@ def download_metadata(connector, host, key, fileid, extractor=None, token=None):
     # fetch data
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
 
-    return result.json()
+    return result
 
 
 def submit_extraction(connector, host, key, fileid, extractorname, token=None):
@@ -122,7 +122,7 @@ def submit_extraction(connector, host, key, fileid, extractorname, token=None):
                             data=json.dumps({"extractor": extractorname}),
                             verify=connector.ssl_verify if connector else True)
 
-    return result.json()
+    return result
 
 
 # TODO not implemented in v2

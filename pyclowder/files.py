@@ -15,7 +15,7 @@ from urllib3.filepost import encode_multipart_formdata
 from pyclowder.datasets import get_file_list
 from pyclowder.collections import get_datasets, get_child_collections
 import pyclowder.api.v2.files as v2files
-
+import pyclowder.api.v1.files as v1files
 from dotenv import load_dotenv
 load_dotenv()
 clowder_version = float(os.getenv('clowder_version'))
@@ -43,28 +43,9 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext="", toke
     """
     if clowder_version >= 2.0:
         inputfilename = v2files.download(connector, host, key, fileid, intermediatefileid, ext, token)
-        return inputfilename
     else:
-        connector.message_process({"type": "file", "id": fileid}, "Downloading file.")
-
-
-
-        # TODO: intermediateid doesn't really seem to be used here, can we remove entirely?
-        if not intermediatefileid:
-            intermediatefileid = fileid
-        url = '%sapi/files/%s?key=%s' % (host, intermediatefileid, key)
-        result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
-
-        (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
-
-        try:
-            with os.fdopen(inputfile, "wb") as outputfile:
-                for chunk in result.iter_content(chunk_size=10*1024):
-                    outputfile.write(chunk)
-            return inputfilename
-        except Exception:
-            os.remove(inputfilename)
-            raise
+        inputfilename = v2files.download(connector, host, key, fileid, intermediatefileid, ext, token)
+    return inputfilename
 
 
 def download_info(connector, host, key, fileid, token=None):
@@ -79,15 +60,9 @@ def download_info(connector, host, key, fileid, token=None):
 
     if clowder_version >= 2.0:
         result = v2files.download_info(connector, host, key, fileid, token)
-        return result.json()
     else:
-        url = '%sapi/files/%s/metadata?key=%s' % (host, fileid, key)
-        headers = {"Authorization": "Bearer " + token}
-
-        # fetch data
-        result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
-
-        return result.json()
+        result = v1files.download_info(connector, host, key, fileid)
+    return result.json()
 
 
 def download_metadata(connector, host, key, fileid, extractor=None, token=None):
@@ -101,15 +76,10 @@ def download_metadata(connector, host, key, fileid, extractor=None, token=None):
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
     if clowder_version >= 2.0:
-        v2files.download_metadata(connector, host, key, fileid, extractor, token)
+        result = v2files.download_metadata(connector, host, key, fileid, extractor, token)
     else:
-        filterstring = "" if extractor is None else "&extractor=%s" % extractor
-        url = '%sapi/files/%s/metadata.jsonld?key=%s%s' % (host, fileid, key, filterstring)
-
-        # fetch data
-        result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
-
-        return result.json()
+        result = v1files.download_metadata(connector, host, key, fileid, extractor)
+    return result.json()
 
 
 def submit_extraction(connector, host, key, fileid, extractorname, token=None):
@@ -123,16 +93,10 @@ def submit_extraction(connector, host, key, fileid, extractorname, token=None):
     extractorname -- registered name of extractor to trigger
     """
     if clowder_version >= 2.0:
-        v2files.submit_extraction(connector, host, key, fileid, extractorname, token)
+        result = v2files.submit_extraction(connector, host, key, fileid, extractorname, token)
     else:
-        url = "%sapi/files/%s/extractions?key=%s" % (host, fileid, key)
-
-        result = connector.post(url,
-                                headers={'Content-Type': 'application/json'},
-                                data=json.dumps({"extractor": extractorname}),
-                                verify=connector.ssl_verify if connector else True)
-
-        return result.json()
+        result = v1files.submit_extraction(connector, host, key, fileid, extractorname)
+    return result.json()
 
 
 def submit_extractions_by_dataset(connector, host, key, datasetid, extractorname, ext=False):
@@ -187,7 +151,7 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
             submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, ext, recursive)
 
 
-def upload_metadata(connector, host, key, fileid, metadata):
+def upload_metadata(connector, host, key, fileid, metadata, token=None):
     """Upload file JSON-LD metadata to Clowder.
 
     Keyword arguments:
@@ -199,15 +163,9 @@ def upload_metadata(connector, host, key, fileid, metadata):
     """
 
     if clowder_version >= 2.0:
-        v2files.upload_metadata(connector, host, key, fileid, metadata)
+        v2files.upload_metadata(connector, host, key, fileid, metadata, token)
     else:
-        connector.message_process({"type": "file", "id": fileid}, "Uploading file metadata.")
-
-        headers = {'Content-Type': 'application/json'}
-
-        url = '%sapi/files/%s/metadata.jsonld?key=%s' % (host, fileid, key)
-        result = connector.post(url, headers=headers, data=json.dumps(metadata),
-                                verify=connector.ssl_verify if connector else True)
+        v1files.upload_metadata(connector, host, key, fileid, metadata)
 
 
 # pylint: disable=too-many-arguments
@@ -365,29 +323,7 @@ def _upload_to_dataset_local(connector, host, key, datasetid, filepath, token=No
     """
 
     if clowder_version >= 2.0:
-        v2files._upload_to_dataset_local(connector, host, key, datasetid, filepath, token)
+        uploadedfileid = v2files._upload_to_dataset_local(connector, host, key, datasetid, filepath, token)
     else:
-        logger = logging.getLogger(__name__)
-        url = '%sapi/uploadToDataset/%s?key=%s' % (host, datasetid, key)
-
-        if os.path.exists(filepath):
-            # Replace local path with remote path before uploading
-            for source_path in connector.mounted_paths:
-                if filepath.startswith(connector.mounted_paths[source_path]):
-                    filepath = filepath.replace(connector.mounted_paths[source_path],
-                                                source_path)
-                    break
-
-            filename = os.path.basename(filepath)
-            m = MultipartEncoder(
-                fields={'file': (filename, open(filepath, 'rb'))}
-            )
-            result = connector.post(url, data=m, headers={'Content-Type': m.content_type},
-                                    verify=connector.ssl_verify if connector else True)
-
-            uploadedfileid = result.json()['id']
-            logger.debug("uploaded file id = [%s]", uploadedfileid)
-
-            return uploadedfileid
-        else:
-            logger.error("unable to upload local file %s (not found)", filepath)
+        uploadedfileid = v1files._upload_to_dataset_local(connector, host, key, datasetid, filepath)
+    return uploadedfileid
