@@ -197,7 +197,7 @@ def get_file_list(connector, host, key, datasetid, token=None):
     return json.loads(result.text)
 
 
-def remove_metadata(connector, host, key, datasetid, extractor=None):
+def remove_metadata(connector, host, key, datasetid, extractor=None, token=None):
     """Delete dataset JSON-LD metadata from Clowder.
 
     Keyword arguments:
