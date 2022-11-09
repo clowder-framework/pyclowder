@@ -514,7 +514,7 @@ class Connector(object):
 
         headers = {'Content-Type': 'application/json'}
         data = self.extractor_info
-        if self.extractor_key is not None and len(self.extractor_key) > 0:
+        if self.extractor_key:
             data["unique_key"] = self.extractor_key
 
         for url in endpoints.split(','):
