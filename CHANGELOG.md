@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/) 
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## Unreleased
+
+### Added
+- Add support for `EXTRACTOR_KEY` and `CLOWDER_EMAIL` environment variables to register
+an extractor for just one user.
+
 ## 2.4.1 - 2021-07-21
 
 ### Added
