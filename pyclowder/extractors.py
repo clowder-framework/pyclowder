@@ -179,7 +179,6 @@ class Extractor(object):
                 connector.connect()
                 connector.register_extractor(self.args.registration_endpoints)
 
-                # TODO: register extractor initially without _process_message?
                 url = "%sapi/extractors" % self.args.clowder_url
                 if url not in connector.registered_clowder:
                     connector.register_extractor("%s" % (url))

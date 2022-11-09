@@ -524,7 +524,6 @@ class Connector(object):
                 else:
                     logger.info("Unable to register extractor without an API key.")
                     return
-                    #url += "?user=%s" % self.clowder_email # TODO: This will not work, need an auth key matching email
             try:
                 result = requests.post(url.strip(), headers=headers,
                                        data=json.dumps(data),
@@ -845,8 +844,6 @@ class RabbitMQBroadcast:
             try:
                 self.channel.connection.process_data_events()
                 if time.time() >= next_heartbeat:
-                    logging.getLogger(__name__).info("Sending heartbeat...")
-                    logging.getLogger(__name__).info(message)
                     self.channel.basic_publish(exchange='extractors', routing_key='', body=json.dumps(message))
                     next_heartbeat = time.time() + self.heartbeat
             except SystemExit:
