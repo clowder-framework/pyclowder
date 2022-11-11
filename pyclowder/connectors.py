@@ -413,9 +413,6 @@ class Connector(object):
         if not source_host.endswith('/'): source_host += '/'
         if not host.endswith('/'): host += '/'
         secret_key = body.get('secretKey', '')
-        if clowder_version >= 2.0:
-            secret_key = body.get('token', '')
-        token = body.get('token', ' ')
         retry_count = 0 if 'retry_count' not in body else body['retry_count']
         resource = self._build_resource(body, host, secret_key)
         if not resource:
@@ -430,7 +427,7 @@ class Connector(object):
         if url not in Connector.registered_clowder:
             Connector.registered_clowder.append(url)
             if clowder_version >= 2.0:
-                self.register_extractor("%s" % (url), token=token)
+                self.register_extractor("%s" % (url), token=secret_key)
             else:
                 self.register_extractor("%s?key=%s" % (url, secret_key))
 
@@ -453,7 +450,7 @@ class Connector(object):
                         try:
                             if check_result != pyclowder.utils.CheckMessage.bypass:
                                 if clowder_version >= 2.0:
-                                    file_metadata = pyclowder.files.download_info(self, host, secret_key, resource["id"], token=token)
+                                    file_metadata = pyclowder.files.download_info(self, host, secret_key, resource["id"])
                                 else:
                                     file_metadata = pyclowder.files.download_info(self, host, secret_key, resource["id"])
                                 file_path = self._check_for_local_file(file_metadata)
@@ -461,7 +458,7 @@ class Connector(object):
                                     if clowder_version >= 2.0:
                                         file_path = pyclowder.files.download(self, host, secret_key, resource["id"],
                                                                          resource["intermediate_id"],
-                                                                         resource["file_ext"], token=token)
+                                                                         resource["file_ext"])
                                     else:
                                         file_path = pyclowder.files.download(self, host, secret_key, resource["id"],
                                                                              resource["intermediate_id"],

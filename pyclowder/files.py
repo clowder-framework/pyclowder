@@ -42,9 +42,9 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext="", toke
     ext -- the file extension, the downloaded file will end with this extension
     """
     if clowder_version >= 2.0:
-        inputfilename = v2files.download(connector, host, key, fileid, intermediatefileid, ext, token)
+        inputfilename = v2files.download(connector, host, key, fileid, intermediatefileid, ext)
     else:
-        inputfilename = v2files.download(connector, host, key, fileid, intermediatefileid, ext, token)
+        inputfilename = v1files.download(connector, host, key, fileid, intermediatefileid, ext)
     return inputfilename
 
 
@@ -59,7 +59,7 @@ def download_info(connector, host, key, fileid, token=None):
     """
 
     if clowder_version >= 2.0:
-        result = v2files.download_info(connector, host, key, fileid, token)
+        result = v2files.download_info(connector, host, key, fileid)
     else:
         result = v1files.download_info(connector, host, key, fileid)
     return result.json()

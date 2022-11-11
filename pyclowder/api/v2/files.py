@@ -29,7 +29,7 @@ except:
 
 
 # pylint: disable=too-many-arguments
-def download(connector, host, key, fileid, intermediatefileid=None, ext="", token=None):
+def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
     """Download file to be processed from Clowder.
 
     Keyword arguments:
@@ -50,7 +50,7 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext="", toke
         intermediatefileid = fileid
 
     url = '%sapi/v2/files/%s' % (host, intermediatefileid)
-    headers = {"Authorization": "Bearer " + token}
+    headers = {"Authorization": "Bearer " + key}
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
 
     (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
@@ -65,7 +65,7 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext="", toke
         raise
 
 
-def download_info(connector, host, key, fileid, token=None):
+def download_info(connector, host, key, fileid):
     """Download file summary metadata from Clowder.
 
     Keyword arguments:
@@ -76,7 +76,7 @@ def download_info(connector, host, key, fileid, token=None):
     """
 
     url = '%sapi/v2/files/%s/metadata' % (host, fileid)
-    headers = {"Authorization": "Bearer " + token}
+    headers = {"Authorization": "Bearer " + key}
     # fetch data
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
 
@@ -179,7 +179,7 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
             submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, ext, recursive)
 
 
-def upload_metadata(connector, host, key, fileid, metadata, token=None):
+def upload_metadata(connector, host, key, fileid, metadata):
     """Upload file JSON-LD metadata to Clowder.
 
     Keyword arguments:
@@ -191,12 +191,8 @@ def upload_metadata(connector, host, key, fileid, metadata, token=None):
     """
 
     connector.message_process({"type": "file", "id": fileid}, "Uploading file metadata.")
-    if token:
-        headers = {'Content-Type': 'application/json',
-                   'Authorization':'Bearer ' + token}
-    else:
-        headers = {'Content-Type': 'application/json',
-                   'Authorization':'Bearer ' + key}
+    headers = {'Content-Type': 'application/json',
+               'Authorization':'Bearer ' + key}
     print(metadata)
     as_json = json.dumps(metadata)
     url = '%sapi/v2/files/%s/metadata' % (host, fileid)
