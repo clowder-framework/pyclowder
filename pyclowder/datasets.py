@@ -115,7 +115,7 @@ def download_metadata(connector, host, key, datasetid, extractor=None, token=Non
         return result_json
 
 
-def get_info(connector, host, key, datasetid, token=None):
+def get_info(connector, host, key, datasetid):
     """Get basic dataset information from UUID.
 
     Keyword arguments:
@@ -125,13 +125,13 @@ def get_info(connector, host, key, datasetid, token=None):
     datasetid -- the dataset to get info of
     """
     if clowder_version >= 2.0:
-        info = v2datasets.get_info(connector, host, key, datasetid, token)
+        info = v2datasets.get_info(connector, host, key, datasetid)
     else:
         info = v1datasets.get_info(connector, host, key, datasetid)
     return info
 
 
-def get_file_list(connector, host, key, datasetid, token=None):
+def get_file_list(connector, host, key, datasetid):
     """Get list of files in a dataset as JSON object.
 
     Keyword arguments:
@@ -141,13 +141,13 @@ def get_file_list(connector, host, key, datasetid, token=None):
     datasetid -- the dataset to get filelist of
     """
     if clowder_version >= 2.0:
-        file_list = v2datasets.get_file_list(connector, host, key, datasetid, token)
+        file_list = v2datasets.get_file_list(connector, host, key, datasetid)
     else:
         file_list = v1datasets.get_file_list(connector, host, key, datasetid)
     return file_list
 
 
-def remove_metadata(connector, host, key, datasetid, extractor=None, token=None):
+def remove_metadata(connector, host, key, datasetid, extractor=None):
     """Delete dataset JSON-LD metadata from Clowder.
 
     Keyword arguments:
@@ -159,12 +159,12 @@ def remove_metadata(connector, host, key, datasetid, extractor=None, token=None)
                     !!! ALL JSON-LD METADATA WILL BE REMOVED IF NO extractor PROVIDED !!!
     """
     if clowder_version >= 2.0:
-        v2datasets.remove_metadata(connector, host, key, datasetid, extractor, token)
+        v2datasets.remove_metadata(connector, host, key, datasetid, extractor)
     else:
         v1datasets.remove_metadata(connector, host, key, datasetid, extractor)
 
 
-def submit_extraction(connector, host, key, datasetid, extractorname, token=None):
+def submit_extraction(connector, host, key, datasetid, extractorname):
     """Submit dataset for extraction by given extractor.
 
     Keyword arguments:
@@ -175,7 +175,7 @@ def submit_extraction(connector, host, key, datasetid, extractorname, token=None
     extractorname -- registered name of extractor to trigger
     """
     if clowder_version >= 2.0:
-        result_status_code = v2datasets.submit_extraction(connector, host, key, datasetid, extractorname, token)
+        result_status_code = v2datasets.submit_extraction(connector, host, key, datasetid, extractorname)
     else:
         result_status_code = v1datasets.submit_extraction(connector, host, key, datasetid, extractorname)
 
@@ -225,7 +225,7 @@ def upload_tags(connector, host, key, datasetid, tags):
                             verify=connector.ssl_verify if connector else True)
 
 
-def upload_metadata(connector, host, key, datasetid, metadata, token=None):
+def upload_metadata(connector, host, key, datasetid, metadata):
     """Upload dataset JSON-LD metadata to Clowder.
 
     Keyword arguments:
@@ -236,7 +236,7 @@ def upload_metadata(connector, host, key, datasetid, metadata, token=None):
     metadata -- the metadata to be uploaded
     """
     if clowder_version >= 2.0:
-        v2datasets.upload_metadata(connector, host, key, datasetid, metadata, token)
+        v2datasets.upload_metadata(connector, host, key, datasetid, metadata)
     else:
         v1datasets.upload_metadata(connector, host, key, datasetid, metadata)
 

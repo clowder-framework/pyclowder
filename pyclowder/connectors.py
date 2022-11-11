@@ -184,8 +184,6 @@ class Connector(object):
         intermediatefileid = body.get('intermediateId', '')
         datasetid = body.get('datasetId', '')
         filename = body.get('filename', '')
-        if float(os.getenv('clowder_version')) == 2.0:
-            token = body.get('token', ' ')
 
         # determine resource type; defaults to file
         resource_type = "file"
@@ -214,12 +212,8 @@ class Connector(object):
         # determine what to download (if needed) and add relevant data to resource
         if resource_type == "dataset":
             try:
-                if float(os.getenv('clowder_version')) == 2.0:
-                    datasetinfo = pyclowder.datasets.get_info(self, host, secret_key, datasetid, token)
-                    filelist = pyclowder.datasets.get_file_list(self, host, secret_key, datasetid, token)
-                else:
-                    datasetinfo = pyclowder.datasets.get_info(self, host, secret_key, datasetid)
-                    filelist = pyclowder.datasets.get_file_list(self, host, secret_key, datasetid)
+                datasetinfo = pyclowder.datasets.get_info(self, host, secret_key, datasetid)
+                filelist = pyclowder.datasets.get_file_list(self, host, secret_key, datasetid)
                 triggering_file = None
                 for f in filelist:
                     if f['id'] == fileid:
@@ -255,7 +249,6 @@ class Connector(object):
                     "intermediate_id": intermediatefileid,
                     "name": filename,
                     "file_ext": ext,
-                    "token": token,
                     "parent": {"type": "dataset",
                                "id": datasetid}
                 }
@@ -427,7 +420,7 @@ class Connector(object):
         if url not in Connector.registered_clowder:
             Connector.registered_clowder.append(url)
             if clowder_version >= 2.0:
-                self.register_extractor("%s" % (url), token=secret_key)
+                self.register_extractor("%s" % (url,secret_key))
             else:
                 self.register_extractor("%s?key=%s" % (url, secret_key))
 
@@ -540,7 +533,7 @@ class Connector(object):
             else:
                 self.message_error(resource, message)
 
-    def register_extractor(self, endpoints, token=None):
+    def register_extractor(self, endpoints):
         """Register extractor info with Clowder.
 
         This assumes a file called extractor_info.json to be located in either the
@@ -552,8 +545,7 @@ class Connector(object):
 
             logger = logging.getLogger(__name__)
 
-            headers = {'Content-Type': 'application/json',
-                       'Authorization': 'Bearer ' + token}
+            headers = {'Content-Type': 'application/json'}
             data = self.extractor_info
 
             for url in endpoints.split(','):

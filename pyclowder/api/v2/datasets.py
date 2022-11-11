@@ -15,7 +15,7 @@ from pyclowder.collections import get_datasets, get_child_collections, delete as
 from pyclowder.utils import StatusMessage
 
 
-def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None, token=None):
+def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
     """Create a new dataset in Clowder.
 
     Keyword arguments:
@@ -31,12 +31,8 @@ def create_empty(connector, host, key, datasetname, description, parentid=None, 
     logger = logging.getLogger(__name__)
 
     url = '%sapi/v2/datasets' % (host)
-    if token:
-        headers = {"Content-Type": "application/json",
-                   "Authorization": "Bearer " + token}
-    else:
-        headers = {"Content-Type": "application/json",
-                   "Authorization": "Bearer " + key}
+    headers = {"Content-Type": "application/json",
+               "Authorization": "Bearer " + key}
     result = requests.post(url, headers=headers,
                            data=json.dumps({"name": datasetname, "description": description}),
                            verify=connector.ssl_verify if connector else True)
@@ -49,7 +45,7 @@ def create_empty(connector, host, key, datasetname, description, parentid=None, 
     return datasetid
 
 
-def delete(connector, host, key, datasetid, token=None):
+def delete(connector, host, key, datasetid):
     """Delete dataset from Clowder.
 
     Keyword arguments:
@@ -58,10 +54,7 @@ def delete(connector, host, key, datasetid, token=None):
     key -- the secret key to login to clowder
     datasetid -- the dataset to delete
     """
-    if token:
-        headers = {"Authorization": "Bearer " + token}
-    else:
-        headers = {"Authorization": "Bearer " + key}
+    headers = {"Authorization": "Bearer " + key}
 
     url = "%sapi/v2/datasets/%s" % (host, datasetid)
 
@@ -96,7 +89,7 @@ def delete_by_collection(connector, host, key, collectionid, recursive=True, del
         delete_collection(connector, host, key, collectionid)
 
 
-def download(connector, host, key, datasetid, token=None):
+def download(connector, host, key, datasetid):
     """Download dataset to be processed from Clowder as zip file.
 
     Keyword arguments:
@@ -108,10 +101,7 @@ def download(connector, host, key, datasetid, token=None):
 
     connector.message_process({"type": "dataset", "id": datasetid}, "Downloading dataset.")
 
-    if token:
-        headers = {"Authorization": "Bearer " + token}
-    else:
-        headers = {"Authorization": "Bearer " + key}
+    headers = {"Authorization": "Bearer " + key}
     # fetch dataset zipfile
     url = '%sapi/v2/datasets/%s/download' % (host, datasetid)
     result = requests.get(url, stream=True, headers=headers,
@@ -126,7 +116,7 @@ def download(connector, host, key, datasetid, token=None):
     return zipfile
 
 
-def download_metadata(connector, host, key, datasetid, extractor=None, token=None):
+def download_metadata(connector, host, key, datasetid, extractor=None):
     """Download dataset JSON-LD metadata from Clowder.
 
     Keyword arguments:
@@ -136,10 +126,7 @@ def download_metadata(connector, host, key, datasetid, extractor=None, token=Non
     datasetid -- the dataset to fetch metadata of
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
-    if token:
-        headers = {"Authorization": "Bearer " + token}
-    else:
-        headers = {"Authorization": "Bearer " + key}
+    headers = {"Authorization": "Bearer " + key}
 
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
     url = '%sapi/v2/datasets/%s/metadata' % (host, datasetid)
@@ -152,7 +139,7 @@ def download_metadata(connector, host, key, datasetid, extractor=None, token=Non
     return result.json()
 
 
-def get_info(connector, host, key, datasetid, token=None):
+def get_info(connector, host, key, datasetid):
     """Get basic dataset information from UUID.
 
     Keyword arguments:
@@ -161,10 +148,7 @@ def get_info(connector, host, key, datasetid, token=None):
     key -- the secret key to login to clowder
     datasetid -- the dataset to get info of
     """
-    if token:
-        headers = {"Authorization": "Bearer " + token}
-    else:
-        headers = {"Authorization": "Bearer " + key}
+    headers = {"Authorization": "Bearer " + key}
 
     url = "%sapi/v2/datasets/%s" % (host, datasetid)
 
@@ -175,7 +159,7 @@ def get_info(connector, host, key, datasetid, token=None):
     return json.loads(result.text)
 
 
-def get_file_list(connector, host, key, datasetid, token=None):
+def get_file_list(connector, host, key, datasetid):
     """Get list of files in a dataset as JSON object.
 
     Keyword arguments:
@@ -184,10 +168,7 @@ def get_file_list(connector, host, key, datasetid, token=None):
     key -- the secret key to login to clowder
     datasetid -- the dataset to get filelist of
     """
-    if token:
-        headers = {"Authorization": "Bearer " + token}
-    else:
-        headers = {"Authorization": "Bearer " + key}
+    headers = {"Authorization": "Bearer " + key}
 
     url = "%sapi/v2/datasets/%s/files" % (host, datasetid)
 
@@ -197,7 +178,7 @@ def get_file_list(connector, host, key, datasetid, token=None):
     return json.loads(result.text)
 
 
-def remove_metadata(connector, host, key, datasetid, extractor=None, token=None):
+def remove_metadata(connector, host, key, datasetid, extractor=None):
     """Delete dataset JSON-LD metadata from Clowder.
 
     Keyword arguments:
@@ -208,10 +189,7 @@ def remove_metadata(connector, host, key, datasetid, extractor=None, token=None)
     extractor -- extractor name to filter deletion
                     !!! ALL JSON-LD METADATA WILL BE REMOVED IF NO extractor PROVIDED !!!
     """
-    if token:
-        headers = {"Authorization": "Bearer " + token}
-    else:
-        headers = {"Authorization": "Bearer " + key}
+    headers = {"Authorization": "Bearer " + key}
 
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
     url = '%sapi/v2/datasets/%s/metadata' % (host, datasetid)
@@ -222,7 +200,7 @@ def remove_metadata(connector, host, key, datasetid, extractor=None, token=None)
     result.raise_for_status()
 
 
-def submit_extraction(connector, host, key, datasetid, extractorname, token=None):
+def submit_extraction(connector, host, key, datasetid, extractorname):
     """Submit dataset for extraction by given extractor.
 
     Keyword arguments:
@@ -232,12 +210,8 @@ def submit_extraction(connector, host, key, datasetid, extractorname, token=None
     datasetid -- the dataset UUID to submit
     extractorname -- registered name of extractor to trigger
     """
-    if token:
-        headers = {'Content-Type': 'application/json',
-            "Authorization": "Bearer " + token}
-    else:
-        headers = {'Content-Type': 'application/json',
-                   "Authorization": "Bearer " + key}
+    headers = {'Content-Type': 'application/json',
+                "Authorization": "Bearer " + key}
 
     url = "%sapi/v2/datasets/%s/extractions?key=%s" % (host, datasetid)
 
@@ -297,7 +271,7 @@ def upload_tags(connector, host, key, datasetid, tags):
                             verify=connector.ssl_verify if connector else True)
 
 
-def upload_metadata(connector, host, key, datasetid, metadata, token=None):
+def upload_metadata(connector, host, key, datasetid, metadata):
     """Upload dataset JSON-LD metadata to Clowder.
 
     Keyword arguments:
@@ -307,12 +281,8 @@ def upload_metadata(connector, host, key, datasetid, metadata, token=None):
     datasetid -- the dataset that is currently being processed
     metadata -- the metadata to be uploaded
     """
-    if token:
-        headers = {'Content-Type': 'application/json',
-                   "Autorization": "Bearer " + token}
-    else:
-        headers = {'Content-Type': 'application/json',
-                   "Authorization": "Bearer " + key}
+    headers = {'Content-Type': 'application/json',
+               "Authorization": "Bearer " + key}
     connector.message_process({"type": "dataset", "id": datasetid}, "Uploading dataset metadata.")
 
 
