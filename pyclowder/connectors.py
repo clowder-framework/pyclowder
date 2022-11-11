@@ -420,7 +420,7 @@ class Connector(object):
         if url not in Connector.registered_clowder:
             Connector.registered_clowder.append(url)
             if clowder_version >= 2.0:
-                self.register_extractor("%s" % (url,secret_key))
+                self.register_extractor("%s?key=%s" % (url,secret_key))
             else:
                 self.register_extractor("%s?key=%s" % (url, secret_key))
 

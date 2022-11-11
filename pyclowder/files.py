@@ -163,7 +163,7 @@ def upload_metadata(connector, host, key, fileid, metadata, token=None):
     """
 
     if clowder_version >= 2.0:
-        v2files.upload_metadata(connector, host, key, fileid, metadata, token)
+        v2files.upload_metadata(connector, host, key, fileid, metadata)
     else:
         v1files.upload_metadata(connector, host, key, fileid, metadata)
 
