@@ -91,7 +91,7 @@ def download(connector, host, key, datasetid, token=None):
     datasetid -- the file that is currently being processed
     """
     if clowder_version >= 2.0:
-        zipfile = v2datasets.download(connector, host, key, datasetid, token)
+        zipfile = v2datasets.download(connector, host, key, datasetid)
     else:
         zipfile = v1datasets.download(connector, host, key, datasetid)
     return zipfile
