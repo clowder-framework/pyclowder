@@ -75,7 +75,8 @@ class Extractor(object):
         connector_default = "RabbitMQ"
         if os.getenv('LOCAL_PROCESSING', "False").lower() == "true":
             connector_default = "Local"
-        max_retry = os.getenv('CLOWDER_MAX_RETRY', 10)
+        max_retry = int(os.getenv('MAX_RETRY', 10))
+        heartbeat = int(os.getenv('HEARTBEAT', 5*60))
 
         # create the actual extractor
         self.parser = argparse.ArgumentParser(description=self.extractor_info['description'])
@@ -118,7 +119,9 @@ class Extractor(object):
         self.parser.add_argument('--no-bind', dest="nobind", action='store_true',
                                  help='instance will bind itself to RabbitMQ by name but NOT file type')
         self.parser.add_argument('--max-retry', dest='max_retry', default=max_retry,
-                                 help='Maximum number of retries if an error happens in the extractor')
+                                 help='Maximum number of retries if an error happens in the extractor (default=%d)' % max_retry)
+        self.parser.add_argument('--heartbeat', dest='heartbeat', default=heartbeat,
+                                 help='Time in seconds between extractor heartbeats (default=%d)' % heartbeat)
 
     def setup(self):
         """Parse command line arguments and so some setup
@@ -127,6 +130,10 @@ class Extractor(object):
         initialize the logging system.
         """
         self.args = self.parser.parse_args()
+
+        # fix extractor_info based on the queue name
+        if self.args.rabbitmq_queuename and self.extractor_info['name'] != self.args.rabbitmq_queuename:
+            self.extractor_info['name'] = self.args.rabbitmq_queuename
 
         # use command line option for ssl_verify
         if 'sslverify' in self.args:
@@ -174,6 +181,7 @@ class Extractor(object):
                                               mounted_paths=json.loads(self.args.mounted_paths),
                                               clowder_url=self.args.clowder_url,
                                               max_retry=self.args.max_retry,
+                                              heartbeat=self.args.heartbeat,
                                               extractor_key=self.args.extractor_key,
                                               clowder_email=self.args.clowder_email)
                 connector.connect()

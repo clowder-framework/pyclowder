@@ -1,44 +1,63 @@
 from setuptools import setup, find_packages
+import pathlib
 
+here = pathlib.Path(__file__).parent.resolve()
 
-def description():
-    """Return description in Restructure Text format."""
+# Get the long description from the README file
+long_description = (here / 'description.rst').read_text(encoding='utf-8')
 
-    with open('description.rst') as f:
-        return f.read()
+setup(
+    name='pyclowder',
+    version='2.6.0',
+    description='Python SDK for the Clowder Data Management System',
+    long_description=long_description,
 
+    author='Rob Kooper',
+    author_email='kooper@illinois.edu',
 
-setup(name='pyclowder',
-      version='2.4.1',
-      packages=find_packages(),
-      description='Python SDK for the Clowder Data Management System',
-      long_description=description(),
-      author='Rob Kooper',
-      author_email='kooper@illinois.edu',
+    url='https://clowderframework.org',
 
-      url='https://clowderframework.org',
-      project_urls={
-        'Source': 'https://github.com/clowder-framework/pyclowder',
-      },
-
-      license='BSD',
-      classifiers=[
+    license='BSD',
+    classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: BSD License',
-        'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 3'
-      ],
-      keywords=['clowder', 'data management system'],
+        # Specify the Python versions you support here. In particular, ensure
+        # that you indicate you support Python 3. These classifiers are *not*
+        # checked by 'pip install'. See instead 'python_requires' below.
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        "Programming Language :: Python :: 3.10",
+    ],
+    keywords=['clowder', 'data management system'],
 
-      install_requires=[
-          'enum34==1.1.10',
-          'pika==1.2.0',
-          'PyYAML==5.4.1',
-          'requests==2.26.0',
-          'requests-toolbelt==0.9.1',
-      ],
+    packages=find_packages(),
 
-      include_package_data=True,
-      zip_safe=True,
-      )
+    python_requires='>=3.6, <4',
+
+    install_requires=[
+        'pika',
+        'PyYAML',
+        'requests',
+        'requests-toolbelt',
+    ],
+
+    extras_require={  # Optional
+        'dev': ['check-manifest'],
+        'test': ['coverage'],
+    },
+
+    entry_points={  # Optional
+        'console_scripts': [
+            'sample=sample:main',
+        ],
+    },
+
+    project_urls={  # Optional
+        'Bug Reports': 'https://github.com/clowder-framework/pyclowder/issues',
+        'Source': 'https://github.com/clowder-framework/pyclowder',
+    },
+)

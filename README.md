@@ -15,7 +15,7 @@ create new extractors.
 Install using pip (for most recent versions see: https://pypi.org/project/pyclowder/):
 
 ```
-pip install pyclowder==2.4.1
+pip install pyclowder==2.6.0
 ```
 
 Install pyClowder on your system by cloning this repo:
@@ -25,12 +25,15 @@ git clone https://github.com/clowder-framework/pyclowder.git
 cd pyclowder
 pip install -r requirements.txt
 python setup.py install
-
 ```
 or directly from GitHub:
 ```
 pip install -r https://raw.githubusercontent.com/clowder-framework/pyclowder/master/requirements.txt git+https://github.com/clowder-framework/pyclowder.git
 ```
+
+## Quickstart example
+
+See the [README](https://github.com/clowder-framework/pyclowder/tree/master/sample-extractors/wordcount#readme) in `sample-extractors/wordcount`. Using Docker, no install is required.
 
 ## Example Extractor
 
@@ -213,8 +216,13 @@ to a file that is read with the configuration options.
 
 # Dockerfile
 
-We recommend using the pyclowder:onbuild to easily convert your extractor into a docker container. If you build the
-extractor as commented above, you will only need the following Dockerfile
+We recommend following the instructions at [clowder/generator](https://github.com/clowder-framework/generator) to build a Docker image from your Simple Extractor.
+
+You can also use the pyclowder:onbuild Docker image to easily convert your extractor into a docker container. This image is no longer maintained so it is recommeded to either use the clowder/generator linked above or build your own Dockerfile by choosing your own base image and installing pyClowder as described below.
+
+
+**This is deprecated and the onbuild image is no longer maintained**
+If you build the extractor as using the pyclowder:onbuild image, you will only need the following Dockerfile
 
 ```
 FROM clowder/pyclowder:onbuild
@@ -287,7 +295,7 @@ def wordcount(input_file):
     return result
 ```
 
-To build wordcount as a Simpel extractor docker image, users just simply assign two environment variables in Dockerfile shown below. EXTRACTION_FUNC is environment variable and has to be assigned as extraction function, where in wordcount.py, the extraction function is `wordcount`. Environment variable EXTRACTION_MODULE is the name of module file containing the definition of extraction function.
+To build wordcount as a an extractor docker image, users just simply assign two environment variables in Dockerfile shown below. EXTRACTION_FUNC is environment variable and has to be assigned as extraction function, where in wordcount.py, the extraction function is `wordcount`. Environment variable EXTRACTION_MODULE is the name of module file containing the definition of extraction function.
 ```markdown
 FROM clowder/extractors-simple-extractor:onbuild
 

@@ -1,7 +1,7 @@
 # Change Log
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](http://keepachangelog.com/) 
+The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
 ## Unreleased
@@ -9,6 +9,37 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 ### Added
 - Add support for `EXTRACTOR_KEY` and `CLOWDER_EMAIL` environment variables to register
 an extractor for just one user.
+
+## 2.6.0 - 2022-06-14
+
+This will change how clowder sees the extractors. If you have an extractor, and you specify
+the queue name (eiter as command line argument or environment variable) the name of the
+extractor shown in clowder, will be the name of the queue.
+
+### Fixed
+- both heartbeat and nax_retry need to be converted to in, not string
+
+### Changed
+- when you set the RABBITMQ_QUEUE it will change the name of the extractor as well in the
+  extractor_info document. [#47](https://github.com/clowder-framework/pyclowder/issues/47)
+- environment variable CLOWDER_MAX_RETRY is now MAX_RETRY
+
+## 2.5.1 - 2022-03-04
+
+### Changed
+- updated pypi documentation
+
+## 2.5.0 - 2022-03-04
+
+### Fixed
+- extractor would fail on empty dataset download [#36](https://github.com/clowder-framework/pyclowder/issues/36)
+
+### Added
+- ability to set the heartbeat for an extractractor [#42](https://github.com/clowder-framework/pyclowder/issues/42)
+
+### Changed
+- update wordcount extractor to not use docker image
+- using piptools for requirements
 
 ## 2.4.1 - 2021-07-21
 
@@ -43,13 +74,13 @@ an extractor for just one user.
 ## 2.3.2 - 2020-09-24
 
 ### Fixed
-- When rabbitmq restarts the extractor would not stop and restart, resulting 
+- When rabbitmq restarts the extractor would not stop and restart, resulting
   in the extractor no longer receiving any messages. #17
 
 ### Added
 - Can specify url to use for extractor downloads, this is helpful for instances
   that have access to the internal URL for clowder, for example in docker/kubernetes.
-  
+
 ### Removed
 - Removed ability to run multiple connectors in the same python process. If
   parallelism is needed, use multiple processes (or containers).
@@ -135,7 +166,7 @@ install pyclowder.
 
 ### Fixed
 - Error decoding json body from Clowder when filename had special characters
-  [CATSPYC-18] (https://opensource.ncsa.illinois.edu/jira/browse/CATSPYC-18) 
+  [CATSPYC-18] (https://opensource.ncsa.illinois.edu/jira/browse/CATSPYC-18)
 - RABBITMQ_QUEUE variable/flag was ignored when set and would connect
   to default queue.
 
