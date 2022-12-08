@@ -17,7 +17,7 @@ from pyclowder.utils import StatusMessage
 
 from dotenv import load_dotenv
 load_dotenv()
-clowder_version = float(os.getenv('clowder_version'))
+clowder_version = float(os.getenv('clowder_version','1.0'))
 
 
 def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None, token=None):

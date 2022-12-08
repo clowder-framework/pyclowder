@@ -58,7 +58,7 @@ from string import Template
 from dotenv import load_dotenv
 load_dotenv()
 
-clowder_version = float(os.getenv('clowder_version'))
+clowder_version = float(os.getenv('clowder_version', '1.0'))
 
 
 class Connector(object):

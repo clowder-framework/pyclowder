@@ -26,7 +26,7 @@ import pyclowder.datasets
 
 from dotenv import load_dotenv
 load_dotenv()
-clowder_version = float(os.getenv('clowder_version'))
+clowder_version = float(os.getenv('clowder_version', '1.0'))
 
 
 class Extractor(object):
