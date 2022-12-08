@@ -30,7 +30,7 @@ except:
 
 
 # pylint: disable=too-many-arguments
-def download(connector, host, key, fileid, intermediatefileid=None, ext="", token=None):
+def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
     """Download file to be processed from Clowder.
 
     Keyword arguments:
@@ -48,7 +48,7 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext="", toke
     return inputfilename
 
 
-def download_info(connector, host, key, fileid, token=None):
+def download_info(connector, host, key, fileid):
     """Download file summary metadata from Clowder.
 
     Keyword arguments:
@@ -65,7 +65,7 @@ def download_info(connector, host, key, fileid, token=None):
     return result.json()
 
 
-def download_metadata(connector, host, key, fileid, extractor=None, token=None):
+def download_metadata(connector, host, key, fileid, extractor=None):
     """Download file JSON-LD metadata from Clowder.
 
     Keyword arguments:
@@ -76,13 +76,13 @@ def download_metadata(connector, host, key, fileid, extractor=None, token=None):
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
     if clowder_version >= 2.0:
-        result = v2files.download_metadata(connector, host, key, fileid, extractor, token)
+        result = v2files.download_metadata(connector, host, key, fileid, extractor)
     else:
         result = v1files.download_metadata(connector, host, key, fileid, extractor)
     return result.json()
 
 
-def submit_extraction(connector, host, key, fileid, extractorname, token=None):
+def submit_extraction(connector, host, key, fileid, extractorname):
     """Submit file for extraction by given extractor.
 
     Keyword arguments:
@@ -93,7 +93,7 @@ def submit_extraction(connector, host, key, fileid, extractorname, token=None):
     extractorname -- registered name of extractor to trigger
     """
     if clowder_version >= 2.0:
-        result = v2files.submit_extraction(connector, host, key, fileid, extractorname, token)
+        result = v2files.submit_extraction(connector, host, key, fileid, extractorname)
     else:
         result = v1files.submit_extraction(connector, host, key, fileid, extractorname)
     return result.json()
@@ -151,7 +151,7 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
             submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, ext, recursive)
 
 
-def upload_metadata(connector, host, key, fileid, metadata, token=None):
+def upload_metadata(connector, host, key, fileid, metadata):
     """Upload file JSON-LD metadata to Clowder.
 
     Keyword arguments:
@@ -265,7 +265,7 @@ def upload_thumbnail(connector, host, key, fileid, thumbnail):
     return thumbnailid
 
 
-def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate=False, token=None):
+def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate=False):
     """Upload file to existing Clowder dataset.
 
     Keyword arguments:
@@ -278,7 +278,7 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
     """
 
     if clowder_version >= 2.0:
-        v2files.upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate, token=None)
+        v2files.upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate)
     else:
         logger = logging.getLogger(__name__)
 
@@ -311,7 +311,7 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
             logger.error("unable to upload file %s (not found)", filepath)
 
 
-def _upload_to_dataset_local(connector, host, key, datasetid, filepath, token=None):
+def _upload_to_dataset_local(connector, host, key, datasetid, filepath):
     """Upload file POINTER to existing Clowder dataset. Does not copy actual file bytes.
 
     Keyword arguments:
@@ -323,7 +323,7 @@ def _upload_to_dataset_local(connector, host, key, datasetid, filepath, token=No
     """
 
     if clowder_version >= 2.0:
-        uploadedfileid = v2files._upload_to_dataset_local(connector, host, key, datasetid, filepath, token)
+        uploadedfileid = v2files._upload_to_dataset_local(connector, host, key, datasetid, filepath)
     else:
         uploadedfileid = v1files._upload_to_dataset_local(connector, host, key, datasetid, filepath)
     return uploadedfileid

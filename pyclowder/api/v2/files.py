@@ -83,7 +83,7 @@ def download_info(connector, host, key, fileid):
     return result
 
 
-def download_metadata(connector, host, key, fileid, extractor=None, token=None):
+def download_metadata(connector, host, key, fileid, extractor=None):
     """Download file JSON-LD metadata from Clowder.
 
     Keyword arguments:
@@ -96,7 +96,7 @@ def download_metadata(connector, host, key, fileid, extractor=None, token=None):
 
     filterstring = "" if extractor is None else "?extractor=%s" % extractor
     url = '%sapi/v2/files/%s/metadata?%s' % (host, fileid, filterstring)
-    headers = {"Authorization": "Bearer " + token}
+    headers = {"Authorization": "Bearer " + key}
 
     # fetch data
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
@@ -104,7 +104,7 @@ def download_metadata(connector, host, key, fileid, extractor=None, token=None):
     return result
 
 
-def submit_extraction(connector, host, key, fileid, extractorname, token=None):
+def submit_extraction(connector, host, key, fileid, extractorname):
     """Submit file for extraction by given extractor.
 
     Keyword arguments:
@@ -118,7 +118,7 @@ def submit_extraction(connector, host, key, fileid, extractorname, token=None):
     url = "%sapi/v2/files/%s/extractions?key=%s" % (host, fileid, key)
     result = connector.post(url,
                             headers={'Content-Type': 'application/json',
-                                     "Authorization": "Bearer " + token},
+                                     "Authorization": "Bearer " + key},
                             data=json.dumps({"extractor": extractorname}),
                             verify=connector.ssl_verify if connector else True)
 
@@ -299,7 +299,7 @@ def upload_thumbnail(connector, host, key, fileid, thumbnail):
     return thumbnailid
 
 
-def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate=False, token=None):
+def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate=False):
     """Upload file to existing Clowder dataset.
 
     Keyword arguments:
@@ -323,7 +323,7 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
 
     for source_path in connector.mounted_paths:
         if filepath.startswith(connector.mounted_paths[source_path]):
-            return _upload_to_dataset_local(connector, host, key, datasetid, filepath, token)
+            return _upload_to_dataset_local(connector, host, key, datasetid, filepath, key)
 
     url = '%sapi/v2/datasets/%s/files' % (host, datasetid)
 
@@ -332,12 +332,8 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
         m = MultipartEncoder(
             fields={'file': (filename, open(filepath, 'rb'))}
         )
-        if token:
-            headers = {"Authorization": "Bearer " + token,
-                       'Content-Type': m.content_type}
-        else:
-            headers = {"Authorization": "Bearer " + key,
-                       'Content-Type': m.content_type}
+        headers = {"Authorization": "Bearer " + key,
+                    'Content-Type': m.content_type}
         result = connector.post(url, data=m, headers=headers,
                                 verify=connector.ssl_verify if connector else True)
 
@@ -349,7 +345,7 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
         logger.error("unable to upload file %s (not found)", filepath)
 
 
-def _upload_to_dataset_local(connector, host, key, datasetid, filepath, token=None):
+def _upload_to_dataset_local(connector, host, key, datasetid, filepath):
     """Upload file POINTER to existing Clowder dataset. Does not copy actual file bytes.
 
     Keyword arguments:
@@ -375,12 +371,8 @@ def _upload_to_dataset_local(connector, host, key, datasetid, filepath, token=No
         m = MultipartEncoder(
             fields={'file': (filename, open(filepath, 'rb'))}
         )
-        if token:
-            headers = {"Authorization": "Bearer " + token,
-                       'Content-Type': m.content_type}
-        else:
-            headers = {"Authorization": "Bearer " + key,
-                       'Content-Type': m.content_type}
+        headers = {"Authorization": "Bearer " + key,
+                    'Content-Type': m.content_type}
         result = connector.post(url, data=m, headers=headers,
                                 verify=connector.ssl_verify if connector else True)
 
