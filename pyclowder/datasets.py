@@ -17,10 +17,10 @@ from pyclowder.utils import StatusMessage
 
 from dotenv import load_dotenv
 load_dotenv()
-clowder_version = float(os.getenv('clowder_version','1.0'))
+clowder_version = float(os.getenv('clowder_version', '1.0'))
 
 
-def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None, token=None):
+def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
     """Create a new dataset in Clowder.
 
     Keyword arguments:
@@ -33,13 +33,13 @@ def create_empty(connector, host, key, datasetname, description, parentid=None, 
     spaceid -- id of the space to add dataset to
     """
     if clowder_version >= 2.0:
-        datasetid = v2datasets.create_empty(connector, host, key, datasetname, description, parentid, spaceid, token)
+        datasetid = v2datasets.create_empty(connector, host, key, datasetname, description, parentid, spaceid)
     else:
         datasetid = v1datasets.create_empty(connector, host, key, datasetname, description, parentid, spaceid)
     return datasetid
 
 
-def delete(connector, host, key, datasetid, token=None):
+def delete(connector, host, key, datasetid):
     """Delete dataset from Clowder.
 
     Keyword arguments:
@@ -49,7 +49,7 @@ def delete(connector, host, key, datasetid, token=None):
     datasetid -- the dataset to delete
     """
     if clowder_version >= 2.0:
-        result = v2datasets.delete(connector, host, key, datasetid, token)
+        result = v2datasets.delete(connector, host, key, datasetid)
     else:
         result = v2datasets.delete(connector, host, key, datasetid)
     result.raise_for_status()
@@ -81,7 +81,7 @@ def delete_by_collection(connector, host, key, collectionid, recursive=True, del
         delete_collection(connector, host, key, collectionid)
 
 
-def download(connector, host, key, datasetid, token=None):
+def download(connector, host, key, datasetid):
     """Download dataset to be processed from Clowder as zip file.
 
     Keyword arguments:
@@ -97,7 +97,7 @@ def download(connector, host, key, datasetid, token=None):
     return zipfile
 
 
-def download_metadata(connector, host, key, datasetid, extractor=None, token=None):
+def download_metadata(connector, host, key, datasetid, extractor=None):
     """Download dataset JSON-LD metadata from Clowder.
 
     Keyword arguments:
@@ -108,7 +108,7 @@ def download_metadata(connector, host, key, datasetid, extractor=None, token=Non
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
     if clowder_version >= 2.0:
-        result_json = v2datasets.download_metadata(connector, host, key, datasetid, extractor, token)
+        result_json = v2datasets.download_metadata(connector, host, key, datasetid, extractor)
         return result_json
     else:
         result_json = v1datasets.download_metadata(connector, host, key, datasetid, extractor)

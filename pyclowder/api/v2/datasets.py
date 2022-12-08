@@ -58,7 +58,7 @@ def delete(connector, host, key, datasetid):
 
     url = "%sapi/v2/datasets/%s" % (host, datasetid)
 
-    result = requests.delete(url, verify=connector.ssl_verify if connector else True)
+    result = requests.delete(url, headers=headers, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     return json.loads(result.text)
