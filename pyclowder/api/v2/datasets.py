@@ -223,6 +223,7 @@ def submit_extraction(connector, host, key, datasetid, extractorname):
 
     return result.status_code
 
+
 def upload_metadata(connector, host, key, datasetid, metadata):
     """Upload dataset JSON-LD metadata to Clowder.
 

@@ -125,60 +125,6 @@ def submit_extraction(connector, host, key, fileid, extractorname):
     return result
 
 
-# TODO not implemented in v2
-def submit_extractions_by_dataset(connector, host, key, datasetid, extractorname, ext=False):
-    """Manually trigger an extraction on all files in a dataset.
-
-        This will iterate through all files in the given dataset and submit them to
-        the provided extractor.
-
-        Keyword arguments:
-        connector -- connector information, used to get missing parameters and send status updates
-        host -- the clowder host, including http and port, should end with a /
-        key -- the secret key to login to clowder
-        datasetid -- the dataset UUID to submit
-        extractorname -- registered name of extractor to trigger
-        ext -- extension to filter. e.g. 'tif' will only submit TIFF files for extraction.
-    """
-
-    filelist = get_file_list(connector, host, key, datasetid)
-
-    for f in filelist:
-        # Only submit files that end with given extension, if specified
-        if ext and not f['filename'].endswith(ext):
-            continue
-
-        submit_extraction(connector, host, key, f['id'], extractorname)
-
-
-# TODO not implemented in v2
-def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, ext=False, recursive=True):
-    """Manually trigger an extraction on all files in a collection.
-
-        This will iterate through all datasets in the given collection and submit them to
-        the submit_extractions_by_dataset(). Does not operate recursively if there are nested collections.
-
-        Keyword arguments:
-        connector -- connector information, used to get missing parameters and send status updates
-        host -- the clowder host, including http and port, should end with a /
-        key -- the secret key to login to clowder
-        collectionid -- the collection UUID to submit
-        extractorname -- registered name of extractor to trigger
-        ext -- extension to filter. e.g. 'tif' will only submit TIFF files for extraction
-        recursive -- whether to also submit child collection files recursively (defaults to True)
-    """
-
-    dslist = get_datasets(connector, host, key, collectionid)
-
-    for ds in dslist:
-        submit_extractions_by_dataset(connector, host, key, ds['id'], extractorname, ext)
-
-    if recursive:
-        childcolls = get_child_collections(connector, host, key, collectionid)
-        for coll in childcolls:
-            submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, ext, recursive)
-
-
 def upload_metadata(connector, host, key, fileid, metadata):
     """Upload file JSON-LD metadata to Clowder.
 
