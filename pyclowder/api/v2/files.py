@@ -15,10 +15,6 @@ from urllib3.filepost import encode_multipart_formdata
 from pyclowder.datasets import get_file_list
 from pyclowder.collections import get_datasets, get_child_collections
 
-from dotenv import load_dotenv
-load_dotenv()
-clowder_version = float(os.getenv('clowder_version', '1.0'))
-
 # Some sources of urllib3 support warning suppression, but not all
 try:
     from urllib3 import disable_warnings

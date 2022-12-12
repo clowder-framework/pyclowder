@@ -48,6 +48,8 @@ import requests
 
 import pyclowder.datasets
 import pyclowder.files
+import pyclowder.api.v1.files as v1files
+import pyclowder.api.v2.files as v2files
 import pyclowder.utils
 
 import smtplib
@@ -57,8 +59,6 @@ from string import Template
 
 from dotenv import load_dotenv
 load_dotenv()
-
-clowder_version = float(os.getenv('clowder_version', '1.0'))
 
 
 class Connector(object):
@@ -139,7 +139,7 @@ class Connector(object):
         """Return whether connection is still alive or not."""
         return True
 
-    def _build_resource(self, body, host, secret_key):
+    def _build_resource(self, body, host, secret_key, clowder_version):
         """Examine message body and create resource object based on message type.
 
         Example FILE message -- *.file.#
@@ -242,7 +242,7 @@ class Connector(object):
 
         elif resource_type == "file":
             ext = os.path.splitext(filename)[1]
-            if float(os.getenv('clowder_version')) == 2.0:
+            if clowder_version == 2.0:
                 return {
                     "type": "file",
                     "id": fileid,
@@ -407,22 +407,21 @@ class Connector(object):
         if not host.endswith('/'): host += '/'
         secret_key = body.get('secretKey', '')
         retry_count = 0 if 'retry_count' not in body else body['retry_count']
-        resource = self._build_resource(body, host, secret_key)
+        clowder_version = float(body.get('clowderVersion', os.getenv('clowder_version', '1.0')))
+        resource = self._build_resource(body, host, secret_key, clowder_version)
         if not resource:
             logging.error("No resource found, this is bad.")
             return
 
         # register extractor
-        if clowder_version >= 2.0:
+        if clowder_version == 2.0:
+            # TODO: Shouldn't heartbeat handle this?
             url = "%sapi/v2/extractors" % source_host
         else:
             url = "%sapi/extractors" % source_host
         if url not in Connector.registered_clowder:
             Connector.registered_clowder.append(url)
-            if clowder_version >= 2.0:
-                self.register_extractor("%s?key=%s" % (url,secret_key))
-            else:
-                self.register_extractor("%s?key=%s" % (url, secret_key))
+            self.register_extractor("%s?key=%s" % (url,secret_key))
 
         # tell everybody we are starting to process the file
         self.status_update(pyclowder.utils.StatusMessage.start, resource, "Started processing.")
@@ -442,18 +441,18 @@ class Connector(object):
                         found_local = False
                         try:
                             if check_result != pyclowder.utils.CheckMessage.bypass:
-                                if clowder_version >= 2.0:
-                                    file_metadata = pyclowder.files.download_info(self, host, secret_key, resource["id"])
+                                if clowder_version == 2.0:
+                                    file_metadata = v2files.download_info(self, host, secret_key, resource["id"])
                                 else:
-                                    file_metadata = pyclowder.files.download_info(self, host, secret_key, resource["id"])
+                                    file_metadata = v1files.download_info(self, host, secret_key, resource["id"])
                                 file_path = self._check_for_local_file(file_metadata)
                                 if not file_path:
-                                    if clowder_version >= 2.0:
-                                        file_path = pyclowder.files.download(self, host, secret_key, resource["id"],
+                                    if clowder_version == 2.0:
+                                        file_path = v2files.download(self, host, secret_key, resource["id"],
                                                                          resource["intermediate_id"],
                                                                          resource["file_ext"])
                                     else:
-                                        file_path = pyclowder.files.download(self, host, secret_key, resource["id"],
+                                        file_path = v1files.download(self, host, secret_key, resource["id"],
                                                                              resource["intermediate_id"],
                                                                              resource["file_ext"])
                                 else:
@@ -539,48 +538,24 @@ class Connector(object):
         This assumes a file called extractor_info.json to be located in either the
         current working directory, or the folder where the main program is started.
         """
-        if clowder_version >= 2.0:
-            if not endpoints or endpoints == "":
-                return
+        if not endpoints or endpoints == "":
+            return
 
-            logger = logging.getLogger(__name__)
+        logger = logging.getLogger(__name__)
 
-            headers = {'Content-Type': 'application/json'}
-            data = self.extractor_info
+        headers = {'Content-Type': 'application/json'}
+        data = self.extractor_info
 
-            for url in endpoints.split(','):
-                if url not in Connector.registered_clowder:
-                    Connector.registered_clowder.append(url)
-                    try:
-                        result = requests.post(url.strip(), headers=headers,
-                                               data=json.dumps(data),
-                                               verify=self.ssl_verify)
-                        result.raise_for_status()
-                        logger.debug("Registering extractor with %s : %s", url, result.text)
-                    except Exception as exc:  # pylint: disable=broad-except
-                        logger.exception('Error in registering extractor: ' + str(exc))
-        else:
-            # don't do any work if we wont register the endpoint
-            if not endpoints or endpoints == "":
-                return
-
-            logger = logging.getLogger(__name__)
-
-            headers = {'Content-Type': 'application/json'}
-            data = self.extractor_info
-
-
-
-            for url in endpoints.split(','):
-                if url not in Connector.registered_clowder:
-                    Connector.registered_clowder.append(url)
-                    try:
-                        result = requests.post(url.strip(), headers=headers,
-                                               data=json.dumps(data),
-                                               verify=self.ssl_verify)
-                        result.raise_for_status()
-                        logger.debug("Registering extractor with %s : %s", url, result.text)
-                    except Exception as exc:  # pylint: disable=broad-except
+        for url in endpoints.split(','):
+            if url not in Connector.registered_clowder:
+                Connector.registered_clowder.append(url)
+                try:
+                    result = requests.post(url.strip(), headers=headers,
+                                           data=json.dumps(data),
+                                           verify=self.ssl_verify)
+                    result.raise_for_status()
+                    logger.debug("Registering extractor with %s : %s", url, result.text)
+                except Exception as exc:  # pylint: disable=broad-except
                         logger.exception('Error in registering extractor: ' + str(exc))
 
     # pylint: disable=no-self-use
