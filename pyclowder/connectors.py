@@ -48,8 +48,6 @@ import requests
 
 import pyclowder.datasets
 import pyclowder.files
-import pyclowder.api.v1.files as v1files
-import pyclowder.api.v2.files as v2files
 import pyclowder.utils
 
 import smtplib
@@ -441,18 +439,10 @@ class Connector(object):
                         found_local = False
                         try:
                             if check_result != pyclowder.utils.CheckMessage.bypass:
-                                if clowder_version == 2.0:
-                                    file_metadata = v2files.download_info(self, host, secret_key, resource["id"])
-                                else:
-                                    file_metadata = v1files.download_info(self, host, secret_key, resource["id"])
+                                file_metadata = pyclowder.files.download_info(self, host, secret_key, resource["id"])
                                 file_path = self._check_for_local_file(file_metadata)
                                 if not file_path:
-                                    if clowder_version == 2.0:
-                                        file_path = v2files.download(self, host, secret_key, resource["id"],
-                                                                         resource["intermediate_id"],
-                                                                         resource["file_ext"])
-                                    else:
-                                        file_path = v1files.download(self, host, secret_key, resource["id"],
+                                    file_path = pyclowder.files.download(self, host, secret_key, resource["id"],
                                                                              resource["intermediate_id"],
                                                                              resource["file_ext"])
                                 else:
