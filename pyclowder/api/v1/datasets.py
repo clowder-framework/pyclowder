@@ -11,7 +11,7 @@ from pyclowder.collections import get_datasets, get_child_collections, delete as
 from pyclowder.utils import StatusMessage
 
 
-def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
+def create_empty(connector, client, datasetname, description, parentid=None, spaceid=None):
     """Create a new dataset in Clowder.
 
     Keyword arguments:
@@ -25,7 +25,7 @@ def create_empty(connector, host, key, datasetname, description, parentid=None, 
     """
     logger = logging.getLogger(__name__)
 
-    url = '%sapi/datasets/createempty?key=%s' % (host, key)
+    url = '%sapi/datasets/createempty?key=%s' % (client.host, client.key)
 
     if parentid:
         if spaceid:

@@ -15,13 +15,12 @@ from pyclowder.collections import get_datasets, get_child_collections, delete as
 from pyclowder.utils import StatusMessage
 
 
-def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
+def create_empty(connector, client, datasetname, description, parentid=None, spaceid=None):
     """Create a new dataset in Clowder.
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
+    client -- ClowderClient containing authentication credentials
     datasetname -- name of new dataset to create
     description -- description of new dataset
     parentid -- id of parent collection
@@ -30,9 +29,9 @@ def create_empty(connector, host, key, datasetname, description, parentid=None, 
 
     logger = logging.getLogger(__name__)
 
-    url = '%sapi/v2/datasets' % (host)
+    url = '%sapi/v2/datasets' % client.host
     headers = {"Content-Type": "application/json",
-               "Authorization": "Bearer " + key}
+               "Authorization": "Bearer " + client.key}
     result = requests.post(url, headers=headers,
                            data=json.dumps({"name": datasetname, "description": description}),
                            verify=connector.ssl_verify if connector else True)
