@@ -66,7 +66,6 @@ class Extractor(object):
         if not rabbitmq_queuename:
             rabbitmq_queuename = self.extractor_info['name']
         rabbitmq_uri = os.getenv('RABBITMQ_URI', "amqp://guest:guest@127.0.0.1/%2f")
-        rabbitmq_exchange = os.getenv('RABBITMQ_EXCHANGE', "")
         clowder_url = os.getenv("CLOWDER_URL", "")
         registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
         logging_config = os.getenv("LOGGING")
@@ -91,16 +90,11 @@ class Extractor(object):
                                  help='pickle file that needs to be processed (only needed for HPC)')
         self.parser.add_argument('--clowderURL', nargs='?', dest='clowder_url', default=clowder_url,
                                  help='Clowder host URL')
-        self.parser.add_argument('--register', '-r', nargs='?', dest="registration_endpoints",
-                                 default=registration_endpoints,
-                                 help='Clowder registration URL (default=%s)' % registration_endpoints)
         self.parser.add_argument('--rabbitmqURI', nargs='?', dest='rabbitmq_uri', default=rabbitmq_uri,
                                  help='rabbitMQ URI (default=%s)' % rabbitmq_uri.replace("%", "%%"))
         self.parser.add_argument('--rabbitmqQUEUE', nargs='?', dest='rabbitmq_queuename',
                                  default=rabbitmq_queuename,
                                  help='rabbitMQ queue name (default=%s)' % rabbitmq_queuename)
-        self.parser.add_argument('--rabbitmqExchange', nargs='?', dest="rabbitmq_exchange", default=rabbitmq_exchange,
-                                 help='rabbitMQ exchange (default=%s)' % rabbitmq_exchange)
         self.parser.add_argument('--mounts', '-m', dest="mounted_paths", default=mounted_paths,
                                  help="dictionary of {'remote path':'local path'} mount mappings")
         self.parser.add_argument('--input-file-path', '-ifp', dest="input_file_path", default=input_file_path,
@@ -170,7 +164,6 @@ class Extractor(object):
                                               check_message=self.check_message,
                                               process_message=self.process_message,
                                               rabbitmq_uri=self.args.rabbitmq_uri,
-                                              rabbitmq_exchange=self.args.rabbitmq_exchange,
                                               rabbitmq_key=rabbitmq_key,
                                               rabbitmq_queue=self.args.rabbitmq_queuename,
                                               mounted_paths=json.loads(self.args.mounted_paths),
@@ -178,7 +171,6 @@ class Extractor(object):
                                               max_retry=self.args.max_retry,
                                               heartbeat=self.args.heartbeat)
                 connector.connect()
-                connector.register_extractor(self.args.registration_endpoints)
                 threading.Thread(target=connector.listen, name="RabbitMQConnector").start()
 
         elif self.args.connector == "HPC":
@@ -192,7 +184,6 @@ class Extractor(object):
                                          picklefile=self.args.hpc_picklefile,
                                          mounted_paths=json.loads(self.args.mounted_paths),
                                          max_retry=self.args.max_retry)
-                connector.register_extractor(self.args.registration_endpoints)
                 threading.Thread(target=connector.listen, name="HPCConnector").start()
 
         elif self.args.connector == "Local":

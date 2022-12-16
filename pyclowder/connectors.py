@@ -16,7 +16,6 @@ passed to the check_message and process_message. This connector takesthree
 parameters:
 
 * rabbitmq_uri [REQUIRED] : the uri of the RabbitMQ server
-* rabbitmq_exchange [OPTIONAL] : the exchange to which to bind the queue
 * rabbitmq_key [OPTIONAL] : the key that binds the queue to the exchange
 
 HPCConnector
@@ -62,8 +61,6 @@ class Connector(object):
      Once a message is received this will start the extraction process. It is assumed
     that there is only one Connector per thread.
     """
-
-    registered_clowder = list()
 
     def __init__(self, extractor_name, extractor_info, check_message=None, process_message=None, ssl_verify=True,
                  mounted_paths=None, clowder_url=None, max_retry=10):
@@ -382,8 +379,7 @@ class Connector(object):
     def _process_message(self, body):
         """The actual processing of the message.
 
-        This will register the extractor with the clowder instance that the message came from.
-        Next it will call check_message to see if the message should be processed and if the
+        This will call check_message to see if the message should be processed and if the
         file should be downloaded. Finally it will call the actual process_message function.
         """
 
@@ -407,13 +403,6 @@ class Connector(object):
         if not resource:
             logging.error("No resource found, this is bad.")
             return
-
-        # register extractor
-        if clowder_version != 2:
-            url = "%sapi/extractors" % source_host
-            if url not in Connector.registered_clowder:
-                Connector.registered_clowder.append(url)
-                self.register_extractor("%s?key=%s" % (url,secret_key))
 
         # tell everybody we are starting to process the file
         self.status_update(pyclowder.utils.StatusMessage.start, resource, "Started processing.")
@@ -516,32 +505,6 @@ class Connector(object):
             else:
                 self.message_error(resource, message)
 
-    def register_extractor(self, endpoints):
-        """Register extractor info with Clowder.
-
-        This assumes a file called extractor_info.json to be located in either the
-        current working directory, or the folder where the main program is started.
-        """
-        if not endpoints or endpoints == "":
-            return
-
-        logger = logging.getLogger(__name__)
-
-        headers = {'Content-Type': 'application/json'}
-        data = self.extractor_info
-
-        for url in endpoints.split(','):
-            if url not in Connector.registered_clowder:
-                Connector.registered_clowder.append(url)
-                try:
-                    result = requests.post(url.strip(), headers=headers,
-                                           data=json.dumps(data),
-                                           verify=self.ssl_verify)
-                    result.raise_for_status()
-                    logger.debug("Registering extractor with %s : %s", url, result.text)
-                except Exception as exc:  # pylint: disable=broad-except
-                        logger.exception('Error in registering extractor: ' + str(exc))
-
     # pylint: disable=no-self-use
     def status_update(self, status, resource, message):
         """Sends a status message.
@@ -637,21 +600,17 @@ class Connector(object):
 class RabbitMQConnector(Connector):
     """Listens for messages on RabbitMQ.
 
-    This will connect to rabbitmq and register the extractor with a queue. If the exchange
-    and key are specified it will bind the exchange to the queue. If an exchange is
-    specified it will always try to bind the special key extractors.<extractor_info[name]> to the
-    exchange and queue.
+    This will connect to rabbitmq and register the extractor with a queue.
     """
 
     # pylint: disable=too-many-arguments
     def __init__(self, extractor_name, extractor_info,
-                 rabbitmq_uri, rabbitmq_exchange=None, rabbitmq_key=None, rabbitmq_queue=None,
+                 rabbitmq_uri, rabbitmq_key=None, rabbitmq_queue=None,
                  check_message=None, process_message=None, ssl_verify=True, mounted_paths=None,
                  heartbeat=5*60, clowder_url=None, max_retry=10):
         super(RabbitMQConnector, self).__init__(extractor_name, extractor_info, check_message, process_message,
                                                 ssl_verify, mounted_paths, clowder_url, max_retry)
         self.rabbitmq_uri = rabbitmq_uri
-        self.rabbitmq_exchange = rabbitmq_exchange
         self.rabbitmq_key = rabbitmq_key
         if rabbitmq_queue is None:
             self.rabbitmq_queue = extractor_info['name']
@@ -680,28 +639,6 @@ class RabbitMQConnector(Connector):
         # declare the queue in case it does not exist
         self.channel.queue_declare(queue=self.rabbitmq_queue, durable=True)
         self.channel.queue_declare(queue='error.'+self.rabbitmq_queue, durable=True)
-
-        # register with an exchange
-        if self.rabbitmq_exchange:
-            # declare the exchange in case it does not exist
-            self.channel.exchange_declare(exchange=self.rabbitmq_exchange, exchange_type='topic',
-                                          durable=True)
-
-            # connect queue and exchange
-            if self.rabbitmq_key:
-                if isinstance(self.rabbitmq_key, str):
-                    self.channel.queue_bind(queue=self.rabbitmq_queue,
-                                            exchange=self.rabbitmq_exchange,
-                                            routing_key=self.rabbitmq_key)
-                else:
-                    for key in self.rabbitmq_key:
-                        self.channel.queue_bind(queue=self.rabbitmq_queue,
-                                                exchange=self.rabbitmq_exchange,
-                                                routing_key=key)
-
-            self.channel.queue_bind(queue=self.rabbitmq_queue,
-                                    exchange=self.rabbitmq_exchange,
-                                    routing_key=self.extractor_name)
 
         # start the extractor announcer
         self.announcer = RabbitMQBroadcast(self.rabbitmq_uri, self.extractor_info, self.rabbitmq_queue, self.heartbeat)
@@ -938,8 +875,6 @@ class RabbitMQHandler(Connector):
             elif msg["type"] == 'resubmit':
                 jbody = json.loads(self.body)
                 jbody['retry_count'] = msg['retry_count']
-                if 'exchange' not in jbody and self.method.exchange:
-                    jbody['exchange'] = self.method.exchange
                 if 'routing_key' not in jbody and self.method.routing_key and self.method.routing_key != rabbitmq_queue:
                     jbody['routing_key'] = self.method.routing_key
 

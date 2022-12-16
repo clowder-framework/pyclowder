@@ -6,7 +6,6 @@ ARG PYTHON_VERSION="2.7"
 # environment variables
 ENV PYTHON_VERSION=${PYTHON_VERSION} \
     RABBITMQ_URI="amqp://guest:guest@rabbitmq:5672/%2F" \
-    RABBITMQ_EXCHANGE="clowder" \
     RABBITMQ_QUEUE="" \
     CLOWDER_URL="" \
     REGISTRATION_ENDPOINTS="" \
