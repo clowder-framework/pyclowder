@@ -412,14 +412,11 @@ class Connector(object):
             return
 
         # register extractor
-        if clowder_version == 2.0:
-            # TODO: Shouldn't heartbeat handle this?
-            url = "%sapi/v2/extractors" % source_host
-        else:
+        if clowder_version != 2.0:
             url = "%sapi/extractors" % source_host
-        if url not in Connector.registered_clowder:
-            Connector.registered_clowder.append(url)
-            self.register_extractor("%s?key=%s" % (url,secret_key))
+            if url not in Connector.registered_clowder:
+                Connector.registered_clowder.append(url)
+                self.register_extractor("%s?key=%s" % (url,secret_key))
 
         # tell everybody we are starting to process the file
         self.status_update(pyclowder.utils.StatusMessage.start, resource, "Started processing.")
@@ -707,7 +704,7 @@ class RabbitMQConnector(Connector):
 
             self.channel.queue_bind(queue=self.rabbitmq_queue,
                                     exchange=self.rabbitmq_exchange,
-                                    routing_key="extractors." + self.extractor_name)
+                                    routing_key=self.extractor_name)
 
         # start the extractor announcer
         self.announcer = RabbitMQBroadcast(self.rabbitmq_uri, self.extractor_info, self.rabbitmq_queue, self.heartbeat)
