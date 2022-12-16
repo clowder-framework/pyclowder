@@ -240,7 +240,7 @@ class Connector(object):
 
         elif resource_type == "file":
             ext = os.path.splitext(filename)[1]
-            if clowder_version == 2.0:
+            if clowder_version == 2:
                 return {
                     "type": "file",
                     "id": fileid,
@@ -405,14 +405,14 @@ class Connector(object):
         if not host.endswith('/'): host += '/'
         secret_key = body.get('secretKey', '')
         retry_count = 0 if 'retry_count' not in body else body['retry_count']
-        clowder_version = float(body.get('clowderVersion', os.getenv('clowder_version', '1.0')))
+        clowder_version = int(body.get('clowderVersion', os.getenv('CLOWDER_VERSION', '1')))
         resource = self._build_resource(body, host, secret_key, clowder_version)
         if not resource:
             logging.error("No resource found, this is bad.")
             return
 
         # register extractor
-        if clowder_version != 2.0:
+        if clowder_version != 2:
             url = "%sapi/extractors" % source_host
             if url not in Connector.registered_clowder:
                 Connector.registered_clowder.append(url)

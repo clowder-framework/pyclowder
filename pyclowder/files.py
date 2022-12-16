@@ -41,7 +41,7 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
     intermediatefileid -- either same as fileid, or the intermediate file to be used
     ext -- the file extension, the downloaded file will end with this extension
     """
-    if clowder_version >= 2.0:
+    if clowder_version == 2:
         inputfilename = v2files.download(connector, host, key, fileid, intermediatefileid, ext)
     else:
         inputfilename = v1files.download(connector, host, key, fileid, intermediatefileid, ext)
@@ -58,7 +58,7 @@ def download_info(connector, host, key, fileid):
     fileid -- the file to fetch metadata of
     """
 
-    if clowder_version >= 2.0:
+    if clowder_version == 2:
         result = v2files.download_info(connector, host, key, fileid)
     else:
         result = v1files.download_info(connector, host, key, fileid)
@@ -75,7 +75,7 @@ def download_metadata(connector, host, key, fileid, extractor=None):
     fileid -- the file to fetch metadata of
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
-    if clowder_version >= 2.0:
+    if clowder_version == 2:
         result = v2files.download_metadata(connector, host, key, fileid, extractor)
     else:
         result = v1files.download_metadata(connector, host, key, fileid, extractor)
@@ -92,7 +92,7 @@ def submit_extraction(connector, host, key, fileid, extractorname):
     fileid -- the file UUID to submit
     extractorname -- registered name of extractor to trigger
     """
-    if clowder_version >= 2.0:
+    if clowder_version == 2:
         result = v2files.submit_extraction(connector, host, key, fileid, extractorname)
     else:
         result = v1files.submit_extraction(connector, host, key, fileid, extractorname)
@@ -162,7 +162,7 @@ def upload_metadata(connector, host, key, fileid, metadata):
     metadata -- the metadata to be uploaded
     """
 
-    if clowder_version >= 2.0:
+    if clowder_version == 2:
         v2files.upload_metadata(connector, host, key, fileid, metadata)
     else:
         v1files.upload_metadata(connector, host, key, fileid, metadata)
@@ -277,7 +277,7 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
     check_duplicate -- check if filename already exists in dataset and skip upload if so
     """
 
-    if clowder_version >= 2.0:
+    if clowder_version == 2:
         v2files.upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate)
     else:
         logger = logging.getLogger(__name__)
@@ -322,7 +322,7 @@ def _upload_to_dataset_local(connector, host, key, datasetid, filepath):
     filepath -- path to file
     """
 
-    if clowder_version >= 2.0:
+    if clowder_version == 2:
         uploadedfileid = v2files._upload_to_dataset_local(connector, host, key, datasetid, filepath)
     else:
         uploadedfileid = v1files._upload_to_dataset_local(connector, host, key, datasetid, filepath)
