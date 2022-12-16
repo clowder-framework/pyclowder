@@ -15,10 +15,7 @@ from pyclowder.client import ClowderClient
 from pyclowder.collections import get_datasets, get_child_collections, delete as delete_collection
 from pyclowder.utils import StatusMessage
 
-from dotenv import load_dotenv
-load_dotenv()
-clowder_version = float(os.getenv('clowder_version', '1.0'))
-
+clowder_version = int(os.getenv('CLOWDER_VERSION', '1'))
 
 def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
     """Create a new dataset in Clowder.
@@ -32,7 +29,7 @@ def create_empty(connector, host, key, datasetname, description, parentid=None, 
     parentid -- id of parent collection
     spaceid -- id of the space to add dataset to
     """
-    if clowder_version >= 2.0:
+    if clowder_version == 2:
         datasetid = v2datasets.create_empty(connector, host, key, datasetname, description, parentid, spaceid)
     else:
         datasetid = v1datasets.create_empty(connector, host, key, datasetname, description, parentid, spaceid)
@@ -48,7 +45,7 @@ def delete(connector, host, key, datasetid):
     key -- the secret key to login to clowder
     datasetid -- the dataset to delete
     """
-    if clowder_version >= 2.0:
+    if clowder_version == 2:
         result = v2datasets.delete(connector, host, key, datasetid)
     else:
         result = v2datasets.delete(connector, host, key, datasetid)
@@ -90,7 +87,7 @@ def download(connector, host, key, datasetid):
     key -- the secret key to login to clowder
     datasetid -- the file that is currently being processed
     """
-    if clowder_version >= 2.0:
+    if clowder_version == 2:
         zipfile = v2datasets.download(connector, host, key, datasetid)
     else:
         zipfile = v1datasets.download(connector, host, key, datasetid)
@@ -107,7 +104,7 @@ def download_metadata(connector, host, key, datasetid, extractor=None):
     datasetid -- the dataset to fetch metadata of
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
-    if clowder_version >= 2.0:
+    if clowder_version == 2:
         result_json = v2datasets.download_metadata(connector, host, key, datasetid, extractor)
         return result_json
     else:
@@ -124,7 +121,7 @@ def get_info(connector, host, key, datasetid):
     key -- the secret key to login to clowder
     datasetid -- the dataset to get info of
     """
-    if clowder_version >= 2.0:
+    if clowder_version == 2:
         info = v2datasets.get_info(connector, host, key, datasetid)
     else:
         info = v1datasets.get_info(connector, host, key, datasetid)
@@ -140,7 +137,7 @@ def get_file_list(connector, host, key, datasetid):
     key -- the secret key to login to clowder
     datasetid -- the dataset to get filelist of
     """
-    if clowder_version >= 2.0:
+    if clowder_version == 2:
         file_list = v2datasets.get_file_list(connector, host, key, datasetid)
     else:
         file_list = v1datasets.get_file_list(connector, host, key, datasetid)
@@ -158,7 +155,7 @@ def remove_metadata(connector, host, key, datasetid, extractor=None):
     extractor -- extractor name to filter deletion
                     !!! ALL JSON-LD METADATA WILL BE REMOVED IF NO extractor PROVIDED !!!
     """
-    if clowder_version >= 2.0:
+    if clowder_version == 2:
         v2datasets.remove_metadata(connector, host, key, datasetid, extractor)
     else:
         v1datasets.remove_metadata(connector, host, key, datasetid, extractor)
@@ -174,7 +171,7 @@ def submit_extraction(connector, host, key, datasetid, extractorname):
     datasetid -- the dataset UUID to submit
     extractorname -- registered name of extractor to trigger
     """
-    if clowder_version >= 2.0:
+    if clowder_version == 2:
         result_status_code = v2datasets.submit_extraction(connector, host, key, datasetid, extractorname)
     else:
         result_status_code = v1datasets.submit_extraction(connector, host, key, datasetid, extractorname)
@@ -235,7 +232,7 @@ def upload_metadata(connector, host, key, datasetid, metadata):
     datasetid -- the dataset that is currently being processed
     metadata -- the metadata to be uploaded
     """
-    if clowder_version >= 2.0:
+    if clowder_version == 2:
         v2datasets.upload_metadata(connector, host, key, datasetid, metadata)
     else:
         v1datasets.upload_metadata(connector, host, key, datasetid, metadata)

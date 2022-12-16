@@ -24,9 +24,7 @@ from pyclowder.utils import CheckMessage, setup_logging
 import pyclowder.files
 import pyclowder.datasets
 
-from dotenv import load_dotenv
-load_dotenv()
-clowder_version = float(os.getenv('clowder_version', '1.0'))
+clowder_version = int(os.getenv('CLOWDER_VERSION', '1'))
 
 
 class Extractor(object):
@@ -266,7 +264,7 @@ class Extractor(object):
                 if not self._check_key(k, self.extractor_info['contexts']):
                     logger.debug("Simple check could not find %s in contexts" % k)
         # TODO generate clowder2.0 extractor info
-        if clowder_version >= 2.0:
+        if clowder_version == 2:
             new_extractor_info = self._get_extractor_info_v2()
             md = dict()
             md["file_version"] = 1
