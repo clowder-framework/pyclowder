@@ -22,4 +22,3 @@ requests-toolbelt==0.9.1
     # via pyclowder (setup.py)
 urllib3==1.26.8
     # via requests
-python-dotenv

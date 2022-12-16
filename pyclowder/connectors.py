@@ -55,9 +55,6 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from string import Template
 
-from dotenv import load_dotenv
-load_dotenv()
-
 
 class Connector(object):
     """ Class that will listen for messages.

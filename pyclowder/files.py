@@ -16,9 +16,8 @@ from pyclowder.datasets import get_file_list
 from pyclowder.collections import get_datasets, get_child_collections
 import pyclowder.api.v2.files as v2files
 import pyclowder.api.v1.files as v1files
-from dotenv import load_dotenv
-load_dotenv()
-clowder_version = float(os.getenv('clowder_version', '1.0'))
+
+clowder_version = int(os.getenv('CLOWDER_VERSION', '1'))
 
 # Some sources of urllib3 support warning suppression, but not all
 try:
