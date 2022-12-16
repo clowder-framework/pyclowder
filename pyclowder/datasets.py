@@ -46,10 +46,11 @@ def delete(connector, host, key, datasetid):
     key -- the secret key to login to clowder
     datasetid -- the dataset to delete
     """
+    client = ClowderClient(host, key)
     if clowder_version == 2:
-        result = v2datasets.delete(connector, host, key, datasetid)
+        result = v2datasets.delete(connector, client, datasetid)
     else:
-        result = v2datasets.delete(connector, host, key, datasetid)
+        result = v2datasets.delete(connector, client, datasetid)
     result.raise_for_status()
 
     return json.loads(result.text)
@@ -66,17 +67,18 @@ def delete_by_collection(connector, host, key, collectionid, recursive=True, del
     recursive -- whether to also iterate across child collections
     delete_colls -- whether to also delete collections containing the datasets
     """
+    client = ClowderClient(host, key)
     dslist = get_datasets(connector, host, key, collectionid)
     for ds in dslist:
-        delete(connector, host, key, ds['id'])
+        delete(connector, client, ds['id'])
 
     if recursive:
-        childcolls = get_child_collections(connector, host, key, collectionid)
+        childcolls = get_child_collections(connector, client, collectionid)
         for coll in childcolls:
             delete_by_collection(connector, host, key, coll['id'], recursive, delete_colls)
 
     if delete_colls:
-        delete_collection(connector, host, key, collectionid)
+        delete_collection(connector, client, collectionid)
 
 
 def download(connector, host, key, datasetid):
@@ -88,10 +90,11 @@ def download(connector, host, key, datasetid):
     key -- the secret key to login to clowder
     datasetid -- the file that is currently being processed
     """
+    client = ClowderClient(host, key)
     if clowder_version == 2:
-        zipfile = v2datasets.download(connector, host, key, datasetid)
+        zipfile = v2datasets.download(connector, client, datasetid)
     else:
-        zipfile = v1datasets.download(connector, host, key, datasetid)
+        zipfile = v1datasets.download(connector, client, datasetid)
     return zipfile
 
 
@@ -105,11 +108,12 @@ def download_metadata(connector, host, key, datasetid, extractor=None):
     datasetid -- the dataset to fetch metadata of
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
+    client = ClowderClient(host, key)
     if clowder_version == 2:
-        result_json = v2datasets.download_metadata(connector, host, key, datasetid, extractor)
+        result_json = v2datasets.download_metadata(connector, client, datasetid, extractor)
         return result_json
     else:
-        result_json = v1datasets.download_metadata(connector, host, key, datasetid, extractor)
+        result_json = v1datasets.download_metadata(connector, client, datasetid, extractor)
         return result_json
 
 
@@ -122,14 +126,15 @@ def get_info(connector, host, key, datasetid):
     key -- the secret key to login to clowder
     datasetid -- the dataset to get info of
     """
+    client = ClowderClient(host, key)
     if clowder_version == 2:
-        info = v2datasets.get_info(connector, host, key, datasetid)
+        info = v2datasets.get_info(connector, client, datasetid)
     else:
-        info = v1datasets.get_info(connector, host, key, datasetid)
+        info = v1datasets.get_info(connector, client, datasetid)
     return info
 
 
-def get_file_list(connector, host, key, datasetid):
+def get_file_list(connector, client, datasetid):
     """Get list of files in a dataset as JSON object.
 
     Keyword arguments:
@@ -139,9 +144,9 @@ def get_file_list(connector, host, key, datasetid):
     datasetid -- the dataset to get filelist of
     """
     if clowder_version == 2:
-        file_list = v2datasets.get_file_list(connector, host, key, datasetid)
+        file_list = v2datasets.get_file_list(connector, client, datasetid)
     else:
-        file_list = v1datasets.get_file_list(connector, host, key, datasetid)
+        file_list = v1datasets.get_file_list(connector, client, datasetid)
     return file_list
 
 
@@ -156,10 +161,11 @@ def remove_metadata(connector, host, key, datasetid, extractor=None):
     extractor -- extractor name to filter deletion
                     !!! ALL JSON-LD METADATA WILL BE REMOVED IF NO extractor PROVIDED !!!
     """
+    client = ClowderClient(host, key)
     if clowder_version == 2:
-        v2datasets.remove_metadata(connector, host, key, datasetid, extractor)
+        v2datasets.remove_metadata(connector, client, datasetid, extractor)
     else:
-        v1datasets.remove_metadata(connector, host, key, datasetid, extractor)
+        v1datasets.remove_metadata(connector, client, datasetid, extractor)
 
 
 def submit_extraction(connector, host, key, datasetid, extractorname):
@@ -172,10 +178,11 @@ def submit_extraction(connector, host, key, datasetid, extractorname):
     datasetid -- the dataset UUID to submit
     extractorname -- registered name of extractor to trigger
     """
+    client = ClowderClient(host, key)
     if clowder_version == 2:
-        result_status_code = v2datasets.submit_extraction(connector, host, key, datasetid, extractorname)
+        result_status_code = v2datasets.submit_extraction(connector, client, datasetid, extractorname)
     else:
-        result_status_code = v1datasets.submit_extraction(connector, host, key, datasetid, extractorname)
+        result_status_code = v1datasets.submit_extraction(connector, client, datasetid, extractorname)
 
 
 def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, recursive=True):
@@ -192,16 +199,16 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
         extractorname -- registered name of extractor to trigger
         recursive -- whether to also submit child collection datasets recursively (defaults to True)
     """
-
-    dslist = get_datasets(connector, host, key, collectionid)
+    client = ClowderClient(host, key)
+    dslist = get_datasets(connector, client, collectionid)
 
     for ds in dslist:
-        submit_extraction(connector, host, key, ds['id'], extractorname)
+        submit_extraction(connector, client, ds['id'], extractorname)
 
     if recursive:
-        childcolls = get_child_collections(connector, host, key, collectionid)
+        childcolls = get_child_collections(connector, client, collectionid)
         for coll in childcolls:
-            submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, recursive)
+            submit_extractions_by_collection(connector, client, coll['id'], extractorname, recursive)
 
 
 def upload_tags(connector, host, key, datasetid, tags):
@@ -214,11 +221,11 @@ def upload_tags(connector, host, key, datasetid, tags):
     datasetid -- the dataset that is currently being processed
     tags -- the tags to be uploaded
     """
-
+    client = ClowderClient(host, key)
     connector.status_update(StatusMessage.processing, {"type": "dataset", "id": datasetid}, "Uploading dataset tags.")
 
     headers = {'Content-Type': 'application/json'}
-    url = '%sapi/datasets/%s/tags?key=%s' % (host, datasetid, key)
+    url = '%sapi/datasets/%s/tags?key=%s' % (client.host, datasetid, client.key)
     result = connector.post(url, headers=headers, data=json.dumps(tags),
                             verify=connector.ssl_verify if connector else True)
 
@@ -233,7 +240,8 @@ def upload_metadata(connector, host, key, datasetid, metadata):
     datasetid -- the dataset that is currently being processed
     metadata -- the metadata to be uploaded
     """
+    client = ClowderClient(host, key)
     if clowder_version == 2:
-        v2datasets.upload_metadata(connector, host, key, datasetid, metadata)
+        v2datasets.upload_metadata(connector, client, datasetid, metadata)
     else:
-        v1datasets.upload_metadata(connector, host, key, datasetid, metadata)
+        v1datasets.upload_metadata(connector, client, datasetid, metadata)

@@ -16,8 +16,7 @@ def create_empty(connector, client, datasetname, description, parentid=None, spa
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
+    client -- ClowderClient containing authentication credentials
     datasetname -- name of new dataset to create
     description -- description of new dataset
     parentid -- id of parent collection
@@ -56,18 +55,17 @@ def create_empty(connector, client, datasetname, description, parentid=None, spa
 
     return datasetid
 
-def delete(connector, host, key, datasetid):
+def delete(connector, client, datasetid):
     """Delete dataset from Clowder.
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
+    client -- ClowderClient containing authentication credentials
     datasetid -- the dataset to delete
     """
-    headers = {"Authorization": "Bearer " + key}
+    headers = {"Authorization": "Bearer " + client.key}
 
-    url = "%sapi/v2/datasets/%s" % (host, datasetid)
+    url = "%sapi/v2/datasets/%s" % (client.host, datasetid)
 
     result = requests.delete(url, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
@@ -75,42 +73,40 @@ def delete(connector, host, key, datasetid):
     return json.loads(result.text)
 
 # TODO collection not implemented yet in v2
-def delete_by_collection(connector, host, key, collectionid, recursive=True, delete_colls=False):
+def delete_by_collection(connector, client, collectionid, recursive=True, delete_colls=False):
     """Delete datasets from Clowder by iterating through collection.
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
+    client -- ClowderClient containing authentication credentials
     collectionid -- the collection to walk
     recursive -- whether to also iterate across child collections
     delete_colls -- whether to also delete collections containing the datasets
     """
-    dslist = get_datasets(connector, host, key, collectionid)
+    dslist = get_datasets(connector, client.host, client.key, collectionid)
     for ds in dslist:
-        delete(connector, host, key, ds['id'])
+        delete(connector, client.host, client.key, ds['id'])
 
     if recursive:
-        childcolls = get_child_collections(connector, host, key, collectionid)
+        childcolls = get_child_collections(connector, client.host, client.key, collectionid)
         for coll in childcolls:
-            delete_by_collection(connector, host, key, coll['id'], recursive, delete_colls)
+            delete_by_collection(connector, client.host, client.key, coll['id'], recursive, delete_colls)
 
     if delete_colls:
-        delete_collection(connector, host, key, collectionid)
+        delete_collection(connector, client.host, client.key, collectionid)
 
-def download(connector, host, key, datasetid):
+def download(connector, client, datasetid):
     """Download dataset to be processed from Clowder as zip file.
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
+    client -- ClowderClient containing authentication credentials
     datasetid -- the file that is currently being processed
     """
     connector.message_process({"type": "dataset", "id": datasetid}, "Downloading dataset.")
 
     # fetch dataset zipfile
-    url = '%sapi/datasets/%s/download?key=%s' % (host, datasetid, key)
+    url = '%sapi/datasets/%s/download?key=%s' % (client.host, datasetid,client.key)
     result = requests.get(url, stream=True,
                           verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
@@ -122,20 +118,19 @@ def download(connector, host, key, datasetid):
 
     return zipfile
 
-def download_metadata(connector, host, key, datasetid, extractor=None):
+def download_metadata(connector, client, datasetid, extractor=None):
     """Download dataset JSON-LD metadata from Clowder.
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
+    client -- ClowderClient containing authentication credentials
     datasetid -- the dataset to fetch metadata of
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
-    headers = {"Authorization": "Bearer " + key}
+    headers = {"Authorization": "Bearer " + client.key}
 
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = '%sapi/v2/datasets/%s/metadata' % (host, datasetid)
+    url = '%sapi/v2/datasets/%s/metadata' % (client.host, datasetid)
 
     # fetch data
     result = requests.get(url, stream=True, headers=headers,
@@ -144,18 +139,17 @@ def download_metadata(connector, host, key, datasetid, extractor=None):
 
     return result.json()
 
-def get_info(connector, host, key, datasetid):
+def get_info(connector, client, datasetid):
     """Get basic dataset information from UUID.
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
+    client -- ClowderClient containing authentication credentials
     datasetid -- the dataset to get info of
     """
-    headers = {"Authorization": "Bearer " + key}
+    headers = {"Authorization": "Bearer " + client.key}
 
-    url = "%sapi/v2/datasets/%s" % (host, datasetid)
+    url = "%sapi/v2/datasets/%s" % (client.host, datasetid)
 
     result = requests.get(url, headers=headers,
                           verify=connector.ssl_verify if connector else True)
@@ -163,59 +157,56 @@ def get_info(connector, host, key, datasetid):
 
     return json.loads(result.text)
 
-def get_file_list(connector, host, key, datasetid):
+def get_file_list(connector, client, datasetid):
     """Get list of files in a dataset as JSON object.
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
+    client -- ClowderClient containing authentication credentials
     datasetid -- the dataset to get filelist of
     """
-    headers = {"Authorization": "Bearer " + key}
+    headers = {"Authorization": "Bearer " + client.key}
 
-    url = "%sapi/v2/datasets/%s/files" % (host, datasetid)
+    url = "%sapi/v2/datasets/%s/files" % (client.host, datasetid)
 
     result = requests.get(url, headers=headers, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     return json.loads(result.text)
 
-def remove_metadata(connector, host, key, datasetid, extractor=None):
+def remove_metadata(connector, client, datasetid, extractor=None):
     """Delete dataset JSON-LD metadata from Clowder.
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
+    client -- ClowderClient containing authentication credentials
     datasetid -- the dataset to fetch metadata of
     extractor -- extractor name to filter deletion
                     !!! ALL JSON-LD METADATA WILL BE REMOVED IF NO extractor PROVIDED !!!
     """
-    headers = {"Authorization": "Bearer " + key}
+    headers = {"Authorization": "Bearer " + client.key}
 
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = '%sapi/v2/datasets/%s/metadata' % (host, datasetid)
+    url = '%sapi/v2/datasets/%s/metadata' % (client.host, datasetid)
 
     # fetch data
     result = requests.delete(url, stream=True, headers=headers,
                              verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
-def submit_extraction(connector, host, key, datasetid, extractorname):
+def submit_extraction(connector, client, datasetid, extractorname):
     """Submit dataset for extraction by given extractor.
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
+    client -- ClowderClient containing authentication credentials
     datasetid -- the dataset UUID to submit
     extractorname -- registered name of extractor to trigger
     """
     headers = {'Content-Type': 'application/json',
-               "Authorization": "Bearer " + key}
+               "Authorization": "Bearer " + client.key}
 
-    url = "%sapi/v2/datasets/%s/extractions?key=%s" % (host, datasetid)
+    url = "%sapi/v2/datasets/%s/extractions?key=%s" % (client.host, datasetid)
 
     result = requests.post(url,
                            headers=headers,
@@ -225,7 +216,7 @@ def submit_extraction(connector, host, key, datasetid, extractorname):
 
     return result.status_code
 
-def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, recursive=True):
+def submit_extractions_by_collection(connector, client, collectionid, extractorname, recursive=True):
     """Manually trigger an extraction on all datasets in a collection.
 
         This will iterate through all datasets in the given collection and submit them to
@@ -233,56 +224,53 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
 
         Keyword arguments:
         connector -- connector information, used to get missing parameters and send status updates
-        host -- the clowder host, including http and port, should end with a /
-        key -- the secret key to login to clowder
+        client -- ClowderClient containing authentication credentials
         datasetid -- the dataset UUID to submit
         extractorname -- registered name of extractor to trigger
         recursive -- whether to also submit child collection datasets recursively (defaults to True)
     """
-    dslist = get_datasets(connector, host, key, collectionid)
+    dslist = get_datasets(connector, client.host, client.key, collectionid)
 
     for ds in dslist:
-        submit_extraction(connector, host, key, ds['id'], extractorname)
+        submit_extraction(connector, client.host, client.key, ds['id'], extractorname)
 
     if recursive:
-        childcolls = get_child_collections(connector, host, key, collectionid)
+        childcolls = get_child_collections(connector, client.host, client.key, collectionid)
         for coll in childcolls:
-            submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, recursive)
+            submit_extractions_by_collection(connector, client.host, client.key, coll['id'], extractorname, recursive)
 
 # TODO tags not implemented in v2
-def upload_tags(connector, host, key, datasetid, tags):
+def upload_tags(connector, client, datasetid, tags):
     """Upload dataset tag to Clowder.
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
+    client -- ClowderClient containing authentication credentials
     datasetid -- the dataset that is currently being processed
     tags -- the tags to be uploaded
     """
     connector.status_update(StatusMessage.processing, {"type": "dataset", "id": datasetid}, "Uploading dataset tags.")
 
     headers = {'Content-Type': 'application/json'}
-    url = '%sapi/datasets/%s/tags?key=%s' % (host, datasetid, key)
+    url = '%sapi/datasets/%s/tags?key=%s' % (client.host, datasetid, client.key)
     result = connector.post(url, headers=headers, data=json.dumps(tags),
                             verify=connector.ssl_verify if connector else True)
 
 
-def upload_metadata(connector, host, key, datasetid, metadata):
+def upload_metadata(connector, client, datasetid, metadata):
     """Upload dataset JSON-LD metadata to Clowder.
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
+    client -- ClowderClient containing authentication credentials
     datasetid -- the dataset that is currently being processed
     metadata -- the metadata to be uploaded
     """
     headers = {'Content-Type': 'application/json',
-               "Authorization": "Bearer " + key}
+               "Authorization": "Bearer " + client.key}
     connector.message_process({"type": "dataset", "id": datasetid}, "Uploading dataset metadata.")
 
-    url = '%sapi/v2/datasets/%s/metadata' % (host, datasetid)
+    url = '%sapi/v2/datasets/%s/metadata' % (client.host, datasetid)
     result = requests.post(url, headers=headers, data=json.dumps(metadata),
                            verify=connector.ssl_verify if connector else True)
     result.raise_for_status()

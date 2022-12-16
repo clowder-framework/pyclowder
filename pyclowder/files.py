@@ -11,7 +11,7 @@ import tempfile
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 from urllib3.filepost import encode_multipart_formdata
-
+from pyclowder.client import ClowderClient
 from pyclowder.datasets import get_file_list
 from pyclowder.collections import get_datasets, get_child_collections
 import pyclowder.api.v2.files as v2files
@@ -40,10 +40,11 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
     intermediatefileid -- either same as fileid, or the intermediate file to be used
     ext -- the file extension, the downloaded file will end with this extension
     """
+    client = ClowderClient(host, key)
     if clowder_version == 2:
-        inputfilename = v2files.download(connector, host, key, fileid, intermediatefileid, ext)
+        inputfilename = v2files.download(connector, client, fileid, intermediatefileid, ext)
     else:
-        inputfilename = v1files.download(connector, host, key, fileid, intermediatefileid, ext)
+        inputfilename = v1files.download(connector, client, fileid, intermediatefileid, ext)
     return inputfilename
 
 
@@ -56,11 +57,11 @@ def download_info(connector, host, key, fileid):
     key -- the secret key to login to clowder
     fileid -- the file to fetch metadata of
     """
-
+    client = ClowderClient(host, key)
     if clowder_version == 2:
-        result = v2files.download_info(connector, host, key, fileid)
+        result = v2files.download_info(connector, client, fileid)
     else:
-        result = v1files.download_info(connector, host, key, fileid)
+        result = v1files.download_info(connector, client, fileid)
     return result.json()
 
 
@@ -74,10 +75,11 @@ def download_metadata(connector, host, key, fileid, extractor=None):
     fileid -- the file to fetch metadata of
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
+    client = ClowderClient(host, key)
     if clowder_version == 2:
-        result = v2files.download_metadata(connector, host, key, fileid, extractor)
+        result = v2files.download_metadata(connector, client, fileid, extractor)
     else:
-        result = v1files.download_metadata(connector, host, key, fileid, extractor)
+        result = v1files.download_metadata(connector, client, fileid, extractor)
     return result.json()
 
 
@@ -91,10 +93,11 @@ def submit_extraction(connector, host, key, fileid, extractorname):
     fileid -- the file UUID to submit
     extractorname -- registered name of extractor to trigger
     """
+    client = ClowderClient(host, key)
     if clowder_version == 2:
-        result = v2files.submit_extraction(connector, host, key, fileid, extractorname)
+        result = v2files.submit_extraction(connector, client, fileid, extractorname)
     else:
-        result = v1files.submit_extraction(connector, host, key, fileid, extractorname)
+        result = v1files.submit_extraction(connector, client, fileid, extractorname)
     return result.json()
 
 
@@ -112,7 +115,6 @@ def submit_extractions_by_dataset(connector, host, key, datasetid, extractorname
         extractorname -- registered name of extractor to trigger
         ext -- extension to filter. e.g. 'tif' will only submit TIFF files for extraction.
     """
-
     filelist = get_file_list(connector, host, key, datasetid)
 
     for f in filelist:
@@ -160,11 +162,11 @@ def upload_metadata(connector, host, key, fileid, metadata):
     fileid -- the file that is currently being processed
     metadata -- the metadata to be uploaded
     """
-
+    client = ClowderClient(host, key)
     if clowder_version == 2:
-        v2files.upload_metadata(connector, host, key, fileid, metadata)
+        v2files.upload_metadata(connector, client, fileid, metadata)
     else:
-        v1files.upload_metadata(connector, host, key, fileid, metadata)
+        v1files.upload_metadata(connector, client, fileid, metadata)
 
 
 # pylint: disable=too-many-arguments
@@ -182,14 +184,14 @@ def upload_preview(connector, host, key, fileid, previewfile, previewmetadata=No
     preview_mimetype -- (optional) MIME type of the preview file. By default, this is obtained from the
                     file itself and this parameter can be ignored. E.g. 'application/vnd.clowder+custom+xml'
     """
-
+    client = ClowderClient(host, key)
     connector.message_process({"type": "file", "id": fileid}, "Uploading file preview.")
 
     logger = logging.getLogger(__name__)
     headers = {'Content-Type': 'application/json'}
 
     # upload preview
-    url = '%sapi/previews?key=%s' % (host, key)
+    url = '%sapi/previews?key=%s' % (client.host, client.key)
     with open(previewfile, 'rb') as filebytes:
         # If a custom preview file MIME type is provided, use it to generate the preview file object.
         if preview_mimetype is not None:
@@ -203,13 +205,13 @@ def upload_preview(connector, host, key, fileid, previewfile, previewmetadata=No
 
     # associate uploaded preview with orginal file
     if fileid and not (previewmetadata and 'section_id' in previewmetadata and previewmetadata['section_id']):
-        url = '%sapi/files/%s/previews/%s?key=%s' % (host, fileid, previewid, key)
+        url = '%sapi/files/%s/previews/%s?key=%s' % (client.host, fileid, previewid, client.key)
         result = connector.post(url, headers=headers, data=json.dumps({}),
                                 verify=connector.ssl_verify if connector else True)
 
     # associate metadata with preview
     if previewmetadata is not None:
-        url = '%sapi/previews/%s/metadata?key=%s' % (host, previewid, key)
+        url = '%sapi/previews/%s/metadata?key=%s' % (client.host, previewid, client.key)
         result = connector.post(url, headers=headers, data=json.dumps(previewmetadata),
                                 verify=connector.ssl_verify if connector else True)
 
@@ -226,11 +228,11 @@ def upload_tags(connector, host, key, fileid, tags):
     fileid -- the file that is currently being processed
     tags -- the tags to be uploaded
     """
-
+    client = ClowderClient(host, key)
     connector.message_process({"type": "file", "id": fileid}, "Uploading file tags.")
 
     headers = {'Content-Type': 'application/json'}
-    url = '%sapi/files/%s/tags?key=%s' % (host, fileid, key)
+    url = '%sapi/files/%s/tags?key=%s' % (client.host, fileid, client.key)
     result = connector.post(url, headers=headers, data=json.dumps(tags),
                             verify=connector.ssl_verify if connector else True)
 
@@ -245,9 +247,9 @@ def upload_thumbnail(connector, host, key, fileid, thumbnail):
     fileid -- the file that the thumbnail should be associated with
     thumbnail -- the file containing the thumbnail
     """
-
+    client = ClowderClient(host, key)
     logger = logging.getLogger(__name__)
-    url = host + 'api/fileThumbnail?key=' + key
+    url = client.host + 'api/fileThumbnail?key=' + client.key
 
     # upload preview
     with open(thumbnail, 'rb') as inputfile:
@@ -258,7 +260,7 @@ def upload_thumbnail(connector, host, key, fileid, thumbnail):
     # associate uploaded preview with orginal file/dataset
     if fileid:
         headers = {'Content-Type': 'application/json'}
-        url = host + 'api/files/' + fileid + '/thumbnails/' + thumbnailid + '?key=' + key
+        url = client.host + 'api/files/' + fileid + '/thumbnails/' + thumbnailid + '?key=' + client.key
         connector.post(url, headers=headers, data=json.dumps({}), verify=connector.ssl_verify if connector else True)
 
     return thumbnailid
@@ -275,14 +277,14 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
     filepath -- path to file
     check_duplicate -- check if filename already exists in dataset and skip upload if so
     """
-
+    client = ClowderClient(host, key)
     if clowder_version == 2:
-        v2files.upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate)
+        v2files.upload_to_dataset(connector, client, datasetid, filepath, check_duplicate)
     else:
         logger = logging.getLogger(__name__)
 
         if check_duplicate:
-            ds_files = get_file_list(connector, host, key, datasetid)
+            ds_files = get_file_list(connector, client, datasetid)
             for f in ds_files:
                 if f['filename'] == os.path.basename(filepath):
                     logger.debug("found %s in dataset %s; not re-uploading" % (f['filename'], datasetid))
@@ -290,9 +292,9 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
 
         for source_path in connector.mounted_paths:
             if filepath.startswith(connector.mounted_paths[source_path]):
-                return _upload_to_dataset_local(connector, host, key, datasetid, filepath)
+                return _upload_to_dataset_local(connector, client.host, client.key, datasetid, filepath)
 
-        url = '%sapi/uploadToDataset/%s?key=%s' % (host, datasetid, key)
+        url = '%sapi/uploadToDataset/%s?key=%s' % (client.host, datasetid, client.key)
 
         if os.path.exists(filepath):
             filename = os.path.basename(filepath)
@@ -320,9 +322,9 @@ def _upload_to_dataset_local(connector, host, key, datasetid, filepath):
     datasetid -- the dataset that the file should be associated with
     filepath -- path to file
     """
-
+    client = ClowderClient(host, key)
     if clowder_version == 2:
-        uploadedfileid = v2files._upload_to_dataset_local(connector, host, key, datasetid, filepath)
+        uploadedfileid = v2files._upload_to_dataset_local(connector, client, datasetid, filepath)
     else:
         uploadedfileid = v1files._upload_to_dataset_local(connector, host, key, datasetid, filepath)
     return uploadedfileid
