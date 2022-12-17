@@ -42,7 +42,7 @@ def download(connector, client, fileid, intermediatefileid=None, ext=""):
     if not intermediatefileid:
         intermediatefileid = fileid
 
-    url = '%sapi/files/%s?key=%s' % (client.host, intermediatefileid, client.key)
+    url = '%s/api/files/%s?key=%s' % (client.host, intermediatefileid, client.key)
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
 
     (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
@@ -66,7 +66,7 @@ def download_info(connector, client, fileid):
     fileid -- the file to fetch metadata of
     """
 
-    url = '%sapi/files/%s/metadata?key=%s' % (client.host, fileid, client.key)
+    url = '%s/api/files/%s/metadata?key=%s' % (client.host, fileid, client.key)
 
     # fetch data
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
@@ -85,7 +85,7 @@ def download_metadata(connector, client, fileid, extractor=None):
     """
 
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = '%sapi/files/%s/metadata.jsonld?key=%s%s' % (client.host, fileid, client.key, filterstring)
+    url = '%s/api/files/%s/metadata.jsonld?key=%s%s' % (client.host, fileid, client.key, filterstring)
 
     # fetch data
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
@@ -103,7 +103,7 @@ def submit_extraction(connector, client, fileid, extractorname):
     extractorname -- registered name of extractor to trigger
     """
 
-    url = "%sapi/files/%s/extractions?key=%s" % (client.host, fileid, client.key)
+    url = "%s/api/files/%s/extractions?key=%s" % (client.host, fileid, client.key)
 
     result = connector.post(url,
                             headers={'Content-Type': 'application/json'},
@@ -176,7 +176,7 @@ def upload_metadata(connector, client, fileid, metadata):
     connector.message_process({"type": "file", "id": fileid}, "Uploading file metadata.")
 
     headers = {'Content-Type': 'application/json'}
-    url = '%sapi/files/%s/metadata.jsonld?key=%s' % (client.host, fileid, client.key)
+    url = '%s/api/files/%s/metadata.jsonld?key=%s' % (client.host, fileid, client.key)
     result = connector.post(url, headers=headers, data=json.dumps(metadata),
                             verify=connector.ssl_verify if connector else True)
 
@@ -202,7 +202,7 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
     headers = {'Content-Type': 'application/json'}
 
     # upload preview
-    url = '%sapi/previews?key=%s' % (client.host, client.key)
+    url = '%s/api/previews?key=%s' % (client.host, client.key)
     with open(previewfile, 'rb') as filebytes:
         # If a custom preview file MIME type is provided, use it to generate the preview file object.
         if preview_mimetype is not None:
@@ -216,13 +216,13 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
 
     # associate uploaded preview with orginal file
     if fileid and not (previewmetadata and 'section_id' in previewmetadata and previewmetadata['section_id']):
-        url = '%sapi/files/%s/previews/%s?key=%s' % (client.host, fileid, previewid, client.key)
+        url = '%s/api/files/%s/previews/%s?key=%s' % (client.host, fileid, previewid, client.key)
         result = connector.post(url, headers=headers, data=json.dumps({}),
                                 verify=connector.ssl_verify if connector else True)
 
     # associate metadata with preview
     if previewmetadata is not None:
-        url = '%sapi/previews/%s/metadata?key=%s' % (client.host, previewid, client.key)
+        url = '%s/api/previews/%s/metadata?key=%s' % (client.host, previewid, client.key)
         result = connector.post(url, headers=headers, data=json.dumps(previewmetadata),
                                 verify=connector.ssl_verify if connector else True)
 
@@ -242,7 +242,7 @@ def upload_tags(connector, client, fileid, tags):
     connector.message_process({"type": "file", "id": fileid}, "Uploading file tags.")
 
     headers = {'Content-Type': 'application/json'}
-    url = '%sapi/files/%s/tags?key=%s' % (client.host, fileid, client.key)
+    url = '%s/api/files/%s/tags?key=%s' % (client.host, fileid, client.key)
     result = connector.post(url, headers=headers, data=json.dumps(tags),
                             verify=connector.ssl_verify if connector else True)
 
@@ -299,7 +299,7 @@ def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=Fa
         if filepath.startswith(connector.mounted_paths[source_path]):
             return _upload_to_dataset_local(connector, client.host, client.key, datasetid, filepath)
 
-    url = '%sapi/uploadToDataset/%s?key=%s' % (client.host, datasetid, client.key)
+    url = '%s/api/uploadToDataset/%s?key=%s' % (client.host, datasetid, client.key)
 
     if os.path.exists(filepath):
         filename = os.path.basename(filepath)
@@ -328,7 +328,7 @@ def _upload_to_dataset_local(connector, client, datasetid, filepath):
     """
 
     logger = logging.getLogger(__name__)
-    url = '%sapi/uploadToDataset/%s?key=%s' % (client.host, datasetid, cliet.key)
+    url = '%s/api/uploadToDataset/%s?key=%s' % (client.host, datasetid, cliet.key)
 
     if os.path.exists(filepath):
         # Replace local path with remote path before uploading

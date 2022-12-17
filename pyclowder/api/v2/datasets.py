@@ -29,7 +29,7 @@ def create_empty(connector, client, datasetname, description, parentid=None, spa
 
     logger = logging.getLogger(__name__)
 
-    url = '%sapi/v2/datasets' % client.host
+    url = '%s/api/v2/datasets' % client.host
     headers = {"Content-Type": "application/json",
                "Authorization": "Bearer " + client.key}
     result = requests.post(url, headers=headers,
@@ -54,7 +54,7 @@ def delete(connector, client , datasetid):
     """
     headers = {"Authorization": "Bearer " + client.key}
 
-    url = "%sapi/v2/datasets/%s" % (client.host, datasetid)
+    url = "%s/api/v2/datasets/%s" % (client.host, datasetid)
 
     result = requests.delete(url, headers=headers, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
@@ -99,7 +99,7 @@ def download(connector, client, datasetid):
 
     headers = {"Authorization": "Bearer " + client.key}
     # fetch dataset zipfile
-    url = '%sapi/v2/datasets/%s/download' % (client.host, datasetid)
+    url = '%s/api/v2/datasets/%s/download' % (client.host, datasetid)
     result = requests.get(url, stream=True, headers=headers,
                           verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
@@ -124,7 +124,7 @@ def download_metadata(connector, client, datasetid, extractor=None):
     headers = {"Authorization": "Bearer " + client.key}
 
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = '%sapi/v2/datasets/%s/metadata' % (client.host, datasetid)
+    url = '%s/api/v2/datasets/%s/metadata' % (client.host, datasetid)
 
     # fetch data
     result = requests.get(url, stream=True, headers=headers,
@@ -144,7 +144,7 @@ def get_info(connector, client, datasetid):
     """
     headers = {"Authorization": "Bearer " + client.key}
 
-    url = "%sapi/v2/datasets/%s" % (client.host, datasetid)
+    url = "%s/api/v2/datasets/%s" % (client.host, datasetid)
 
     result = requests.get(url, headers=headers,
                           verify=connector.ssl_verify if connector else True)
@@ -163,7 +163,7 @@ def get_file_list(connector, client, datasetid):
     """
     headers = {"Authorization": "Bearer " + client.key}
 
-    url = "%sapi/v2/datasets/%s/files" % (client.host, datasetid)
+    url = "%s/api/v2/datasets/%s/files" % (client.host, datasetid)
 
     result = requests.get(url, headers=headers, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
@@ -184,7 +184,7 @@ def remove_metadata(connector, client, datasetid, extractor=None):
     headers = {"Authorization": "Bearer " + client.key}
 
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = '%sapi/v2/datasets/%s/metadata' % (client.host, datasetid)
+    url = '%s/api/v2/datasets/%s/metadata' % (client.host, datasetid)
 
     # fetch data
     result = requests.delete(url, stream=True, headers=headers,
@@ -204,7 +204,7 @@ def submit_extraction(connector, client, datasetid, extractorname):
     headers = {'Content-Type': 'application/json',
                 "Authorization": "Bearer " + client.key}
 
-    url = "%sapi/v2/datasets/%s/extractions?key=%s" % (client.host, datasetid)
+    url = "%s/api/v2/datasets/%s/extractions?key=%s" % (client.host, datasetid)
 
     result = requests.post(url,
                            headers=headers,
@@ -229,7 +229,7 @@ def upload_metadata(connector, client, datasetid, metadata):
     connector.message_process({"type": "dataset", "id": datasetid}, "Uploading dataset metadata.")
 
 
-    url = '%sapi/v2/datasets/%s/metadata' % (client.host, datasetid)
+    url = '%s/api/v2/datasets/%s/metadata' % (client.host, datasetid)
     result = requests.post(url, headers=headers, data=json.dumps(metadata),
                            verify=connector.ssl_verify if connector else True)
     result.raise_for_status()

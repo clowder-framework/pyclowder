@@ -17,7 +17,7 @@ from pyclowder.collections import get_datasets, get_child_collections
 import pyclowder.api.v2.files as v2files
 import pyclowder.api.v1.files as v1files
 
-clowder_version = int(os.getenv('CLOWDER_VERSION', '1'))
+clowder_version = int(os.getenv('CLOWDER_VERSION', '2'))
 
 # Some sources of urllib3 support warning suppression, but not all
 try:
@@ -40,7 +40,7 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
     intermediatefileid -- either same as fileid, or the intermediate file to be used
     ext -- the file extension, the downloaded file will end with this extension
     """
-    client = ClowderClient(host, key)
+    client = ClowderClient(host=host, key=key)
     if clowder_version == 2:
         inputfilename = v2files.download(connector, client, fileid, intermediatefileid, ext)
     else:
@@ -57,7 +57,7 @@ def download_info(connector, host, key, fileid):
     key -- the secret key to login to clowder
     fileid -- the file to fetch metadata of
     """
-    client = ClowderClient(host, key)
+    client = ClowderClient(host=host, key=key)
     if clowder_version == 2:
         result = v2files.download_info(connector, client, fileid)
     else:
@@ -75,7 +75,7 @@ def download_metadata(connector, host, key, fileid, extractor=None):
     fileid -- the file to fetch metadata of
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
-    client = ClowderClient(host, key)
+    client = ClowderClient(host=host, key=key)
     if clowder_version == 2:
         result = v2files.download_metadata(connector, client, fileid, extractor)
     else:
@@ -93,7 +93,7 @@ def submit_extraction(connector, host, key, fileid, extractorname):
     fileid -- the file UUID to submit
     extractorname -- registered name of extractor to trigger
     """
-    client = ClowderClient(host, key)
+    client = ClowderClient(host=host, key=key)
     if clowder_version == 2:
         result = v2files.submit_extraction(connector, client, fileid, extractorname)
     else:
@@ -162,7 +162,7 @@ def upload_metadata(connector, host, key, fileid, metadata):
     fileid -- the file that is currently being processed
     metadata -- the metadata to be uploaded
     """
-    client = ClowderClient(host, key)
+    client = ClowderClient(host=host, key=key)
     if clowder_version == 2:
         v2files.upload_metadata(connector, client, fileid, metadata)
     else:
@@ -184,7 +184,7 @@ def upload_preview(connector, host, key, fileid, previewfile, previewmetadata=No
     preview_mimetype -- (optional) MIME type of the preview file. By default, this is obtained from the
                     file itself and this parameter can be ignored. E.g. 'application/vnd.clowder+custom+xml'
     """
-    client = ClowderClient(host, key)
+    client = ClowderClient(host=host, key=key)
     connector.message_process({"type": "file", "id": fileid}, "Uploading file preview.")
 
     logger = logging.getLogger(__name__)
@@ -228,7 +228,7 @@ def upload_tags(connector, host, key, fileid, tags):
     fileid -- the file that is currently being processed
     tags -- the tags to be uploaded
     """
-    client = ClowderClient(host, key)
+    client = ClowderClient(host=host, key=key)
     connector.message_process({"type": "file", "id": fileid}, "Uploading file tags.")
 
     headers = {'Content-Type': 'application/json'}
@@ -247,7 +247,7 @@ def upload_thumbnail(connector, host, key, fileid, thumbnail):
     fileid -- the file that the thumbnail should be associated with
     thumbnail -- the file containing the thumbnail
     """
-    client = ClowderClient(host, key)
+    client = ClowderClient(host=host, key=key)
     logger = logging.getLogger(__name__)
     url = client.host + 'api/fileThumbnail?key=' + client.key
 
@@ -277,7 +277,7 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
     filepath -- path to file
     check_duplicate -- check if filename already exists in dataset and skip upload if so
     """
-    client = ClowderClient(host, key)
+    client = ClowderClient(host=host, key=key)
     if clowder_version == 2:
         v2files.upload_to_dataset(connector, client, datasetid, filepath, check_duplicate)
     else:
@@ -322,7 +322,7 @@ def _upload_to_dataset_local(connector, host, key, datasetid, filepath):
     datasetid -- the dataset that the file should be associated with
     filepath -- path to file
     """
-    client = ClowderClient(host, key)
+    client = ClowderClient(host=host, key=key)
     if clowder_version == 2:
         uploadedfileid = v2files._upload_to_dataset_local(connector, client, datasetid, filepath)
     else:
