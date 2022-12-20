@@ -247,7 +247,6 @@ def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=Fa
 
     logger = logging.getLogger(__name__)
 
-    # TODO fix this to use v2 api
     if check_duplicate:
         ds_files = get_file_list(connector, client.host, client.key, datasetid)
         for f in ds_files:
@@ -257,7 +256,7 @@ def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=Fa
 
     for source_path in connector.mounted_paths:
         if filepath.startswith(connector.mounted_paths[source_path]):
-            return _upload_to_dataset_local(connector, client.host, client.key, datasetid, filepath)
+            return _upload_to_dataset_local(connector, client, datasetid, filepath)
 
     url = '%s/api/v2/datasets/%s/files' % (client.host, datasetid)
 
@@ -279,17 +278,15 @@ def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=Fa
         logger.error("unable to upload file %s (not found)", filepath)
 
 
-def _upload_to_dataset_local(connector, host, key, datasetid, filepath):
+def _upload_to_dataset_local(connector, client, datasetid, filepath):
     """Upload file POINTER to existing Clowder dataset. Does not copy actual file bytes.
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
-    host -- the clowder host, including http and port, should end with a /
-    key -- the secret key to login to clowder
+    client -- ClowderClient containing authentication credentials
     datasetid -- the dataset that the file should be associated with
     filepath -- path to file
     """
-    client = ClowderClient(host, key)
     logger = logging.getLogger(__name__)
     url = '%s/api/v2/datatsets/%s/files' % (client.host, datasetid)
 

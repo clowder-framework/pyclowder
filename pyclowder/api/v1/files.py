@@ -297,7 +297,7 @@ def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=Fa
 
     for source_path in connector.mounted_paths:
         if filepath.startswith(connector.mounted_paths[source_path]):
-            return _upload_to_dataset_local(connector, client.host, client.key, datasetid, filepath)
+            return _upload_to_dataset_local(connector, client, datasetid, filepath)
 
     url = '%s/api/uploadToDataset/%s?key=%s' % (client.host, datasetid, client.key)
 

@@ -115,7 +115,8 @@ def submit_extractions_by_dataset(connector, host, key, datasetid, extractorname
         extractorname -- registered name of extractor to trigger
         ext -- extension to filter. e.g. 'tif' will only submit TIFF files for extraction.
     """
-    filelist = get_file_list(connector, host, key, datasetid)
+    client = ClowderClient(host=host, key=key)
+    filelist = get_file_list(connector, client, datasetid)
 
     for f in filelist:
         # Only submit files that end with given extension, if specified
@@ -326,5 +327,5 @@ def _upload_to_dataset_local(connector, host, key, datasetid, filepath):
     if clowder_version == 2:
         uploadedfileid = v2files._upload_to_dataset_local(connector, client, datasetid, filepath)
     else:
-        uploadedfileid = v1files._upload_to_dataset_local(connector, host, key, datasetid, filepath)
+        uploadedfileid = v1files._upload_to_dataset_local(connector, client, datasetid, filepath)
     return uploadedfileid
