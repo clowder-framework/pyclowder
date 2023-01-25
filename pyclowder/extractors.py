@@ -261,7 +261,7 @@ class Extractor(object):
             md["file_version"] = 1
             md["context"] = self.extractor_info["contexts"][0]
             md["context_url"] = context_url
-            md["contents"] = content
+            md["content"] = content
             md["extractor_info"] = new_extractor_info
             return md
         else:
@@ -308,7 +308,7 @@ class Extractor(object):
             connector (Connector): the connector that received the message
             parameters (dict): the message received
         """
-
+        print(clowder_version)
         logging.getLogger(__name__).debug("default check message : " + str(parameters))
         return CheckMessage.download
 
