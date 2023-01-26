@@ -262,6 +262,7 @@ class Extractor(object):
             md["context"] = self.extractor_info["contexts"][0]
             md["context_url"] = context_url
             md["content"] = content
+            md["contents"] = content
             md["extractor_info"] = new_extractor_info
             return md
         else:
