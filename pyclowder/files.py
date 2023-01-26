@@ -29,7 +29,7 @@ except:
 
 
 # pylint: disable=too-many-arguments
-def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
+def download(connector, host, key, fileid, intermediatefileid=None, ext="", clowder_version=1):
     """Download file to be processed from Clowder.
 
     Keyword arguments:
@@ -48,7 +48,7 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
     return inputfilename
 
 
-def download_info(connector, host, key, fileid):
+def download_info(connector, host, key, fileid, clowder_version=1):
     """Download file summary metadata from Clowder.
 
     Keyword arguments:
@@ -65,7 +65,7 @@ def download_info(connector, host, key, fileid):
     return result.json()
 
 
-def download_metadata(connector, host, key, fileid, extractor=None):
+def download_metadata(connector, host, key, fileid, extractor=None, clowder_version=1):
     """Download file JSON-LD metadata from Clowder.
 
     Keyword arguments:
@@ -83,7 +83,7 @@ def download_metadata(connector, host, key, fileid, extractor=None):
     return result.json()
 
 
-def submit_extraction(connector, host, key, fileid, extractorname):
+def submit_extraction(connector, host, key, fileid, extractorname, clowder_version=1):
     """Submit file for extraction by given extractor.
 
     Keyword arguments:
@@ -101,7 +101,7 @@ def submit_extraction(connector, host, key, fileid, extractorname):
     return result.json()
 
 
-def submit_extractions_by_dataset(connector, host, key, datasetid, extractorname, ext=False):
+def submit_extractions_by_dataset(connector, host, key, datasetid, extractorname, ext=False, clowder_version=1):
     """Manually trigger an extraction on all files in a dataset.
 
         This will iterate through all files in the given dataset and submit them to
@@ -126,7 +126,7 @@ def submit_extractions_by_dataset(connector, host, key, datasetid, extractorname
         submit_extraction(connector, host, key, f['id'], extractorname)
 
 
-def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, ext=False, recursive=True):
+def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, ext=False, recursive=True, clowder_version=1):
     """Manually trigger an extraction on all files in a collection.
 
         This will iterate through all datasets in the given collection and submit them to
@@ -153,7 +153,7 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
             submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, ext, recursive)
 
 
-def upload_metadata(connector, host, key, fileid, metadata):
+def upload_metadata(connector, host, key, fileid, metadata, clowder_version=1):
     """Upload file JSON-LD metadata to Clowder.
 
     Keyword arguments:
@@ -171,7 +171,7 @@ def upload_metadata(connector, host, key, fileid, metadata):
 
 
 # pylint: disable=too-many-arguments
-def upload_preview(connector, host, key, fileid, previewfile, previewmetadata=None, preview_mimetype=None):
+def upload_preview(connector, host, key, fileid, previewfile, previewmetadata=None, preview_mimetype=None, clowder_version=1):
     """Upload preview to Clowder.
 
     Keyword arguments:
@@ -219,7 +219,7 @@ def upload_preview(connector, host, key, fileid, previewfile, previewmetadata=No
     return previewid
 
 
-def upload_tags(connector, host, key, fileid, tags):
+def upload_tags(connector, host, key, fileid, tags, clowder_version=1):
     """Upload file tag to Clowder.
 
     Keyword arguments:
@@ -238,7 +238,7 @@ def upload_tags(connector, host, key, fileid, tags):
                             verify=connector.ssl_verify if connector else True)
 
 
-def upload_thumbnail(connector, host, key, fileid, thumbnail):
+def upload_thumbnail(connector, host, key, fileid, thumbnail, clowder_version=1):
     """Upload thumbnail to Clowder.
 
     Keyword arguments:
@@ -267,7 +267,7 @@ def upload_thumbnail(connector, host, key, fileid, thumbnail):
     return thumbnailid
 
 
-def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate=False):
+def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate=False, clowder_version=1):
     """Upload file to existing Clowder dataset.
 
     Keyword arguments:
@@ -313,7 +313,7 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
             logger.error("unable to upload file %s (not found)", filepath)
 
 
-def _upload_to_dataset_local(connector, host, key, datasetid, filepath):
+def _upload_to_dataset_local(connector, host, key, datasetid, filepath, clowder_version=1):
     """Upload file POINTER to existing Clowder dataset. Does not copy actual file bytes.
 
     Keyword arguments:

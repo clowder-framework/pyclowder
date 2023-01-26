@@ -24,8 +24,6 @@ from pyclowder.utils import CheckMessage, setup_logging
 import pyclowder.files
 import pyclowder.datasets
 
-clowder_version = int(os.getenv('CLOWDER_VERSION', '1'))
-
 
 class Extractor(object):
     """Basic extractor.
@@ -230,7 +228,7 @@ class Extractor(object):
         return current_extractor_info
 
 
-    def get_metadata(self, content, resource_type, resource_id, server=None):
+    def get_metadata(self, content, resource_type, resource_id, server=None, clowder_version=1):
         """Generate a metadata field.
 
         This will return a metadata dict that is valid JSON-LD. This will use the results as well as the information
