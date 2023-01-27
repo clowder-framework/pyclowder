@@ -24,6 +24,26 @@ except:
     pass
 
 
+def get_download_url(connector, client, fileid, intermediatefileid=None, ext=""):
+    """Download file to be processed from Clowder.
+
+        Keyword arguments:
+        connector -- connector information, used to get missing parameters and send status updates
+        client -- ClowderClient containing authentication credentials
+        fileid -- the file that is currently being processed
+        intermediatefileid -- either same as fileid, or the intermediate file to be used
+        ext -- the file extension, the downloaded file will end with this extension
+        """
+
+    connector.message_process({"type": "file", "id": fileid}, "Getting download url for file.")
+
+    # TODO: intermediateid doesn't really seem to be used here, can we remove entirely?
+    if not intermediatefileid:
+        intermediatefileid = fileid
+
+    url = '%s/api/v2/files/%s' % (client.host, intermediatefileid)
+    return url
+
 # pylint: disable=too-many-arguments
 def download(connector, client, fileid, intermediatefileid=None, ext=""):
     """Download file to be processed from Clowder.

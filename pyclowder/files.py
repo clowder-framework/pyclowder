@@ -27,6 +27,13 @@ try:
 except:
     pass
 
+def get_download_url(connector, host, key, fileid, intermediatefileid=None, ext=""):
+    client = ClowderClient(host=host, key=key)
+    if clowder_version == 2:
+        download_url = v2files.get_download_url(connector, client, fileid, intermediatefileid, ext)
+    else:
+        download_url = v1files.get_download_url(connector, client, fileid, intermediatefileid, ext)
+    return download_url
 
 # pylint: disable=too-many-arguments
 def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
