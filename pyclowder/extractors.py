@@ -23,6 +23,7 @@ from pyclowder.connectors import RabbitMQConnector, HPCConnector, LocalConnector
 from pyclowder.utils import CheckMessage, setup_logging
 import pyclowder.files
 import pyclowder.datasets
+from functools import reduce
 
 clowder_version = int(os.getenv('CLOWDER_VERSION', '1'))
 
@@ -229,7 +230,7 @@ class Extractor(object):
         return current_extractor_info
 
 
-    def get_metadata(self, content, resource_type, resource_id, server=None):
+    def get_metadata(self, content, resource_type, resource_id, server=None, contexts=None):
         """Generate a metadata field.
 
         This will return a metadata dict that is valid JSON-LD. This will use the results as well as the information
@@ -254,33 +255,63 @@ class Extractor(object):
                 if not self._check_key(k, self.extractor_info['contexts']):
                     logger.debug("Simple check could not find %s in contexts" % k)
         # TODO generate clowder2.0 extractor info
-        if clowder_version == 2:
+        if clowder_version == 2.0:
             new_extractor_info = self._get_extractor_info_v2()
             md = dict()
             md["file_version"] = 1
-            md["context"] = self.extractor_info["contexts"][0]
+            if contexts is not None:
+                md["context"] = contexts
+            else:
+                md["context"] = {}
+                if type(self.extractor_info['contexts'] == list):
+                    if len(self.extractor_info['contexts']) > 0:
+                        if len(self.extractor_info == 1):
+                            md["context"] = self.extractor_info["contexts"]
+                        else:
+                            # TODO is this necessary? should contexts should always be a list with one dictionary?
+                            current_contexts = self.extractor_info["contexts"]
+                            reduce(lambda a, b: dict(a, **b), current_contexts)
             md["context_url"] = context_url
             md["content"] = content
             md["contents"] = content
             md["extractor_info"] = new_extractor_info
             return md
         else:
-            return {
-                '@context': [context_url] + self.extractor_info['contexts'],
-                'attachedTo': {
-                    'resourceType': resource_type,
-                    'id': resource_id
-                },
-                'agent': {
-                    '@type': 'cat:extractor',
-                    'extractor_id': '%sextractors/%s/%s' %
-                                    (server, self.extractor_info['name'], self.extractor_info['version']),
-                    'version': self.extractor_info['version'],
-                    'name': self.extractor_info['name']
-                },
-                'content': content
-            }
-
+            # TODO handle cases where contexts are either not available or are dynamnically generated
+            if contexts is not None:
+                md = {
+                    '@context': [context_url] + contexts,
+                    'attachedTo': {
+                        'resourceType': resource_type,
+                        'id': resource_id
+                    },
+                    'agent': {
+                        '@type': 'cat:extractor',
+                        'extractor_id': '%sextractors/%s/%s' %
+                                        (server, self.extractor_info['name'], self.extractor_info['version']),
+                        'version': self.extractor_info['version'],
+                        'name': self.extractor_info['name']
+                    },
+                    'content': content
+                }
+                return md
+            else:
+                md = {
+                    '@context': [context_url] + self.extractor_info['contexts'],
+                    'attachedTo': {
+                        'resourceType': resource_type,
+                        'id': resource_id
+                    },
+                    'agent': {
+                        '@type': 'cat:extractor',
+                        'extractor_id': '%sextractors/%s/%s' %
+                                        (server, self.extractor_info['name'], self.extractor_info['version']),
+                        'version': self.extractor_info['version'],
+                        'name': self.extractor_info['name']
+                    },
+                    'content': content
+                }
+                return md
     def _check_key(self, key, obj):
         if key in obj:
             return True
