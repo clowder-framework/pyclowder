@@ -265,7 +265,7 @@ class Extractor(object):
                 md["context"] = {}
                 if type(self.extractor_info['contexts'] == list):
                     if len(self.extractor_info['contexts']) > 0:
-                        if len(self.extractor_info == 1):
+                        if len(self.extractor_info) == 1:
                             md["context"] = self.extractor_info["contexts"]
                         else:
                             # TODO is this necessary? should contexts should always be a list with one dictionary?
