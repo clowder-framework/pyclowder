@@ -268,7 +268,7 @@ def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=Fa
     logger = logging.getLogger(__name__)
 
     if check_duplicate:
-        ds_files = get_file_list(connector, client.host, client.key, datasetid)
+        ds_files = get_file_list(connector, client, datasetid)
         for f in ds_files:
             if f['filename'] == os.path.basename(filepath):
                 logger.debug("found %s in dataset %s; not re-uploading" % (f['filename'], datasetid))
