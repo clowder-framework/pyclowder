@@ -134,7 +134,7 @@ def get_info(connector, host, key, datasetid):
     return info
 
 
-def get_file_list(connector, client, datasetid):
+def get_file_list(connector, host, key, datasetid):
     """Get list of files in a dataset as JSON object.
 
     Keyword arguments:
@@ -143,6 +143,7 @@ def get_file_list(connector, client, datasetid):
     key -- the secret key to login to clowder
     datasetid -- the dataset to get filelist of
     """
+    client = ClowderClient(host=host, key=key)
     if clowder_version == 2:
         file_list = v2datasets.get_file_list(connector, client, datasetid)
     else:
