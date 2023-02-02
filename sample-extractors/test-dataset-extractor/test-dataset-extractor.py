@@ -4,6 +4,7 @@
 
 import logging
 import subprocess
+import os
 
 from pyclowder.extractors import Extractor
 import pyclowder.files
@@ -32,7 +33,7 @@ class TestDatasetExtractor(Extractor):
         dataset_id = resource['id']
 
         # Local file path to file which you want to upload to dataset
-        file_path = 'a7.txt'
+        file_path = os.path.join(os.getcwd(), 'test_dataset_extractor_file.txt')
 
         # Upload a new file to dataset
         file_id = pyclowder.files.upload_to_dataset(connector, host, secret_key, dataset_id, file_path, True)
@@ -44,6 +45,7 @@ class TestDatasetExtractor(Extractor):
         # Get file list under dataset
         file_list = pyclowder.datasets.get_file_list(connector, host, secret_key, dataset_id)
         logger.info("File list : %s", file_list)
+        is_in = file_id in [file['id'] for file in file_list]
         if file_id in [file['id'] for file in file_list]:
             logger.info("File uploading and retrieving file list succeeded")
         else:

@@ -287,7 +287,8 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
     """
     client = ClowderClient(host=host, key=key)
     if clowder_version == 2:
-        v2files.upload_to_dataset(connector, client, datasetid, filepath, check_duplicate)
+        uploadedfileid = v2files.upload_to_dataset(connector, client, datasetid, filepath, check_duplicate)
+        return uploadedfileid
     else:
         logger = logging.getLogger(__name__)
 
