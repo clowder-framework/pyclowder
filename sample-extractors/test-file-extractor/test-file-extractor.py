@@ -54,13 +54,13 @@ class TestFileExtractor(Extractor):
         else:
             logger.error("Error in uploading/downloading file metadata")
 
-        # Download info of file
-        file = pyclowder.files.download_info(connector, host, secret_key, file_id)
-        logger.info("File info: %s", file)
-        if file_id == file[0]['id']:
-            logger.info("Success in downloading file info")
+        # Download file summary
+        file = pyclowder.files.download_summary(connector, host, secret_key, file_id)
+        logger.info("File summary: %s", file)
+        if file_id == file['id']:
+            logger.info("Success in downloading file summary")
         else:
-            logger.error("Error in downloading file info")
+            logger.error("Error in downloading file summary")
 
 
 
