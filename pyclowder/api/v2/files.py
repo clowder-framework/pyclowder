@@ -210,13 +210,13 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
 
     # associate uploaded preview with orginal file
     if fileid and not (previewmetadata and 'section_id' in previewmetadata and previewmetadata['section_id']):
-        url = '%s/api/files/%s/previews/%s?key=%s' % (host, fileid, previewid, key)
+        url = '%s/api/files/%s/previews/%s?key=%s' % (client.host, fileid, previewid, client.key)
         result = connector.post(url, headers=headers, data=json.dumps({}),
                                 verify=connector.ssl_verify if connector else True)
 
     # associate metadata with preview
     if previewmetadata is not None:
-        url = '%s/api/previews/%s/metadata?key=%s' % (host, previewid, key)
+        url = '%s/api/previews/%s/metadata?key=%s' % (client.host, previewid, client.key)
         result = connector.post(url, headers=headers, data=json.dumps(previewmetadata),
                                 verify=connector.ssl_verify if connector else True)
 
