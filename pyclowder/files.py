@@ -71,6 +71,21 @@ def download_info(connector, host, key, fileid):
         result = v1files.download_info(connector, client, fileid)
     return result.json()
 
+def download_summary(connector, host, key, fileid):
+    """Download file summary  from Clowder.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    fileid -- the file to fetch metadata of
+    """
+    client = ClowderClient(host=host, key=key)
+    if clowder_version == 2:
+        result = v2files.download_summary(connector, client, fileid)
+    else:
+        result = v1files.download_info(connector, client, fileid)
+    return result.json()
 
 def download_metadata(connector, host, key, fileid, extractor=None):
     """Download file JSON-LD metadata from Clowder.
