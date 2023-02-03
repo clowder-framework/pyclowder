@@ -348,7 +348,7 @@ def _upload_to_dataset_local(connector, client, datasetid, filepath):
     """
 
     logger = logging.getLogger(__name__)
-    url = '%s/api/uploadToDataset/%s?key=%s' % (client.host, datasetid, cliet.key)
+    url = '%s/api/uploadToDataset/%s?key=%s' % (client.host, datasetid, client.key)
 
     if os.path.exists(filepath):
         # Replace local path with remote path before uploading
