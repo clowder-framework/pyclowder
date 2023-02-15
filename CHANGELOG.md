@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 2.7.0 - 2023-02-14
+
+When extractors download a file from clowder it will ask clowder to not track that download.
+This will result in only those donwloads to be counted by users, not extractors.
+
+### Changed
+- Ask not to track a download from an extractor.
+
 ## 2.6.0 - 2022-06-14
 
 This will change how clowder sees the extractors. If you have an extractor, and you specify

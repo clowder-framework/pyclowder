@@ -25,7 +25,7 @@ except:
 
 
 # pylint: disable=too-many-arguments
-def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
+def download(connector, host, key, fileid, intermediatefileid=None, ext="", tracking=True):
     """Download file to be processed from Clowder.
 
     Keyword arguments:
@@ -35,6 +35,7 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
     fileid -- the file that is currently being processed
     intermediatefileid -- either same as fileid, or the intermediate file to be used
     ext -- the file extension, the downloaded file will end with this extension
+    tracking -- should the download action be tracked
     """
 
     connector.message_process({"type": "file", "id": fileid}, "Downloading file.")
@@ -43,7 +44,7 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
     if not intermediatefileid:
         intermediatefileid = fileid
 
-    url = '%sapi/files/%s?key=%s' % (host, intermediatefileid, key)
+    url = '%sapi/files/%s?key=%s&tracking=%s' % (host, intermediatefileid, key, str(tracking).lower())
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
 
     (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
