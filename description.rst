@@ -14,7 +14,7 @@ Installation
 Install using pip (for most recent versions see: https://pypi.org/project/pyclowder/):
 
 ```
-pip install pyclowder==2.6.0
+pip install pyclowder==2.7.0
 ```
 
 Install pyClowder on your system by cloning this repo:
