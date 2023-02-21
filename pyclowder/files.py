@@ -36,7 +36,7 @@ def get_download_url(connector, host, key, fileid, intermediatefileid=None, ext=
     return download_url
 
 # pylint: disable=too-many-arguments
-def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
+def download(connector, host, key, fileid, intermediatefileid=None, ext="", tracking=True):
     """Download file to be processed from Clowder.
 
     Keyword arguments:
@@ -46,6 +46,7 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
     fileid -- the file that is currently being processed
     intermediatefileid -- either same as fileid, or the intermediate file to be used
     ext -- the file extension, the downloaded file will end with this extension
+    tracking -- should the download action be tracked
     """
     client = ClowderClient(host=host, key=key)
     if clowder_version == 2:
@@ -53,7 +54,6 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext=""):
     else:
         inputfilename = v1files.download(connector, client, fileid, intermediatefileid, ext)
     return inputfilename
-
 
 def download_info(connector, host, key, fileid):
     """Download file summary metadata from Clowder.

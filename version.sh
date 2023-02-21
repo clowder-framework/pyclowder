@@ -1,7 +1,6 @@
 #!/bin/bash
 
-VERSION=${1:-2.5.1}
-
+VERSION=$(awk '/^## / { print $2 }' CHANGELOG.md | head -1)
 MAJOR=${VERSION%.*}
 
 sed -i~ "s/## unreleased.*/## ${VERSION} - $(date +'%Y-%m-%d')/i" CHANGELOG.md

@@ -15,6 +15,14 @@ This version adds Clowder 2 support and removes the old method of extractor regi
 - remove RABBITMQ_EXCHANGE parameter and REGISTRATION_URL parameter.
 - remove DatasetsAPI and object-oriented ClowderClient.
 
+## 2.7.0 - 2023-02-14
+
+When extractors download a file from clowder it will ask clowder to not track that download.
+This will result in only those donwloads to be counted by users, not extractors.
+
+### Changed
+- Ask not to track a download from an extractor.
+
 ## 2.6.0 - 2022-06-14
 
 This will change how clowder sees the extractors. If you have an extractor, and you specify
