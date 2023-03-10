@@ -14,6 +14,126 @@ from pyclowder.client import ClowderClient
 from pyclowder.collections import get_datasets, get_child_collections, delete as delete_collection
 from pyclowder.utils import StatusMessage
 
+def create_empty_dataset(host, clowder_user, clowder_pass, datasetname, description, parentid=None, spaceid=None):
+    """Create a new dataset in Clowder.
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    datasetname -- name of new dataset to create
+    description -- description of new dataset
+    parentid -- id of parent collection
+    spaceid -- id of the space to add dataset to
+    """
+
+    logger = logging.getLogger(__name__)
+
+    url = '%sapi/datasets/createempty' % host
+
+    if parentid:
+        if spaceid:
+            result = requests.post(url, headers={"Content-Type": "application/json"},
+                                   data=json.dumps({"name": datasetname, "description": description,
+                                                    "collection": [parentid], "space": [spaceid]}),
+                                   auth=(clowder_user, clowder_pass))
+        else:
+            result = requests.post(url, headers={"Content-Type": "application/json"},
+                                   data=json.dumps({"name": datasetname, "description": description,
+                                                    "collection": [parentid]}),
+                                   auth=(clowder_user, clowder_pass))
+    else:
+        if spaceid:
+            result = requests.post(url, headers={"Content-Type": "application/json"},
+                                   data=json.dumps({"name": datasetname, "description": description,
+                                                    "space": [spaceid]}),
+                                   auth=(clowder_user, clowder_pass))
+        else:
+            result = requests.post(url, headers={"Content-Type": "application/json"},
+                                   data=json.dumps({"name": datasetname, "description": description}),
+                                   auth=(clowder_user, clowder_pass))
+
+    result.raise_for_status()
+
+    datasetid = result.json()['id']
+    logger.debug("dataset id = [%s]", datasetid)
+
+    return datasetid
+
+def get_datasetid_by_name(host, secret_key, dsname):
+    """Looks up the ID of a dataset by nanme
+    Args:
+        host(str): the URI of the host making the connection
+        secret_key(str): used with the host API
+        dsname(str): the dataset name to look up
+    Return:
+        Returns the ID of the dataset if it's found. Returns None if the dataset
+        isn't found
+    """
+    url = "%sapi/datasets?key=%s&title=%s&exact=true" % (host, secret_key, dsname)
+
+    try:
+        result = requests.get(url)
+        result.raise_for_status()
+
+        md = result.json()
+        md_len = len(md)
+    except Exception as ex:     # pylint: disable=broad-except
+        md = None
+        md_len = 0
+        logging.debug(ex.message)
+
+    if md and md_len > 0 and "id" in md[0]:
+        return md[0]["id"]
+
+    return None
+
+def get_dataset_folderid_by_name(host, secret_key, dataset_id, folder_name):
+    folder_url = f"{host}/api/datasets/{dataset_id}/folders?key={secret_key}"
+    dataset_folders = requests.get(folder_url)
+    result = dataset_folders.json()
+    for folder in result:
+        current_folder_name = folder['name'].lstrip('/')
+        if current_folder_name == folder_name:
+            return folder['id']
+    return None
+
+def add_dataset_to_collection(host, secret_key, dataset_id, collection_id):
+    # Didn't find space, so we must associate it now
+    url = "%sapi/collections/%s/datasets/%s?key=%s" % (host, collection_id, dataset_id, secret_key)
+    result = requests.post(url)
+    result.raise_for_status()
+
+def add_dataset_to_space(host, secret_key, dataset_id, space_id):
+    # Didn't find space, so we must associate it now
+    url = "%sapi/spaces/%s/addDatasetToSpace/%s?key=%s" % (host, space_id, dataset_id, secret_key)
+    result = requests.post(url)
+    result.raise_for_status()
+
+def get_dataset_or_create(host, secret_key, clowder_user, clowder_pass, dsname, parent_colln=None, parent_space=None):
+    # Fetch dataset from Clowder by name, or create it if not found
+    ds_id = get_datasetid_by_name(host, secret_key, dsname)
+
+    if not ds_id:
+        return create_empty_dataset(host, clowder_user, clowder_pass, dsname, "",
+                                    parent_colln, parent_space)
+    else:
+        if parent_colln:
+            add_dataset_to_collection(host, secret_key, ds_id, parent_colln)
+        if parent_space:
+            add_dataset_to_space(host, secret_key, ds_id, parent_space)
+        return ds_id
+
+def get_dataset_folder_or_create(host, secret_key, clowder_user, clowder_pass, dataset_id, folder_name):
+    folder_id = get_dataset_folderid_by_name(host, secret_key, dataset_id, folder_name)
+    if folder_id is None:
+        folder_post_url = f"{host}/api/datasets/{dataset_id}/newFolder?key={secret_key}"
+        payload = json.dumps({'name': folder_name,
+                              'parentId': dataset_id,
+                              'parentType': "dataset"})
+        r = requests.post(folder_post_url, data=payload)
+        r.raise_for_status()
+        folder_id = r.json()["id"]
+    return folder_id
 
 def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
     """Create a new dataset in Clowder.
