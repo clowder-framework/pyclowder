@@ -168,7 +168,7 @@ class ClowderClient(object):
             auth = None
         while True:
             try:
-                response = requests.delete(url, headers=headers, params=params,
+                response = requests.delete(url, params=params,
                                            auth=auth, timeout=self.timeout, verify=self.ssl)
                 response.raise_for_status()
                 return response.json()
