@@ -4,6 +4,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 3.0.0 - 2022-12-16
+This version adds Clowder 2 support and removes the old method of extractor registration in favor of reliance on heartbeats.
+
+### Added
+- api/v1 and api/v2 code split for back compatibility as v2 is introduced.
+- new simplified ClowderClient is used in the new split endpoints for future refactoring.
+
+### Removed
+- remove RABBITMQ_EXCHANGE parameter and REGISTRATION_URL parameter.
+- remove DatasetsAPI and object-oriented ClowderClient.
+
 ## 2.7.0 - 2023-02-14
 
 When extractors download a file from clowder it will ask clowder to not track that download.
