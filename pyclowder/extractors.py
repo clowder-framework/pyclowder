@@ -23,7 +23,9 @@ from pyclowder.connectors import RabbitMQConnector, HPCConnector, LocalConnector
 from pyclowder.utils import CheckMessage, setup_logging
 import pyclowder.files
 import pyclowder.datasets
+from functools import reduce
 
+clowder_version = int(os.getenv('CLOWDER_VERSION', '1'))
 
 class Extractor(object):
     """Basic extractor.
@@ -51,6 +53,7 @@ class Extractor(object):
         try:
             with open(filename) as info_file:
                 self.extractor_info = json.load(info_file)
+                new_info = self._get_extractor_info_v2()
         except Exception:  # pylint: disable=broad-except
             print("Error loading extractor_info.json")
             traceback.print_exc()
@@ -63,7 +66,6 @@ class Extractor(object):
         if not rabbitmq_queuename:
             rabbitmq_queuename = self.extractor_info['name']
         rabbitmq_uri = os.getenv('RABBITMQ_URI', "amqp://guest:guest@127.0.0.1/%2f")
-        rabbitmq_exchange = os.getenv('RABBITMQ_EXCHANGE', "")
         clowder_url = os.getenv("CLOWDER_URL", "")
         registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
         logging_config = os.getenv("LOGGING")
@@ -88,16 +90,11 @@ class Extractor(object):
                                  help='pickle file that needs to be processed (only needed for HPC)')
         self.parser.add_argument('--clowderURL', nargs='?', dest='clowder_url', default=clowder_url,
                                  help='Clowder host URL')
-        self.parser.add_argument('--register', '-r', nargs='?', dest="registration_endpoints",
-                                 default=registration_endpoints,
-                                 help='Clowder registration URL (default=%s)' % registration_endpoints)
         self.parser.add_argument('--rabbitmqURI', nargs='?', dest='rabbitmq_uri', default=rabbitmq_uri,
                                  help='rabbitMQ URI (default=%s)' % rabbitmq_uri.replace("%", "%%"))
         self.parser.add_argument('--rabbitmqQUEUE', nargs='?', dest='rabbitmq_queuename',
                                  default=rabbitmq_queuename,
                                  help='rabbitMQ queue name (default=%s)' % rabbitmq_queuename)
-        self.parser.add_argument('--rabbitmqExchange', nargs='?', dest="rabbitmq_exchange", default=rabbitmq_exchange,
-                                 help='rabbitMQ exchange (default=%s)' % rabbitmq_exchange)
         self.parser.add_argument('--mounts', '-m', dest="mounted_paths", default=mounted_paths,
                                  help="dictionary of {'remote path':'local path'} mount mappings")
         self.parser.add_argument('--input-file-path', '-ifp', dest="input_file_path", default=input_file_path,
@@ -167,7 +164,6 @@ class Extractor(object):
                                               check_message=self.check_message,
                                               process_message=self.process_message,
                                               rabbitmq_uri=self.args.rabbitmq_uri,
-                                              rabbitmq_exchange=self.args.rabbitmq_exchange,
                                               rabbitmq_key=rabbitmq_key,
                                               rabbitmq_queue=self.args.rabbitmq_queuename,
                                               mounted_paths=json.loads(self.args.mounted_paths),
@@ -175,7 +171,6 @@ class Extractor(object):
                                               max_retry=self.args.max_retry,
                                               heartbeat=self.args.heartbeat)
                 connector.connect()
-                connector.register_extractor(self.args.registration_endpoints)
                 threading.Thread(target=connector.listen, name="RabbitMQConnector").start()
 
         elif self.args.connector == "HPC":
@@ -189,7 +184,6 @@ class Extractor(object):
                                          picklefile=self.args.hpc_picklefile,
                                          mounted_paths=json.loads(self.args.mounted_paths),
                                          max_retry=self.args.max_retry)
-                connector.register_extractor(self.args.registration_endpoints)
                 threading.Thread(target=connector.listen, name="HPCConnector").start()
 
         elif self.args.connector == "Local":
@@ -221,7 +215,22 @@ class Extractor(object):
             logger.exception("Error while consuming messages.")
         connector.stop()
 
-    def get_metadata(self, content, resource_type, resource_id, server=None):
+    def _get_extractor_info_v2(self):
+        current_extractor_info = self.extractor_info.copy()
+        old_repository = self.extractor_info['repository']
+        new_repository_list = []
+        for repo in old_repository:
+            repo_type = repo['repType']
+            repo_url = repo['repUrl']
+            new_repo = dict()
+            new_repo['repository_url'] = repo_url
+            new_repo['repository_type'] = repo_type
+            new_repository_list.append(new_repo)
+        current_extractor_info['repository'] = new_repository_list
+        return current_extractor_info
+
+
+    def get_metadata(self, content, resource_type, resource_id, server=None, contexts=None):
         """Generate a metadata field.
 
         This will return a metadata dict that is valid JSON-LD. This will use the results as well as the information
@@ -245,23 +254,54 @@ class Extractor(object):
             for k in content:
                 if not self._check_key(k, self.extractor_info['contexts']):
                     logger.debug("Simple check could not find %s in contexts" % k)
-
-        return {
-            '@context': [context_url] + self.extractor_info['contexts'],
-            'attachedTo': {
-                'resourceType': resource_type,
-                'id': resource_id
-            },
-            'agent': {
-                '@type': 'cat:extractor',
-                'extractor_id': '%sextractors/%s/%s' %
-                                (server, self.extractor_info['name'], self.extractor_info['version']),
-                'version': self.extractor_info['version'],
-                'name': self.extractor_info['name']
-            },
-            'content': content
-        }
-
+        # TODO generate clowder2.0 extractor info
+        if clowder_version == 2.0:
+            new_extractor_info = self._get_extractor_info_v2()
+            md = dict()
+            md["file_version"] = 1
+            if contexts is not None:
+                md["context"] = [context_url] + contexts
+            md["context_url"] = context_url
+            md["content"] = content
+            md["contents"] = content
+            md["extractor_info"] = new_extractor_info
+            return md
+        else:
+            # TODO handle cases where contexts are either not available or are dynamnically generated
+            if contexts is not None:
+                md = {
+                    '@context': [context_url] + contexts,
+                    'attachedTo': {
+                        'resourceType': resource_type,
+                        'id': resource_id
+                    },
+                    'agent': {
+                        '@type': 'cat:extractor',
+                        'extractor_id': '%sextractors/%s/%s' %
+                                        (server, self.extractor_info['name'], self.extractor_info['version']),
+                        'version': self.extractor_info['version'],
+                        'name': self.extractor_info['name']
+                    },
+                    'content': content
+                }
+                return md
+            else:
+                md = {
+                    '@context': [context_url] + self.extractor_info['contexts'],
+                    'attachedTo': {
+                        'resourceType': resource_type,
+                        'id': resource_id
+                    },
+                    'agent': {
+                        '@type': 'cat:extractor',
+                        'extractor_id': '%sextractors/%s/%s' %
+                                        (server, self.extractor_info['name'], self.extractor_info['version']),
+                        'version': self.extractor_info['version'],
+                        'name': self.extractor_info['name']
+                    },
+                    'content': content
+                }
+                return md
     def _check_key(self, key, obj):
         if key in obj:
             return True
@@ -289,7 +329,7 @@ class Extractor(object):
             connector (Connector): the connector that received the message
             parameters (dict): the message received
         """
-
+        print(clowder_version)
         logging.getLogger(__name__).debug("default check message : " + str(parameters))
         return CheckMessage.download
 
