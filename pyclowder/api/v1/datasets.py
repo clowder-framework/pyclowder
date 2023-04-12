@@ -65,7 +65,7 @@ def delete(connector, client, datasetid):
     """
     headers = {"Authorization": "Bearer " + client.key}
 
-    url = "%s/api/v2/datasets/%s" % (client.host, datasetid)
+    url = "%s/api/datasets/%s" % (client.host, datasetid)
 
     result = requests.delete(url, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
