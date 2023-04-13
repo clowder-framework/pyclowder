@@ -194,7 +194,7 @@ def submit_extraction(connector, client, datasetid, extractorname):
     """
     headers = {'Content-Type': 'application/json'}
 
-    url = "%s/api/v2/datasets/%s/extractions?key=%s" % (client.host, datasetid, client.key)
+    url = "%s/api/datasets/%s/extractions?key=%s" % (client.host, datasetid, client.key)
 
     result = requests.post(url,
                            headers=headers,
@@ -257,7 +257,7 @@ def upload_metadata(connector, client, datasetid, metadata):
     headers = {'Content-Type': 'application/json'}
     connector.message_process({"type": "dataset", "id": datasetid}, "Uploading dataset metadata.")
 
-    url = '%s/api/v2/datasets/%s/metadata?key=%s' % (client.host, datasetid, client.key)
+    url = '%s/api/datasets/%s/metadata?key=%s' % (client.host, datasetid, client.key)
     result = requests.post(url, headers=headers, data=json.dumps(metadata),
                            verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
