@@ -9,8 +9,9 @@ import os
 import tempfile
 
 import requests
-
 from pyclowder.client import ClowderClient
+import pyclowder.api.v2.datasets as v2datasets
+import pyclowder.api.v1.datasets as v1datasets
 from pyclowder.collections import get_datasets, get_child_collections, delete as delete_collection
 from pyclowder.utils import StatusMessage
 
@@ -134,6 +135,7 @@ def get_dataset_folder_or_create(host, secret_key, clowder_user, clowder_pass, d
         r.raise_for_status()
         folder_id = r.json()["id"]
     return folder_id
+clowder_version = int(os.getenv('CLOWDER_VERSION', '1'))
 
 def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
     """Create a new dataset in Clowder.
@@ -147,38 +149,11 @@ def create_empty(connector, host, key, datasetname, description, parentid=None, 
     parentid -- id of parent collection
     spaceid -- id of the space to add dataset to
     """
-
-    logger = logging.getLogger(__name__)
-
-    url = '%sapi/datasets/createempty?key=%s' % (host, key)
-
-    if parentid:
-        if spaceid:
-            result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data=json.dumps({"name": datasetname, "description": description,
-                                                    "collection": [parentid], "space": [spaceid]}),
-                                   verify=connector.ssl_verify if connector else True)
-        else:
-            result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data=json.dumps({"name": datasetname, "description": description,
-                                                    "collection": [parentid]}),
-                                   verify=connector.ssl_verify if connector else True)
+    client = ClowderClient(host=host, key=key)
+    if clowder_version == 2:
+        datasetid = v2datasets.create_empty(connector, client, datasetname, description, parentid, spaceid)
     else:
-        if spaceid:
-            result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data=json.dumps({"name": datasetname, "description": description,
-                                                    "space": [spaceid]}),
-                                   verify=connector.ssl_verify if connector else True)
-        else:
-            result = requests.post(url, headers={"Content-Type": "application/json"},
-                                   data=json.dumps({"name": datasetname, "description": description}),
-                                   verify=connector.ssl_verify if connector else True)
-
-    result.raise_for_status()
-
-    datasetid = result.json()['id']
-    logger.debug("dataset id = [%s]", datasetid)
-
+        datasetid = v1datasets.create_empty(connector, client, datasetname, description, parentid, spaceid)
     return datasetid
 
 
@@ -191,9 +166,11 @@ def delete(connector, host, key, datasetid):
     key -- the secret key to login to clowder
     datasetid -- the dataset to delete
     """
-    url = "%sapi/datasets/%s?key=%s" % (host, datasetid, key)
-
-    result = requests.delete(url, verify=connector.ssl_verify if connector else True)
+    client = ClowderClient(host=host, key=key)
+    if clowder_version == 2:
+        result = v2datasets.delete(connector, client, datasetid)
+    else:
+        result = v2datasets.delete(connector, client, datasetid)
     result.raise_for_status()
 
     return json.loads(result.text)
@@ -210,17 +187,18 @@ def delete_by_collection(connector, host, key, collectionid, recursive=True, del
     recursive -- whether to also iterate across child collections
     delete_colls -- whether to also delete collections containing the datasets
     """
+    client = ClowderClient(host=host, key=key)
     dslist = get_datasets(connector, host, key, collectionid)
     for ds in dslist:
-        delete(connector, host, key, ds['id'])
+        delete(connector, client, ds['id'])
 
     if recursive:
-        childcolls = get_child_collections(connector, host, key, collectionid)
+        childcolls = get_child_collections(connector, client, collectionid)
         for coll in childcolls:
             delete_by_collection(connector, host, key, coll['id'], recursive, delete_colls)
 
     if delete_colls:
-        delete_collection(connector, host, key, collectionid)
+        delete_collection(connector, client, collectionid)
 
 
 def download(connector, host, key, datasetid):
@@ -232,20 +210,11 @@ def download(connector, host, key, datasetid):
     key -- the secret key to login to clowder
     datasetid -- the file that is currently being processed
     """
-
-    connector.message_process({"type": "dataset", "id": datasetid}, "Downloading dataset.")
-
-    # fetch dataset zipfile
-    url = '%sapi/datasets/%s/download?key=%s' % (host, datasetid, key)
-    result = requests.get(url, stream=True,
-                          verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    (filedescriptor, zipfile) = tempfile.mkstemp(suffix=".zip")
-    with os.fdopen(filedescriptor, "wb") as outfile:
-        for chunk in result.iter_content(chunk_size=10 * 1024):
-            outfile.write(chunk)
-
+    client = ClowderClient(host=host, key=key)
+    if clowder_version == 2:
+        zipfile = v2datasets.download(connector, client, datasetid)
+    else:
+        zipfile = v1datasets.download(connector, client, datasetid)
     return zipfile
 
 
@@ -259,16 +228,13 @@ def download_metadata(connector, host, key, datasetid, extractor=None):
     datasetid -- the dataset to fetch metadata of
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
-
-    filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = '%sapi/datasets/%s/metadata.jsonld?key=%s%s' % (host, datasetid, key, filterstring)
-
-    # fetch data
-    result = requests.get(url, stream=True,
-                          verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    return result.json()
+    client = ClowderClient(host=host, key=key)
+    if clowder_version == 2:
+        result_json = v2datasets.download_metadata(connector, client, datasetid, extractor)
+        return result_json
+    else:
+        result_json = v1datasets.download_metadata(connector, client, datasetid, extractor)
+        return result_json
 
 
 def get_info(connector, host, key, datasetid):
@@ -280,14 +246,12 @@ def get_info(connector, host, key, datasetid):
     key -- the secret key to login to clowder
     datasetid -- the dataset to get info of
     """
-
-    url = "%sapi/datasets/%s?key=%s" % (host, datasetid, key)
-
-    result = requests.get(url,
-                          verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    return json.loads(result.text)
+    client = ClowderClient(host=host, key=key)
+    if clowder_version == 2:
+        info = v2datasets.get_info(connector, client, datasetid)
+    else:
+        info = v1datasets.get_info(connector, client, datasetid)
+    return info
 
 
 def get_file_list(connector, host, key, datasetid):
@@ -299,13 +263,12 @@ def get_file_list(connector, host, key, datasetid):
     key -- the secret key to login to clowder
     datasetid -- the dataset to get filelist of
     """
-
-    url = "%sapi/datasets/%s/files?key=%s" % (host, datasetid, key)
-
-    result = requests.get(url, verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    return json.loads(result.text)
+    client = ClowderClient(host=host, key=key)
+    if clowder_version == 2:
+        file_list = v2datasets.get_file_list(connector, client, datasetid)
+    else:
+        file_list = v1datasets.get_file_list(connector, client, datasetid)
+    return file_list
 
 
 def remove_metadata(connector, host, key, datasetid, extractor=None):
@@ -319,14 +282,11 @@ def remove_metadata(connector, host, key, datasetid, extractor=None):
     extractor -- extractor name to filter deletion
                     !!! ALL JSON-LD METADATA WILL BE REMOVED IF NO extractor PROVIDED !!!
     """
-
-    filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = '%sapi/datasets/%s/metadata.jsonld?key=%s%s' % (host, datasetid, key, filterstring)
-
-    # fetch data
-    result = requests.delete(url, stream=True,
-                             verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
+    client = ClowderClient(host=host, key=key)
+    if clowder_version == 2:
+        v2datasets.remove_metadata(connector, client, datasetid, extractor)
+    else:
+        v1datasets.remove_metadata(connector, client, datasetid, extractor)
 
 
 def submit_extraction(connector, host, key, datasetid, extractorname):
@@ -339,16 +299,11 @@ def submit_extraction(connector, host, key, datasetid, extractorname):
     datasetid -- the dataset UUID to submit
     extractorname -- registered name of extractor to trigger
     """
-
-    url = "%sapi/datasets/%s/extractions?key=%s" % (host, datasetid, key)
-
-    result = requests.post(url,
-                           headers={'Content-Type': 'application/json'},
-                           data=json.dumps({"extractor": extractorname}),
-                           verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-    return result.status_code
+    client = ClowderClient(host=host, key=key)
+    if clowder_version == 2:
+        result_status_code = v2datasets.submit_extraction(connector, client, datasetid, extractorname)
+    else:
+        result_status_code = v1datasets.submit_extraction(connector, client, datasetid, extractorname)
 
 
 def submit_extractions_by_collection(connector, host, key, collectionid, extractorname, recursive=True):
@@ -365,16 +320,16 @@ def submit_extractions_by_collection(connector, host, key, collectionid, extract
         extractorname -- registered name of extractor to trigger
         recursive -- whether to also submit child collection datasets recursively (defaults to True)
     """
-
-    dslist = get_datasets(connector, host, key, collectionid)
+    client = ClowderClient(host=host, key=key)
+    dslist = get_datasets(connector, client, collectionid)
 
     for ds in dslist:
-        submit_extraction(connector, host, key, ds['id'], extractorname)
+        submit_extraction(connector, client, ds['id'], extractorname)
 
     if recursive:
-        childcolls = get_child_collections(connector, host, key, collectionid)
+        childcolls = get_child_collections(connector, client, collectionid)
         for coll in childcolls:
-            submit_extractions_by_collection(connector, host, key, coll['id'], extractorname, recursive)
+            submit_extractions_by_collection(connector, client, coll['id'], extractorname, recursive)
 
 
 def upload_tags(connector, host, key, datasetid, tags):
@@ -387,11 +342,11 @@ def upload_tags(connector, host, key, datasetid, tags):
     datasetid -- the dataset that is currently being processed
     tags -- the tags to be uploaded
     """
-
+    client = ClowderClient(host=host, key=key)
     connector.status_update(StatusMessage.processing, {"type": "dataset", "id": datasetid}, "Uploading dataset tags.")
 
     headers = {'Content-Type': 'application/json'}
-    url = '%sapi/datasets/%s/tags?key=%s' % (host, datasetid, key)
+    url = '%sapi/datasets/%s/tags?key=%s' % (client.host, datasetid, client.key)
     result = connector.post(url, headers=headers, data=json.dumps(tags),
                             verify=connector.ssl_verify if connector else True)
 
@@ -406,105 +361,8 @@ def upload_metadata(connector, host, key, datasetid, metadata):
     datasetid -- the dataset that is currently being processed
     metadata -- the metadata to be uploaded
     """
-
-    connector.message_process({"type": "dataset", "id": datasetid}, "Uploading dataset metadata.")
-
-    headers = {'Content-Type': 'application/json'}
-    url = '%sapi/datasets/%s/metadata.jsonld?key=%s' % (host, datasetid, key)
-    result = requests.post(url, headers=headers, data=json.dumps(metadata),
-                           verify=connector.ssl_verify if connector else True)
-    result.raise_for_status()
-
-
-class DatasetsApi(object):
-    """
-        API to manage the REST CRUD endpoints for datasets.
-    """
-
-    def __init__(self, client=None, host=None, key=None,
-                 username=None, password=None):
-        """Set client if provided otherwise create new one"""
-        if client:
-            self.client = client
-        else:
-            self.client = ClowderClient(host=host, key=key,
-                                        username=username, password=password)
-
-    def datasets_get(self):
-        """
-        Get the list of all available datasets.
-
-        :return: Full list of datasets.
-        :rtype: `requests.Response`
-        """
-        logging.debug("Getting all datasets")
-        try:
-            return self.client.get("/datasets")
-        except Exception as e:
-            logging.error("Error retrieving dataset list: %s", str(e))
-
-    def dataset_get(self, dataset_id):
-        """
-        Get a specific dataset by id.
-
-        :return: Sensor object as JSON.
-        :rtype: `requests.Response`
-        """
-        logging.debug("Getting dataset %s" % dataset_id)
-        try:
-            return self.client.get("/datasets/%s" % dataset_id)
-        except Exception as e:
-            logging.error("Error retrieving dataset %s: %s" % (dataset_id, str(e)))
-
-    def create_empty(self, dataset_id):
-        """
-        Create dataset.
-
-        :return: If successful or not.
-        :rtype: `requests.Response`
-        """
-        logging.debug("Adding dataset")
-        try:
-            return self.client.post("/datasets/createempty", dataset_id)
-        except Exception as e:
-            logging.error("Error adding datapoint %s: %s" % (dataset_id, str(e)))
-
-    def dataset_delete(self, dataset_id):
-        """
-        Delete a specific dataset by id.
-
-        :return: If successfull or not.
-        :rtype: `requests.Response`
-        """
-        logging.debug("Deleting dataset %s" % dataset_id)
-        try:
-            return self.client.delete("/datasets/%s" % dataset_id)
-        except Exception as e:
-            logging.error("Error retrieving dataset %s: %s" % (dataset_id, str(e)))
-
-    def upload_file(self, dataset_id, file):
-        """
-        Add a file to a dataset.
-
-        :return: If successfull or not.
-        :rtype: `requests.Response`
-        """
-        logging.debug("Uploading a file to dataset %s" % dataset_id)
-        try:
-            return self.client.post_file("/uploadToDataset/%s" % dataset_id, file)
-        except Exception as e:
-            logging.error("Error upload to dataset %s: %s" % (dataset_id, str(e)))
-
-    def add_metadata(self, dataset_id, metadata):
-        """
-        Add a file to a dataset
-
-        :return: If successfull or not.
-        :rtype: `requests.Response`
-        """
-
-        logging.debug("Update metadata of dataset %s" % dataset_id)
-        try:
-            return self.client.post("/datasets/%s/metadata" % dataset_id, metadata)
-        except Exception as e:
-            logging.error("Error upload to dataset %s: %s" % (dataset_id, str(e)))
+    client = ClowderClient(host=host, key=key)
+    if clowder_version == 2:
+        v2datasets.upload_metadata(connector, client, datasetid, metadata)
+    else:
+        v1datasets.upload_metadata(connector, client, datasetid, metadata)
