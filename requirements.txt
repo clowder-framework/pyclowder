@@ -14,7 +14,7 @@ pika==1.2.0
     # via pyclowder (setup.py)
 pyyaml==5.4.1
     # via pyclowder (setup.py)
-requests==2.26.0
+requests==2.31.0
     # via
     #   pyclowder (setup.py)
     #   requests-toolbelt
