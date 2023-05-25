@@ -4,6 +4,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
+## 3.0.1 - 2023-05-25
+
+### Changed
+This version updates Clowder 2 functionality to use API Key headers instead of Bearer tokens.
+
 ## 3.0.0 - 2022-12-16
 This version adds Clowder 2 support and removes the old method of extractor registration in favor of reliance on heartbeats.
 
