@@ -123,13 +123,11 @@ def download_metadata(connector, client, datasetid, extractor=None):
     datasetid -- the dataset to fetch metadata of
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
-    headers = {"Authorization": "Bearer " + client.key}
-
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = '%s/api/datasets/%s/metadata?key=%s' % (client.host, datasetid, client.key)
+    url = '%s/api/datasets/%s/metadata?key=%s' % (client.host, datasetid, client.key + filterstring)
 
     # fetch data
-    result = requests.get(url, stream=True, headers=headers,
+    result = requests.get(url, stream=True,
                           verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 

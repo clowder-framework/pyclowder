@@ -31,7 +31,7 @@ def create_empty(connector, client, datasetname, description, parentid=None, spa
 
     url = '%s/api/v2/datasets' % client.host
     headers = {"Content-Type": "application/json",
-               "Authorization": "Bearer " + client.key}
+               "x-api-key": client.key}
     result = requests.post(url, headers=headers,
                            data=json.dumps({"name": datasetname, "description": description}),
                            verify=connector.ssl_verify if connector else True)
@@ -52,8 +52,7 @@ def delete(connector, client , datasetid):
     client -- ClowderClient containing authentication credentials
     datasetid -- the dataset to delete
     """
-    headers = {"Authorization": "Bearer " + client.key}
-
+    headers = {"x-api-key": client.key}
     url = "%s/api/v2/datasets/%s" % (client.host, datasetid)
 
     result = requests.delete(url, headers=headers, verify=connector.ssl_verify if connector else True)
@@ -97,7 +96,7 @@ def download(connector, client, datasetid):
 
     connector.message_process({"type": "dataset", "id": datasetid}, "Downloading dataset.")
 
-    headers = {"Authorization": "Bearer " + client.key}
+    headers = {"x-api-key": client.key}
     # fetch dataset zipfile
     url = '%s/api/v2/datasets/%s/download' % (client.host, datasetid)
     result = requests.get(url, stream=True, headers=headers,
@@ -121,7 +120,7 @@ def download_metadata(connector, client, datasetid, extractor=None):
     datasetid -- the dataset to fetch metadata of
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
-    headers = {"Authorization": "Bearer " + client.key}
+    headers = {"x-api-key": client.key}
 
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
     url = '%s/api/v2/datasets/%s/metadata' % (client.host, datasetid)
@@ -142,7 +141,7 @@ def get_info(connector, client, datasetid):
     client -- ClowderClient containing authentication credentials
     datasetid -- the dataset to get info of
     """
-    headers = {"Authorization": "Bearer " + client.key}
+    headers = {"x-api-key": client.key}
 
     url = "%s/api/v2/datasets/%s" % (client.host, datasetid)
 
@@ -161,7 +160,7 @@ def get_file_list(connector, client, datasetid):
     client -- ClowderClient containing authentication credentials
     datasetid -- the dataset to get filelist of
     """
-    headers = {"Authorization": "Bearer " + client.key}
+    headers = {"x-api-key": client.key}
 
     url = "%s/api/v2/datasets/%s/files" % (client.host, datasetid)
 
@@ -181,7 +180,7 @@ def remove_metadata(connector, client, datasetid, extractor=None):
     extractor -- extractor name to filter deletion
                     !!! ALL JSON-LD METADATA WILL BE REMOVED IF NO extractor PROVIDED !!!
     """
-    headers = {"Authorization": "Bearer " + client.key}
+    headers = {"x-api-key": client.key}
 
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
     url = '%s/api/v2/datasets/%s/metadata' % (client.host, datasetid)
@@ -202,7 +201,7 @@ def submit_extraction(connector, client, datasetid, extractorname):
     extractorname -- registered name of extractor to trigger
     """
     headers = {'Content-Type': 'application/json',
-                "Authorization": "Bearer " + client.key}
+                "x-api-key": client.key}
 
     url = "%s/api/v2/datasets/%s/extractions?key=%s" % (client.host, datasetid)
 
@@ -225,7 +224,7 @@ def upload_metadata(connector, client, datasetid, metadata):
     metadata -- the metadata to be uploaded
     """
     headers = {'Content-Type': 'application/json',
-               "Authorization": "Bearer " + client.key}
+               "x-api-key": client.key}
     connector.message_process({"type": "dataset", "id": datasetid}, "Uploading dataset metadata.")
 
 
