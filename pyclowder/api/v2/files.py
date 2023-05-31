@@ -65,7 +65,7 @@ def download(connector, client, fileid, intermediatefileid=None, ext=""):
         intermediatefileid = fileid
 
     url = '%s/api/v2/files/%s' % (client.host, intermediatefileid)
-    headers = {"x-api-key": client.key}
+    headers = {"X-API-KEY": client.key}
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
 
     (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
@@ -90,7 +90,7 @@ def download_info(connector, client, fileid):
     """
 
     url = '%s/api/v2/files/%s/metadata' % (client.host, fileid)
-    headers = {"x-api-key": client.key}
+    headers = {"X-API-KEY": client.key}
     # fetch data
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
 
@@ -109,7 +109,7 @@ def download_metadata(connector,client, fileid, extractor=None):
 
     filterstring = "" if extractor is None else "?extractor=%s" % extractor
     url = '%s/api/v2/files/%s/metadata?%s' % (client.host, fileid, filterstring)
-    headers = {"x-api-key": client.key}
+    headers = {"X-API-KEY": client.key}
 
     # fetch data
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
@@ -130,7 +130,7 @@ def submit_extraction(connector, client, fileid, extractorname):
     url = "%s/api/v2/files/%s/extractions?key=%s" % (client.host, fileid, client.key)
     result = connector.post(url,
                             headers={'Content-Type': 'application/json',
-                                     "x-api-key": client.key},
+                                     "X-API-KEY": client.key},
                             data=json.dumps({"extractor": extractorname}),
                             verify=connector.ssl_verify if connector else True)
 
@@ -149,7 +149,7 @@ def upload_metadata(connector, client, fileid, metadata):
 
     connector.message_process({"type": "file", "id": fileid}, "Uploading file metadata.")
     headers = {'Content-Type': 'application/json',
-               'x-api-key': client.key}
+               'X-API-KEY': client.key}
     url = '%s/api/v2/files/%s/metadata' % (client.host, fileid)
     result = connector.post(url, headers=headers, data=json.dumps(metadata),
                             verify=connector.ssl_verify if connector else True)
@@ -283,7 +283,7 @@ def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=Fa
         m = MultipartEncoder(
             fields={'file': (filename, open(filepath, 'rb'))}
         )
-        headers = {"x-api-key": client.key,
+        headers = {"X-API-KEY": client.key,
                     'Content-Type': m.content_type}
         result = connector.post(url, data=m, headers=headers,
                                 verify=connector.ssl_verify if connector else True)
@@ -320,7 +320,7 @@ def _upload_to_dataset_local(connector, client, datasetid, filepath):
         m = MultipartEncoder(
             fields={'file': (filename, open(filepath, 'rb'))}
         )
-        headers = {"x-api-key": client.key,
+        headers = {"X-API-KEY": client.key,
                     'Content-Type': m.content_type}
         result = connector.post(url, data=m, headers=headers,
                                 verify=connector.ssl_verify if connector else True)
