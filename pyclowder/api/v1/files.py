@@ -10,18 +10,19 @@ import tempfile
 
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
-from urllib3.filepost import encode_multipart_formdata
 
-from pyclowder.datasets import get_file_list
 from pyclowder.collections import get_datasets, get_child_collections
+from pyclowder.datasets import get_file_list
 
 # Some sources of urllib3 support warning suppression, but not all
 try:
     from urllib3 import disable_warnings
     from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 except:
     pass
+
 
 # pylint: disable=too-many-arguments
 def get_download_url(connector, client, fileid, intermediatefileid=None, ext=""):
@@ -43,6 +44,7 @@ def get_download_url(connector, client, fileid, intermediatefileid=None, ext="")
 
     url = '%s/api/files/%s?key=%s' % (client.host, intermediatefileid, client.key)
     return url
+
 
 # pylint: disable=too-many-arguments
 def download(connector, client, fileid, intermediatefileid=None, ext=""):
@@ -69,7 +71,7 @@ def download(connector, client, fileid, intermediatefileid=None, ext=""):
 
     try:
         with os.fdopen(inputfile, "wb") as outputfile:
-            for chunk in result.iter_content(chunk_size=10*1024):
+            for chunk in result.iter_content(chunk_size=10 * 1024):
                 outputfile.write(chunk)
         return inputfilename
     except Exception:
@@ -180,7 +182,8 @@ def submit_extractions_by_collection(connector, client, collectionid, extractorn
     if recursive:
         childcolls = get_child_collections(connector, client.host, client.key, collectionid)
         for coll in childcolls:
-            submit_extractions_by_collection(connector, client.host, client.key, coll['id'], extractorname, ext, recursive)
+            submit_extractions_by_collection(connector, client.host, client.key, coll['id'], extractorname, ext,
+                                             recursive)
 
 
 def upload_metadata(connector, client, fileid, metadata):
@@ -202,7 +205,7 @@ def upload_metadata(connector, client, fileid, metadata):
 
 
 # pylint: disable=too-many-arguments
-def upload_preview(connector, client, fileid, previewfile, previewmetadata=None, preview_mimetype=None):
+def upload_preview(connector, client, fileid, previewfile, previewmetadata=None, preview_mimetype=None, **kwargs):
     """Upload preview to Clowder.
 
     Keyword arguments:
