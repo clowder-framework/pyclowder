@@ -6,13 +6,14 @@ import re
 import subprocess
 import tempfile
 
-from pyclowder.extractors import Extractor
 import pyclowder.files
 import pyclowder.utils
+from pyclowder.extractors import Extractor
 
 
 class BinaryPreviewExtractor(Extractor):
     """Count the number of characters, words and lines in a text file."""
+
     def __init__(self):
         Extractor.__init__(self)
 
@@ -56,12 +57,12 @@ class BinaryPreviewExtractor(Extractor):
         file_id = resource['id']
 
         # create thumbnail image
-        if 'image_thumbnail' in parameters:
-            args = parameters['image_thumbnail']
-        else:
-            args = self.args.image_thumbnail_command
-        self.execute_command(connector, host, secret_key, inputfile, file_id, resource, False,
-                             self.args.image_binary, args, self.args.image_type)
+        # if 'image_thumbnail' in parameters:
+        #     args = parameters['image_thumbnail']
+        # else:
+        #     args = self.args.image_thumbnail_command
+        # self.execute_command(connector, host, secret_key, inputfile, file_id, resource, False,
+        #                      self.args.image_binary, args, self.args.image_type)
 
         # create preview image
         if 'image_preview' in parameters:
@@ -109,7 +110,11 @@ class BinaryPreviewExtractor(Extractor):
             if os.path.getsize(tmpfile) != 0:
                 # upload result
                 if preview:
-                    pyclowder.files.upload_preview(connector, host, key, fileid, tmpfile, None)
+                    visualization_config_data = dict()
+                    pyclowder.files.upload_preview(connector, host, key, fileid, tmpfile, None, "image/png",
+                                                   visualization_name="thumbnail",
+                                                   visualization_description="thumbnail",
+                                                   visualization_config_data=visualization_config_data)
                     connector.status_update(pyclowder.utils.StatusMessage.processing, resource,
                                             "Uploaded preview of type %s" % ext)
                 else:
