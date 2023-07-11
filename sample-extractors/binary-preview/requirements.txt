@@ -1,2 +1,1 @@
-/Users/sandeep/Repositories/CATS/pyclowder
-# git+https://github.com/clowder-framework/pyclowder.git@70-add-support-for-using-new-v2-visualization-endpoints#egg=pyclowder
+../../
