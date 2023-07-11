@@ -156,7 +156,7 @@ def upload_metadata(connector, client, fileid, metadata):
 # pylint: disable=too-many-arguments
 def upload_preview(connector, client, fileid, previewfile, previewmetadata=None, preview_mimetype=None,
                    visualization_name=None, visualization_description=None):
-    """Upload preview to Clowder.
+    """Upload visualization to Clowder.
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
@@ -172,23 +172,34 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
     connector.message_process({"type": "file", "id": fileid}, "Uploading file preview.")
 
     logger = logging.getLogger(__name__)
-    headers = {'Content-Type': 'application/json'}
 
     # TODO: 1. Upload visualization config
 
     # upload preview
     url = '%s/api/v2/visualizations?name=%s&description=%s' % (
         client.host, visualization_name, visualization_description)
-    headers = {"X-API-KEY": client.key}
-    with open(previewfile, 'rb') as file_data:
-        response = connector.post(url, headers=headers,
-                                  files={"file": (os.path.basename(previewfile), file_data, preview_mimetype)},
+
+    preview_id = None
+
+    if os.path.exists(previewfile):
+        filename = os.path.basename(previewfile)
+        if preview_mimetype is not None:
+            multipart_encoder_object = MultipartEncoder(
+                fields={'file': (filename, open(previewfile, 'rb'), preview_mimetype)})
+        else:
+            multipart_encoder_object = MultipartEncoder(fields={'file': (filename, open(previewfile, 'rb'))})
+        headers = {"X-API-KEY": client.key,
+                   'Content-Type': multipart_encoder_object.content_type}
+        response = connector.post(url, data=multipart_encoder_object, headers=headers,
                                   verify=connector.ssl_verify if connector else True)
-        if response.status == 200:
-            print(response.text)
+
+        if response.status_code == 200:
             preview_id = response.json()['id']
+            logger.debug("Uploaded visualization ID = [%s]", preview_id)
         else:
             logger.error("An error occurred when uploading the visualization data to file: " + fileid)
+    else:
+        logger.error("Visualization data file not found")
 
     return preview_id
 
@@ -271,7 +282,7 @@ def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=Fa
     if os.path.exists(filepath):
         filename = os.path.basename(filepath)
         m = MultipartEncoder(
-            fields={'file': (filename, open(filepath, 'rb'))}
+            fields={'File': (filename, open(filepath, 'rb'))}
         )
         headers = {"X-API-KEY": client.key,
                    'Content-Type': m.content_type}
