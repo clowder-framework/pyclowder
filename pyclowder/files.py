@@ -167,7 +167,7 @@ def upload_metadata(connector, host, key, fileid, metadata):
 
 # pylint: disable=too-many-arguments
 def upload_preview(connector, host, key, fileid, previewfile, previewmetadata=None, preview_mimetype=None,
-                   visualization_name=None, visualization_description=None):
+                   visualization_name=None, visualization_description=None, visualization_config_data=None):
     """Upload preview to Clowder.
 
     Keyword arguments:
@@ -185,7 +185,8 @@ def upload_preview(connector, host, key, fileid, previewfile, previewmetadata=No
     client = ClowderClient(host=host, key=key)
     preview_id = files.upload_preview(connector, client, fileid, previewfile, previewmetadata, preview_mimetype,
                                       visualization_name=visualization_name,
-                                      visualization_description=visualization_description)
+                                      visualization_description=visualization_description,
+                                      visualization_config_data=visualization_config_data)
     return preview_id
 
 

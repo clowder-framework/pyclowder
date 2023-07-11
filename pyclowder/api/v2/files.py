@@ -155,7 +155,7 @@ def upload_metadata(connector, client, fileid, metadata):
 
 # pylint: disable=too-many-arguments
 def upload_preview(connector, client, fileid, previewfile, previewmetadata=None, preview_mimetype=None,
-                   visualization_name=None, visualization_description=None):
+                   visualization_name=None, visualization_description=None, visualization_config_data=None):
     """Upload visualization to Clowder.
 
     Keyword arguments:
@@ -170,13 +170,10 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
     """
 
     connector.message_process({"type": "file", "id": fileid}, "Uploading file preview.")
-
     logger = logging.getLogger(__name__)
 
-    # TODO: 1. Upload visualization config
-
-    # upload preview
-    url = '%s/api/v2/visualizations?name=%s&description=%s' % (
+    # upload visualization URL
+    visualization_url = '%s/api/v2/visualizations?name=%s&description=%s' % (
         client.host, visualization_name, visualization_description)
 
     preview_id = None
@@ -188,9 +185,9 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
                 fields={'file': (filename, open(previewfile, 'rb'), preview_mimetype)})
         else:
             multipart_encoder_object = MultipartEncoder(fields={'file': (filename, open(previewfile, 'rb'))})
-        headers = {"X-API-KEY": client.key,
+        headers = {'X-API-KEY': client.key,
                    'Content-Type': multipart_encoder_object.content_type}
-        response = connector.post(url, data=multipart_encoder_object, headers=headers,
+        response = connector.post(visualization_url, data=multipart_encoder_object, headers=headers,
                                   verify=connector.ssl_verify if connector else True)
 
         if response.status_code == 200:
@@ -200,6 +197,35 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
             logger.error("An error occurred when uploading the visualization data to file: " + fileid)
     else:
         logger.error("Visualization data file not found")
+
+    if visualization_config_data is not None and preview_id is not None:
+        # upload visualization URL
+        visualization_config_url = '%s/api/v2/visualizations/config' % client.host
+
+        payload = json.dumps({
+            "resource": {
+                "collection": "files",
+                "resource_id": fileid
+            },
+            "client": "testClient",
+            "vis_config_data": visualization_config_data,
+            "visualization": preview_id,
+            "component_name": "basic-image-component"
+        })
+
+        headers = {
+            "X-API-KEY": client.key,
+            "Content-Type": "application/json"
+        }
+
+        response = connector.post(visualization_config_url, headers=headers, data=payload,
+                                  verify=connector.ssl_verify if connector else True)
+
+        if response.status_code == 200:
+            visualization_config_id = response.json()['id']
+            logger.debug("Uploaded visualization config ID = [%s]", visualization_config_id)
+        else:
+            logger.error("An error occurred when uploading visualization config to file: " + fileid)
 
     return preview_id
 
