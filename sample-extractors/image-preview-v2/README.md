@@ -21,7 +21,7 @@ pip install -r requirements.txt
 ### Run extractor
 
 ```shell
-export CLOWDER_VERSION=2 && export IMAGE_BINARY="/usr/local/bin/convert" && python binary_extractor.py
+export CLOWDER_VERSION=2 && export IMAGE_BINARY="<Full path of local ImageMagick Convert tool binary>" && python binary_extractor.py
 ```
 
 ## Docker Instructions
