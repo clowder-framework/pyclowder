@@ -62,7 +62,7 @@ class BinaryPreviewExtractor(Extractor):
         else:
             args = self.args.image_thumbnail_command
         self.execute_command(connector, host, secret_key, inputfile, file_id, resource, False,
-                             self.args.image_binary, args, self.args.image_type, self.extractor_info["name"])
+                             self.args.image_binary, args, self.args.image_type)
 
         # create preview image
         if 'image_preview' in parameters:
@@ -70,7 +70,7 @@ class BinaryPreviewExtractor(Extractor):
         else:
             args = self.args.image_preview_command
         self.execute_command(connector, host, secret_key, inputfile, file_id, resource, True,
-                             self.args.image_binary, args, self.args.image_type, self.extractor_info["name"])
+                             self.args.image_binary, args, self.args.image_type)
 
         # create extractor specifc preview
         if 'preview' in parameters:
@@ -78,11 +78,10 @@ class BinaryPreviewExtractor(Extractor):
         else:
             args = self.args.preview_command
         self.execute_command(connector, host, secret_key, inputfile, file_id, resource, True,
-                             self.args.preview_binary, args, self.args.preview_type, self.extractor_info["name"])
+                             self.args.preview_binary, args, self.args.preview_type)
 
     @staticmethod
-    def execute_command(connector, host, key, inputfile, fileid, resource, preview, binary, commandline, ext,
-                        extractor_name):
+    def execute_command(connector, host, key, inputfile, fileid, resource, preview, binary, commandline, ext):
         logger = logging.getLogger(__name__)
 
         if binary is None or binary == '' or commandline is None or commandline == '' or ext is None or ext == '':
@@ -111,9 +110,7 @@ class BinaryPreviewExtractor(Extractor):
             if os.path.getsize(tmpfile) != 0:
                 # upload result
                 if preview:
-                    pyclowder.files.upload_preview(connector, host, key, fileid, tmpfile, None, "image/" + ext,
-                                                   visualization_name=extractor_name,
-                                                   visualization_component_id="basic-image-component")
+                    pyclowder.files.upload_preview(connector, host, key, fileid, tmpfile, None)
                     connector.status_update(pyclowder.utils.StatusMessage.processing, resource,
                                             "Uploaded preview of type %s" % ext)
                 else:
