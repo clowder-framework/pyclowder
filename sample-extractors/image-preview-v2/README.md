@@ -26,11 +26,11 @@ export CLOWDER_VERSION=2 && export IMAGE_BINARY="<Full path of local ImageMagick
 
 ## Docker Instructions
 
-## Build Docker image
+### Build Docker image
 
 `docker build -t clowder/extractors-image-preview .`
 
-## Run Docker Container
+### Run Docker Container
 
 `docker run --rm -e CLOWDER_VERSION=2 --network clowder2 --link rabbitmq --link clowder2 clowder/extractors-image-preview`
 
