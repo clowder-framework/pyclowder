@@ -12,7 +12,7 @@ from pyclowder.extractors import Extractor
 
 
 class BinaryPreviewExtractor(Extractor):
-    """Count the number of characters, words and lines in a text file."""
+    """Create and upload image thumbnail and image preview."""
 
     def __init__(self):
         Extractor.__init__(self)
