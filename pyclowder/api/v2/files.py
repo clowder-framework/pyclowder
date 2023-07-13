@@ -199,9 +199,12 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
     else:
         logger.error("Visualization data file not found")
 
-    if visualization_config_data is not None and preview_id is not None:
+    if preview_id is not None:
         # upload visualization URL
         visualization_config_url = '%s/api/v2/visualizations/config' % client.host
+
+        if visualization_config_data is None:
+            visualization_config_data = dict()
 
         payload = json.dumps({
             "resource": {
