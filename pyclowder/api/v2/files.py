@@ -155,7 +155,8 @@ def upload_metadata(connector, client, fileid, metadata):
 
 # pylint: disable=too-many-arguments
 def upload_preview(connector, client, fileid, previewfile, previewmetadata=None, preview_mimetype=None,
-                   visualization_name=None, visualization_description=None, visualization_config_data=None):
+                   visualization_name=None, visualization_description=None, visualization_config_data=None,
+                   visualization_component_id=None):
     """Upload visualization to Clowder.
 
     Keyword arguments:
@@ -192,7 +193,7 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
 
         if response.status_code == 200:
             preview_id = response.json()['id']
-            logger.debug("Uploaded visualization ID = [%s]", preview_id)
+            logger.debug("Uploaded visualization data ID = [%s]", preview_id)
         else:
             logger.error("An error occurred when uploading the visualization data to file: " + fileid)
     else:
@@ -207,10 +208,11 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
                 "collection": "files",
                 "resource_id": fileid
             },
-            "client": "testClient",
-            "vis_config_data": visualization_config_data,
-            "visualization": preview_id,
-            "component_name": "basic-image-component"
+            "client": client.host,
+            "parameters": visualization_config_data,
+            "visualization_bytes_ids": [preview_id],
+            "visualization_mimetype": preview_mimetype,
+            "visualization_component_id": visualization_component_id
         })
 
         headers = {
@@ -261,22 +263,10 @@ def upload_thumbnail(connector, client, fileid, thumbnail):
     thumbnail -- the file containing the thumbnail
     """
 
+    # TODO: Update the code below after V2 endpoint for uploading a thumbnail is ready.
     logger = logging.getLogger(__name__)
-    url = client.host + 'api/fileThumbnail?key=' + client.key
-
-    # upload preview
-    with open(thumbnail, 'rb') as inputfile:
-        result = connector.post(url, files={"File": inputfile}, verify=connector.ssl_verify if connector else True)
-    thumbnailid = result.json()['id']
-    logger.debug("thumbnail id = [%s]", thumbnailid)
-
-    # associate uploaded preview with orginal file/dataset
-    if fileid:
-        headers = {'Content-Type': 'application/json'}
-        url = client.host + 'api/files/' + fileid + '/thumbnails/' + thumbnailid + '?key=' + client.key
-        connector.post(url, headers=headers, data=json.dumps({}), verify=connector.ssl_verify if connector else True)
-
-    return thumbnailid
+    logger.info("Thumbnail upload is under construction and currently skipped in Clowder V2 extractors!")
+    pass
 
 
 def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=False):

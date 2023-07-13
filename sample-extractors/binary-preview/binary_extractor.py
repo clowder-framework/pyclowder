@@ -57,12 +57,12 @@ class BinaryPreviewExtractor(Extractor):
         file_id = resource['id']
 
         # create thumbnail image
-        # if 'image_thumbnail' in parameters:
-        #     args = parameters['image_thumbnail']
-        # else:
-        #     args = self.args.image_thumbnail_command
-        # self.execute_command(connector, host, secret_key, inputfile, file_id, resource, False,
-        #                      self.args.image_binary, args, self.args.image_type)
+        if 'image_thumbnail' in parameters:
+            args = parameters['image_thumbnail']
+        else:
+            args = self.args.image_thumbnail_command
+        self.execute_command(connector, host, secret_key, inputfile, file_id, resource, False,
+                             self.args.image_binary, args, self.args.image_type)
 
         # create preview image
         if 'image_preview' in parameters:
@@ -111,10 +111,11 @@ class BinaryPreviewExtractor(Extractor):
                 # upload result
                 if preview:
                     visualization_config_data = dict()
-                    pyclowder.files.upload_preview(connector, host, key, fileid, tmpfile, None, "image/png",
+                    pyclowder.files.upload_preview(connector, host, key, fileid, tmpfile, None, "image/" + ext,
                                                    visualization_name="thumbnail",
                                                    visualization_description="thumbnail",
-                                                   visualization_config_data=visualization_config_data)
+                                                   visualization_config_data=visualization_config_data,
+                                                   visualization_component_id="basic-image-component")
                     connector.status_update(pyclowder.utils.StatusMessage.processing, resource,
                                             "Uploaded preview of type %s" % ext)
                 else:
