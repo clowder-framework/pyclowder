@@ -4,9 +4,10 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](http://semver.org/).
 
-## Unreleased
+## 3.0.1 - 2023-05-25
 
-Fix bug with delete. [#38](https://github.com/clowder-framework/pyclowder/issues/38)
+### Changed
+This version updates Clowder 2 functionality to use API Key headers instead of Bearer tokens.
 
 ## 3.0.0 - 2022-12-16
 This version adds Clowder 2 support and removes the old method of extractor registration in favor of reliance on heartbeats.
@@ -18,7 +19,6 @@ This version adds Clowder 2 support and removes the old method of extractor regi
 ### Removed
 - remove RABBITMQ_EXCHANGE parameter and REGISTRATION_URL parameter.
 - remove DatasetsAPI and object-oriented ClowderClient.
-
 
 ## 2.7.0 - 2023-02-14
 
