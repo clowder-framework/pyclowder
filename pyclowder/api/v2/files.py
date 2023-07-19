@@ -173,33 +173,11 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
     connector.message_process({"type": "file", "id": fileid}, "Uploading file preview.")
     logger = logging.getLogger(__name__)
 
-    # upload visualization URL
-    visualization_url = '%s/api/v2/visualizations?name=%s&description=%s' % (
-        client.host, visualization_name, visualization_description)
-
     preview_id = None
+    visualization_config_id = None
 
     if os.path.exists(previewfile):
-        filename = os.path.basename(previewfile)
-        if preview_mimetype is not None:
-            multipart_encoder_object = MultipartEncoder(
-                fields={'file': (filename, open(previewfile, 'rb'), preview_mimetype)})
-        else:
-            multipart_encoder_object = MultipartEncoder(fields={'file': (filename, open(previewfile, 'rb'))})
-        headers = {'X-API-KEY': client.key,
-                   'Content-Type': multipart_encoder_object.content_type}
-        response = connector.post(visualization_url, data=multipart_encoder_object, headers=headers,
-                                  verify=connector.ssl_verify if connector else True)
 
-        if response.status_code == 200:
-            preview_id = response.json()['id']
-            logger.debug("Uploaded visualization data ID = [%s]", preview_id)
-        else:
-            logger.error("An error occurred when uploading the visualization data to file: " + fileid)
-    else:
-        logger.error("Visualization data file not found")
-
-    if preview_id is not None:
         # upload visualization URL
         visualization_config_url = '%s/api/v2/visualizations/config' % client.host
 
@@ -213,7 +191,6 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
             },
             "client": client.host,
             "parameters": visualization_config_data,
-            "visualization_bytes_ids": [preview_id],
             "visualization_mimetype": preview_mimetype,
             "visualization_component_id": visualization_component_id
         })
@@ -231,6 +208,31 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
             logger.debug("Uploaded visualization config ID = [%s]", visualization_config_id)
         else:
             logger.error("An error occurred when uploading visualization config to file: " + fileid)
+
+        if visualization_config_id is not None:
+
+            # upload visualization URL
+            visualization_url = '%s/api/v2/visualizations?name=%s&description=%s&config=%s' % (
+                client.host, visualization_name, visualization_description, visualization_config_id)
+
+            filename = os.path.basename(previewfile)
+            if preview_mimetype is not None:
+                multipart_encoder_object = MultipartEncoder(
+                    fields={'file': (filename, open(previewfile, 'rb'), preview_mimetype)})
+            else:
+                multipart_encoder_object = MultipartEncoder(fields={'file': (filename, open(previewfile, 'rb'))})
+            headers = {'X-API-KEY': client.key,
+                       'Content-Type': multipart_encoder_object.content_type}
+            response = connector.post(visualization_url, data=multipart_encoder_object, headers=headers,
+                                      verify=connector.ssl_verify if connector else True)
+
+            if response.status_code == 200:
+                preview_id = response.json()['id']
+                logger.debug("Uploaded visualization data ID = [%s]", preview_id)
+            else:
+                logger.error("An error occurred when uploading the visualization data to file: " + fileid)
+    else:
+        logger.error("Visualization data file not found")
 
     return preview_id
 
