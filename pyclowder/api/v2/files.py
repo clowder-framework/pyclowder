@@ -106,7 +106,7 @@ def download_metadata(connector, client, fileid, extractor=None):
     """
 
     filterstring = "" if extractor is None else "?extractor=%s" % extractor
-    url = '%s/api/v2/files/%s/metadata?%s' % (client.host, fileid, filterstring)
+    url = '%s/api/v2/files/%s/metadata%s' % (client.host, fileid, filterstring)
     headers = {"X-API-KEY": client.key}
 
     # fetch data
