@@ -10,15 +10,14 @@ import tempfile
 
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
-from urllib3.filepost import encode_multipart_formdata
-from pyclowder.client import ClowderClient
+
 from pyclowder.datasets import get_file_list
-from pyclowder.collections import get_datasets, get_child_collections
 
 # Some sources of urllib3 support warning suppression, but not all
 try:
     from urllib3 import disable_warnings
     from requests.packages.urllib3.exceptions import InsecureRequestWarning
+
     requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
 except:
     pass
@@ -44,6 +43,7 @@ def get_download_url(connector, client, fileid, intermediatefileid=None, ext="")
     url = '%s/api/v2/files/%s' % (client.host, intermediatefileid)
     return url
 
+
 # pylint: disable=too-many-arguments
 def download(connector, client, fileid, intermediatefileid=None, ext=""):
     """Download file to be processed from Clowder.
@@ -57,8 +57,6 @@ def download(connector, client, fileid, intermediatefileid=None, ext=""):
     """
 
     connector.message_process({"type": "file", "id": fileid}, "Downloading file.")
-
-
 
     # TODO: intermediateid doesn't really seem to be used here, can we remove entirely?
     if not intermediatefileid:
@@ -97,7 +95,7 @@ def download_info(connector, client, fileid):
     return result
 
 
-def download_metadata(connector,client, fileid, extractor=None):
+def download_metadata(connector, client, fileid, extractor=None):
     """Download file JSON-LD metadata from Clowder.
 
     Keyword arguments:
@@ -108,7 +106,7 @@ def download_metadata(connector,client, fileid, extractor=None):
     """
 
     filterstring = "" if extractor is None else "?extractor=%s" % extractor
-    url = '%s/api/v2/files/%s/metadata?%s' % (client.host, fileid, filterstring)
+    url = '%s/api/v2/files/%s/metadata%s' % (client.host, fileid, filterstring)
     headers = {"X-API-KEY": client.key}
 
     # fetch data
@@ -155,11 +153,11 @@ def upload_metadata(connector, client, fileid, metadata):
                             verify=connector.ssl_verify if connector else True)
 
 
-
-# TODO not implemented in v2
 # pylint: disable=too-many-arguments
-def upload_preview(connector, client, fileid, previewfile, previewmetadata=None, preview_mimetype=None):
-    """Upload preview to Clowder.
+def upload_preview(connector, client, fileid, previewfile, previewmetadata=None, preview_mimetype=None,
+                   visualization_name=None, visualization_description=None, visualization_config_data=None,
+                   visualization_component_id=None):
+    """Upload visualization to Clowder.
 
     Keyword arguments:
     connector -- connector information, used to get missing parameters and send status updates
@@ -173,36 +171,71 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
     """
 
     connector.message_process({"type": "file", "id": fileid}, "Uploading file preview.")
-
     logger = logging.getLogger(__name__)
-    headers = {'Content-Type': 'application/json'}
 
-    # upload preview
-    url = '%s/api/previews?key=%s' % (client.host, client.key)
-    with open(previewfile, 'rb') as filebytes:
-        # If a custom preview file MIME type is provided, use it to generate the preview file object.
-        if preview_mimetype is not None:
-            result = connector.post(url, files={"File": (os.path.basename(previewfile), filebytes, preview_mimetype)},
-                                    verify=connector.ssl_verify if connector else True)
+    preview_id = None
+    visualization_config_id = None
+
+    if os.path.exists(previewfile):
+
+        # upload visualization URL
+        visualization_config_url = '%s/api/v2/visualizations/config' % client.host
+
+        if visualization_config_data is None:
+            visualization_config_data = dict()
+
+        payload = json.dumps({
+            "resource": {
+                "collection": "files",
+                "resource_id": fileid
+            },
+            "client": client.host,
+            "parameters": visualization_config_data,
+            "visualization_mimetype": preview_mimetype,
+            "visualization_component_id": visualization_component_id
+        })
+
+        headers = {
+            "X-API-KEY": client.key,
+            "Content-Type": "application/json"
+        }
+
+        response = connector.post(visualization_config_url, headers=headers, data=payload,
+                                  verify=connector.ssl_verify if connector else True)
+
+        if response.status_code == 200:
+            visualization_config_id = response.json()['id']
+            logger.debug("Uploaded visualization config ID = [%s]", visualization_config_id)
         else:
-            result = connector.post(url, files={"File": filebytes}, verify=connector.ssl_verify if connector else True)
+            logger.error("An error occurred when uploading visualization config to file: " + fileid)
 
-    previewid = result.json()['id']
-    logger.debug("preview id = [%s]", previewid)
+        if visualization_config_id is not None:
 
-    # associate uploaded preview with orginal file
-    if fileid and not (previewmetadata and 'section_id' in previewmetadata and previewmetadata['section_id']):
-        url = '%s/api/files/%s/previews/%s?key=%s' % (client.host, fileid, previewid, client.key)
-        result = connector.post(url, headers=headers, data=json.dumps({}),
-                                verify=connector.ssl_verify if connector else True)
+            # upload visualization URL
+            visualization_url = '%s/api/v2/visualizations?name=%s&description=%s&config=%s' % (
+                client.host, visualization_name, visualization_description, visualization_config_id)
 
-    # associate metadata with preview
-    if previewmetadata is not None:
-        url = '%s/api/previews/%s/metadata?key=%s' % (client.host, previewid, client.key)
-        result = connector.post(url, headers=headers, data=json.dumps(previewmetadata),
-                                verify=connector.ssl_verify if connector else True)
+            filename = os.path.basename(previewfile)
+            if preview_mimetype is not None:
+                multipart_encoder_object = MultipartEncoder(
+                    fields={'file': (filename, open(previewfile, 'rb'), preview_mimetype)})
+            else:
+                multipart_encoder_object = MultipartEncoder(fields={'file': (filename, open(previewfile, 'rb'))})
+            headers = {'X-API-KEY': client.key,
+                       'Content-Type': multipart_encoder_object.content_type}
+            response = connector.post(visualization_url, data=multipart_encoder_object, headers=headers,
+                                      verify=connector.ssl_verify if connector else True)
 
-    return previewid
+            if response.status_code == 200:
+                preview_id = response.json()['id']
+                logger.debug("Uploaded visualization data ID = [%s]", preview_id)
+            else:
+                logger.error("An error occurred when uploading the visualization data to file: " + fileid)
+    else:
+        logger.error("Visualization data file not found")
+
+    return preview_id
+
 
 # TODO not implemented in v2
 def upload_tags(connector, client, fileid, tags):
@@ -222,6 +255,7 @@ def upload_tags(connector, client, fileid, tags):
     result = connector.post(url, headers=headers, data=json.dumps(tags),
                             verify=connector.ssl_verify if connector else True)
 
+
 # TODO not implemented in v2
 def upload_thumbnail(connector, client, fileid, thumbnail):
     """Upload thumbnail to Clowder.
@@ -234,22 +268,10 @@ def upload_thumbnail(connector, client, fileid, thumbnail):
     thumbnail -- the file containing the thumbnail
     """
 
+    # TODO: Update the code below after V2 endpoint for uploading a thumbnail is ready.
     logger = logging.getLogger(__name__)
-    url = client.host + 'api/fileThumbnail?key=' + client.key
-
-    # upload preview
-    with open(thumbnail, 'rb') as inputfile:
-        result = connector.post(url, files={"File": inputfile}, verify=connector.ssl_verify if connector else True)
-    thumbnailid = result.json()['id']
-    logger.debug("thumbnail id = [%s]", thumbnailid)
-
-    # associate uploaded preview with orginal file/dataset
-    if fileid:
-        headers = {'Content-Type': 'application/json'}
-        url = client.host + 'api/files/' + fileid + '/thumbnails/' + thumbnailid + '?key=' + client.key
-        connector.post(url, headers=headers, data=json.dumps({}), verify=connector.ssl_verify if connector else True)
-
-    return thumbnailid
+    logger.info("Thumbnail upload is under construction and currently skipped in Clowder V2 extractors!")
+    pass
 
 
 def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=False):
@@ -281,10 +303,10 @@ def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=Fa
     if os.path.exists(filepath):
         filename = os.path.basename(filepath)
         m = MultipartEncoder(
-            fields={'file': (filename, open(filepath, 'rb'))}
+            fields={'File': (filename, open(filepath, 'rb'))}
         )
         headers = {"X-API-KEY": client.key,
-                    'Content-Type': m.content_type}
+                   'Content-Type': m.content_type}
         result = connector.post(url, data=m, headers=headers,
                                 verify=connector.ssl_verify if connector else True)
 
@@ -321,7 +343,7 @@ def _upload_to_dataset_local(connector, client, datasetid, filepath):
             fields={'file': (filename, open(filepath, 'rb'))}
         )
         headers = {"X-API-KEY": client.key,
-                    'Content-Type': m.content_type}
+                   'Content-Type': m.content_type}
         result = connector.post(url, data=m, headers=headers,
                                 verify=connector.ssl_verify if connector else True)
 
