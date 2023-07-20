@@ -2,8 +2,8 @@
 
 All notable changes to this project will be documented in this file.
 
-The format is based on [Keep a Changelog](http://keepachangelog.com/)
-and this project adheres to [Semantic Versioning](http://semver.org/).
+The format is based on [Keep a Changelog](https://keepachangelog.com/)
+and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
@@ -11,6 +11,10 @@ and this project adheres to [Semantic Versioning](http://semver.org/).
 
 - Support for Clowder V2 visualization and visualization config
   endpoints. [#70](https://github.com/clowder-framework/pyclowder/issues/70)
+
+### Fixed
+
+- fix bug with delete. [#38](https://github.com/clowder-framework/pyclowder/issues/38)
 
 ## 3.0.1 - 2023-05-25
 
