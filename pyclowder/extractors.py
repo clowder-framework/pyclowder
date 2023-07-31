@@ -258,7 +258,6 @@ class Extractor(object):
         if clowder_version == 2.0:
             new_extractor_info = self._get_extractor_info_v2()
             md = dict()
-            md["file_version"] = 1
             if contexts is not None:
                 md["context"] = [context_url] + contexts
             md["context_url"] = context_url
