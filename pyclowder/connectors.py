@@ -340,7 +340,7 @@ class Connector(object):
             for ds_file in missing_files:
                 # Download file to temp directory
                 inputfile = pyclowder.files.download(self, host, secret_key, ds_file['id'], ds_file['id'],
-                                                     ds_file['file_ext'])
+                                                     ds_file['file_ext'], tracking=False)
                 # Also get file metadata in format expected by extractor
                 (file_md_dir, file_md_tmp) = self._download_file_metadata(host, secret_key, ds_file['id'],
                                                                           ds_file['filepath'])
@@ -426,8 +426,9 @@ class Connector(object):
                                 file_path = self._check_for_local_file(file_metadata)
                                 if not file_path:
                                     file_path = pyclowder.files.download(self, host, secret_key, resource["id"],
-                                                                             resource["intermediate_id"],
-                                                                             resource["file_ext"])
+                                                                         resource["intermediate_id"],
+                                                                         resource["file_ext"],
+                                                                         tracking=False)
                                 else:
                                     found_local = True
                                 resource['local_paths'] = [file_path]

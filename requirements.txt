@@ -4,7 +4,7 @@
 #
 #    pip-compile
 #
-certifi==2021.10.8
+certifi==2022.12.7
     # via requests
 charset-normalizer==2.0.10
     # via requests
@@ -12,9 +12,9 @@ idna==3.3
     # via requests
 pika==1.2.0
     # via pyclowder (setup.py)
-pyyaml==5.4.1
+pyyaml
     # via pyclowder (setup.py)
-requests==2.26.0
+requests==2.31.0
     # via
     #   pyclowder (setup.py)
     #   requests-toolbelt

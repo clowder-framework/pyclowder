@@ -50,7 +50,7 @@ def delete(connector, host, key, datasetid):
     if clowder_version == 2:
         result = v2datasets.delete(connector, client, datasetid)
     else:
-        result = v2datasets.delete(connector, client, datasetid)
+        result = v1datasets.delete(connector, client, datasetid)
     result.raise_for_status()
 
     return json.loads(result.text)

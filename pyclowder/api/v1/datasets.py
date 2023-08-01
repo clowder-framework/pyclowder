@@ -4,8 +4,6 @@ import os
 import tempfile
 
 import requests
-import pyclowder.api.v2.datasets as v2datasets
-import pyclowder.api.v1.datasets as v1datasets
 from pyclowder.client import ClowderClient
 from pyclowder.collections import get_datasets, get_child_collections, delete as delete_collection
 from pyclowder.utils import StatusMessage
@@ -63,9 +61,7 @@ def delete(connector, client, datasetid):
     client -- ClowderClient containing authentication credentials
     datasetid -- the dataset to delete
     """
-    headers = {"Authorization": "Bearer " + client.key}
-
-    url = "%s/api/v2/datasets/%s" % (client.host, datasetid)
+    url = "%s/api/datasets/%s?key=%s" % (client.host, datasetid, client.key)
 
     result = requests.delete(url, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
@@ -127,13 +123,11 @@ def download_metadata(connector, client, datasetid, extractor=None):
     datasetid -- the dataset to fetch metadata of
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
-    headers = {"Authorization": "Bearer " + client.key}
-
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = '%s/api/v2/datasets/%s/metadata' % (client.host, datasetid)
+    url = '%s/api/datasets/%s/metadata?key=%s' % (client.host, datasetid, client.key + filterstring)
 
     # fetch data
-    result = requests.get(url, stream=True, headers=headers,
+    result = requests.get(url, stream=True,
                           verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
@@ -147,12 +141,10 @@ def get_info(connector, client, datasetid):
     client -- ClowderClient containing authentication credentials
     datasetid -- the dataset to get info of
     """
-    headers = {"Authorization": "Bearer " + client.key}
 
-    url = "%s/api/v2/datasets/%s" % (client.host, datasetid)
+    url = "%s/api/datasets/%s?key=%s" % (client.host, datasetid, client.key)
 
-    result = requests.get(url, headers=headers,
-                          verify=connector.ssl_verify if connector else True)
+    result = requests.get(url, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     return json.loads(result.text)
@@ -165,11 +157,9 @@ def get_file_list(connector, client, datasetid):
     client -- ClowderClient containing authentication credentials
     datasetid -- the dataset to get filelist of
     """
-    headers = {"Authorization": "Bearer " + client.key}
+    url = "%s/api/datasets/%s/files?key=%s" % (client.host, datasetid, client.key)
 
-    url = "%s/api/v2/datasets/%s/files" % (client.host, datasetid)
-
-    result = requests.get(url, headers=headers, verify=connector.ssl_verify if connector else True)
+    result = requests.get(url, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     return json.loads(result.text)
@@ -184,14 +174,11 @@ def remove_metadata(connector, client, datasetid, extractor=None):
     extractor -- extractor name to filter deletion
                     !!! ALL JSON-LD METADATA WILL BE REMOVED IF NO extractor PROVIDED !!!
     """
-    headers = {"Authorization": "Bearer " + client.key}
-
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = '%s/api/v2/datasets/%s/metadata' % (client.host, datasetid)
+    url = '%s/api/datasets/%s/metadata?key=%s' % (client.host, datasetid, client.key)
 
     # fetch data
-    result = requests.delete(url, stream=True, headers=headers,
-                             verify=connector.ssl_verify if connector else True)
+    result = requests.delete(url, stream=True, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
 def submit_extraction(connector, client, datasetid, extractorname):
@@ -203,10 +190,9 @@ def submit_extraction(connector, client, datasetid, extractorname):
     datasetid -- the dataset UUID to submit
     extractorname -- registered name of extractor to trigger
     """
-    headers = {'Content-Type': 'application/json',
-               "Authorization": "Bearer " + client.key}
+    headers = {'Content-Type': 'application/json'}
 
-    url = "%s/api/v2/datasets/%s/extractions?key=%s" % (client.host, datasetid)
+    url = "%s/api/datasets/%s/extractions?key=%s" % (client.host, datasetid, client.key)
 
     result = requests.post(url,
                            headers=headers,
@@ -266,11 +252,10 @@ def upload_metadata(connector, client, datasetid, metadata):
     datasetid -- the dataset that is currently being processed
     metadata -- the metadata to be uploaded
     """
-    headers = {'Content-Type': 'application/json',
-               "Authorization": "Bearer " + client.key}
+    headers = {'Content-Type': 'application/json'}
     connector.message_process({"type": "dataset", "id": datasetid}, "Uploading dataset metadata.")
 
-    url = '%s/api/v2/datasets/%s/metadata' % (client.host, datasetid)
+    url = '%s/api/datasets/%s/metadata?key=%s' % (client.host, datasetid, client.key)
     result = requests.post(url, headers=headers, data=json.dumps(metadata),
                            verify=connector.ssl_verify if connector else True)
     result.raise_for_status()

@@ -12,10 +12,18 @@ create new extractors.
 
 ## Setup
 
+It is recommended to create a Python virtual environment using the following commands before installing PyClowder.
+
+```shell
+python3 -m venv venv
+source venv/bin/activate
+pip install --upgrade pip
+```
+
 Install using pip (for most recent versions see: https://pypi.org/project/pyclowder/):
 
 ```
-pip install pyclowder==2.6.0
+pip install pyclowder==2.7.0
 ```
 
 Install pyClowder on your system by cloning this repo:
@@ -26,14 +34,17 @@ cd pyclowder
 pip install -r requirements.txt
 python setup.py install
 ```
+
 or directly from GitHub:
+
 ```
 pip install -r https://raw.githubusercontent.com/clowder-framework/pyclowder/master/requirements.txt git+https://github.com/clowder-framework/pyclowder.git
 ```
 
 ## Quickstart example
 
-See the [README](https://github.com/clowder-framework/pyclowder/tree/master/sample-extractors/wordcount#readme) in `sample-extractors/wordcount`. Using Docker, no install is required.
+See the [README](https://github.com/clowder-framework/pyclowder/tree/master/sample-extractors/wordcount#readme)
+in `sample-extractors/wordcount`. Using Docker, no install is required.
 
 ## Example Extractor
 
@@ -160,7 +171,7 @@ extractor_info.json, and instead bind only by extractor name. Assuming no other 
 extractor instance will then only be triggered via manual or direct messages (i.e. using extractor name), and not by
 upload events in Clowder.
 
-Note however that if any other instances of the extractor are running on the same RabbitMQ queue without --no-bind, 
+Note however that if any other instances of the extractor are running on the same RabbitMQ queue without --no-bind,
 they will still bind by file type as normal regardless of previously existing instances with --no-bind, so use caution
 when running multiple instances of one extractor while using --no-bind.
 
@@ -191,24 +202,24 @@ argument, the logfile that is being monitored to send feedback back to clowder. 
 
 ## LocalConnector
 
-The Local connector will execute an extractor as a standalone program. This can be used to process files that are 
-present in a local hard drive. After extracting the metadata, it stores the generated metadata in an output file in the 
+The Local connector will execute an extractor as a standalone program. This can be used to process files that are
+present in a local hard drive. After extracting the metadata, it stores the generated metadata in an output file in the
 local drive. This connector takes two arguments:
 
 * --input-file-path [REQUIRED] : Full path of the local input file that needs to be processed.
-* --output-file-path [OPTIONAL] : Full path of the output file (.json) to store the generated metadata. If no output 
-file path is provided, it will create a new file with the name <input_file_with_extension>.json in the same directory 
-as that of the input file.
+* --output-file-path [OPTIONAL] : Full path of the output file (.json) to store the generated metadata. If no output
+  file path is provided, it will create a new file with the name <input_file_with_extension>.json in the same directory
+  as that of the input file.
 
 # Clowder API wrappers
 
 Besides code to create extractors there are also functions that wrap the clowder API. They are broken up into modules
-that map to the routes endpoint of clowder, for example /api/files/:id/download will be in the clowder.files package.
+that map to the routes endpoint of clowder, for example /api/files/:id/download will be in the `clowder.files` package.
 
 ## utils
 
 The clowder.utils package contains some utility functions that should make it easier to create new code that works as
-an extractor or code that interacts with clowder. One of these functions is setup_logging, which will initialize the
+an extractor or code that interacts with clowder. One of these functions is `setup_logging`, which will initialize the
 logging system for you. The logging function takes a single argument that can be None. The argument is either a pointer
 to a file that is read with the configuration options.
 
@@ -216,10 +227,12 @@ to a file that is read with the configuration options.
 
 # Dockerfile
 
-We recommend following the instructions at [clowder/generator](https://github.com/clowder-framework/generator) to build a Docker image from your Simple Extractor.
+We recommend following the instructions at [clowder/generator](https://github.com/clowder-framework/generator) to build
+a Docker image from your Simple Extractor.
 
-You can also use the pyclowder:onbuild Docker image to easily convert your extractor into a docker container. This image is no longer maintained so it is recommeded to either use the clowder/generator linked above or build your own Dockerfile by choosing your own base image and installing pyClowder as described below.
-
+You can also use the pyclowder:onbuild Docker image to easily convert your extractor into a docker container. This image
+is no longer maintained, so it is recommended to either use the clowder/generator linked above or build your own
+Dockerfile by choosing your own base image and installing pyClowder as described below.
 
 **This is deprecated and the onbuild image is no longer maintained**
 If you build the extractor as using the pyclowder:onbuild image, you will only need the following Dockerfile
@@ -232,14 +245,15 @@ ENV MAIN_SCRIPT="wordcount.py"
 
 The main piece is the MAIN_SCRIPT which should point to the python file that holds your main function.
 
-If you need additional packages installed, you will need a file called packages.apt with in this file a list of all
-packages that need to be installed. The docker build process will use this file to install those pacakges first in
+If you need additional packages installed, you will need a file called `packages.apt` with in this file a list of all
+packages that need to be installed. The docker build process will use this file to install those packages first in
 the docker container.
 
-If you need any python packages installed you will need to create file called requiremenets.txt. If this file exists
+If you need any python packages installed you will need to create file called requirements.txt. If this file exists
 the docker build process will use `pip install -r requirements.txt` to install these packages.
 
-To use the latest version of pyClowder we recommend choosing a base image of your choice and install pyClowder by adding it to the requirements.txt file. An example Dockerfile is below:
+To use the latest version of pyClowder we recommend choosing a base image of your choice and install pyClowder by adding
+it to the requirements.txt file. An example Dockerfile is below:
 
 ```
 # Base image
@@ -258,44 +272,57 @@ COPY <MY.CODE>.py extractor_info.json /home/clowder/
 # Command to be run when container is run
 CMD python3 <MY.CODE>.py
 ```
-## SimpleExtractor
-Motivation: design and implement a simple extractor to bridge Python developer and knowledge of PyClowder library. It requires little effort for Python developers to wrap their python code into Clowder's extractors.
 
-Simple extractors take developer defined main function as input parameter to do extraction and then parse and pack extraction's output into Simple extractor defined metadata data-struct and submit back to Clowder.
+## SimpleExtractor
+
+Motivation: design and implement a simple extractor to bridge Python developer and knowledge of PyClowder library. It
+requires little effort for Python developers to wrap their python code into Clowder's extractors.
+
+Simple extractors take developer defined main function as input parameter to do extraction and then parse and pack
+extraction's output into Simple extractor defined metadata data-struct and submit back to Clowder.
 
 Users' function must have to return a ``dict'' object containing metdata and previews.
+
 ```markdown
 result = {
-  'metadata': {},
-  'previews': [
-      'filename',
-      {'file': 'filename'},
-      {'file': 'filename', 'metadata': {}, 'mimetype': 'image/jpeg'}
-  ]}
+'metadata': {},
+'previews': [
+'filename',
+{'file': 'filename'},
+{'file': 'filename', 'metadata': {}, 'mimetype': 'image/jpeg'}
+]}
 ```
 
-### Example: 
-`wordcount-simpleextractor` is the simplest example to illustrate how to wrap existing Python code as a Simple Extractor.
+### Example:
 
-wordcount.py is regular python file which is defined and provided by Python developers. In the code, wordcount invoke `wc` command to process input file to extract lines, words, characters. It packs metadata into python dict.
+`wordcount-simple-extractor` is the simplest example to illustrate how to wrap existing Python code as a Simple
+Extractor.
+
+wordcount.py is regular python file which is defined and provided by Python developers. In the code, wordcount
+invoke `wc` command to process input file to extract lines, words, characters. It packs metadata into python dict.
+
 ```markdown
 import subprocess
-  
+
 def wordcount(input_file):
-    result = subprocess.check_output(['wc', input_file], stderr=subprocess.STDOUT)
-    (lines, words, characters, _) = result.split()
-    metadata = {
-        'lines': lines,
-        'words': words,
-        'characters': characters
-    }
-    result = {
-        'metadata': metadata
-    }
-    return result
+result = subprocess.check_output(['wc', input_file], stderr=subprocess.STDOUT)
+(lines, words, characters, _) = result.split()
+metadata = {
+'lines': lines,
+'words': words,
+'characters': characters
+}
+result = {
+'metadata': metadata
+}
+return result
 ```
 
-To build wordcount as a an extractor docker image, users just simply assign two environment variables in Dockerfile shown below. EXTRACTION_FUNC is environment variable and has to be assigned as extraction function, where in wordcount.py, the extraction function is `wordcount`. Environment variable EXTRACTION_MODULE is the name of module file containing the definition of extraction function.
+To build wordcount as an extractor docker image, users just simply assign two environment variables in Dockerfile shown
+below. EXTRACTION_FUNC is environment variable and has to be assigned as extraction function, where in wordcount.py, the
+extraction function is `wordcount`. Environment variable EXTRACTION_MODULE is the name of module file containing the
+definition of extraction function.
+
 ```markdown
 FROM clowder/extractors-simple-extractor:onbuild
 
