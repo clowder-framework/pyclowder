@@ -11,6 +11,7 @@ import tempfile
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
+from pyclowder.client import ClowderClient
 from pyclowder.collections import get_datasets, get_child_collections
 from pyclowder.datasets import get_file_list
 
@@ -94,6 +95,19 @@ def download_info(connector, client, fileid):
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
 
     return result
+
+def download_summary(connector, host, key, fileid):
+    """Download file summary  from Clowder. It's the same as download_info. We have different names for the
+    same functionality for v2. To be consistent, we are keeping this method in v1,
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    fileid -- the file to fetch metadata of
+    """
+    client = ClowderClient(host=host, key=key)
+    result = download_info(connector, client, fileid)
+    return result.json()
 
 
 def download_metadata(connector, client, fileid, extractor=None):
