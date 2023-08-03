@@ -104,7 +104,7 @@ def download_summary(connector, client, fileid):
     """
 
     url = '%s/api/v2/files/%s/summary' % (client.host, fileid)
-    headers = {"Authorization": "Bearer " + client.key}
+    headers = {"X-API-KEY": client.key}
     # fetch data
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
 

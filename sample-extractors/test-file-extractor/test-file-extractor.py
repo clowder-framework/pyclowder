@@ -49,7 +49,7 @@ class TestFileExtractor(Extractor):
         # Download metadata of file
         downloaded_metadata = pyclowder.files.download_metadata(connector, host, secret_key, file_id)
         logger.info("Downloaded metadata : %s", downloaded_metadata)
-        if sample_metadata in (metadata['contents']for metadata in downloaded_metadata):
+        if sample_metadata in (metadata['content']for metadata in downloaded_metadata):
             logger.info("Success in uploading and downloading file metadata")
         else:
             logger.error("Error in uploading/downloading file metadata")
