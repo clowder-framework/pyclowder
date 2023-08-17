@@ -318,12 +318,12 @@ def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=Fa
 
     if os.path.exists(filepath):
         filename = os.path.basename(filepath)
-        m = MultipartEncoder(
-            fields={'File': (filename, open(filepath, 'rb'))}
-        )
-        headers = {"X-API-KEY": client.key,
-                   'Content-Type': m.content_type}
-        result = connector.post(url, data=m, headers=headers,
+        # m = MultipartEncoder(
+        #     fields={'File': (filename, open(filepath, 'rb'))}
+        # )
+        file_data = {"file": open(filepath, 'rb')}
+        headers = {"X-API-KEY": client.key}
+        result = connector.post(url, files=file_data, headers=headers,
                                 verify=connector.ssl_verify if connector else True)
 
         uploadedfileid = result.json()['id']
