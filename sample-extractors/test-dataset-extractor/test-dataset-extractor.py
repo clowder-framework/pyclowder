@@ -65,6 +65,19 @@ class TestDatasetExtractor(Extractor):
         else:
             logger.info("Metadata: %s", dataset_metadata)
 
+        # Upload a preview to dataset
+        # Local file path to file which you want to upload to dataset for preview
+        preview_file_path = os.path.join(os.getcwd(), 'preview_file.jpeg')
+        preview_id = pyclowder.datasets.upload_preview(connector, host, secret_key, dataset_id, preview_file_path, None,
+                                                       "image/jpeg", visualization_name="test-dataset-extractor",
+                                                       visualization_component_id="basic-image-component")
+        if preview_id is None:
+            logger.info("Preview upload failed")
+        else:
+            logger.info("Preview %s uploaded to dataset successfully ", preview_id)
+
+
+
 
 if __name__ == "__main__":
     extractor = TestDatasetExtractor()

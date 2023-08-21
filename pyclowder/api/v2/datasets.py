@@ -266,7 +266,7 @@ def upload_preview(connector, client, datasetid, previewfile, previewmetadata=No
 
         payload = json.dumps({
             "resource": {
-                "collection": "dataset",
+                "collection": "datasets",
                 "resource_id": datasetid
             },
             "client": client.host,

@@ -22,6 +22,7 @@ if clowder_version == 2:
 else:
     import pyclowder.api.v1.datasets as datasets
 
+
 def create_empty(connector, host, key, datasetname, description, parentid=None, spaceid=None):
     """Create a new dataset in Clowder.
 
@@ -223,3 +224,29 @@ def upload_metadata(connector, host, key, datasetid, metadata):
     """
     client = ClowderClient(host=host, key=key)
     datasets.upload_metadata(connector, client, datasetid, metadata)
+
+
+def upload_preview(connector, host, key, datasetid, previewfile, previewmetadata=None, preview_mimetype=None,
+                   visualization_name=None, visualization_description=None, visualization_config_data=None,
+                   visualization_component_id=None):
+    """Upload preview to Clowder.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    datasetid -- the dataset that is currently being processed
+    previewfile -- the file containing the preview
+    previewmetadata -- any metadata to be associated with preview, can contain a section_id
+                    to indicate the section this preview should be associated with.
+    preview_mimetype -- (optional) MIME type of the preview file. By default, this is obtained from the
+                    file itself and this parameter can be ignored. E.g. 'application/vnd.clowder+custom+xml'
+    """
+
+    client = ClowderClient(host=host, key=key)
+    preview_id = datasets.upload_preview(connector, client, datasetid, previewfile, previewmetadata, preview_mimetype,
+                                         visualization_name=visualization_name,
+                                         visualization_description=visualization_description,
+                                         visualization_config_data=visualization_config_data,
+                                         visualization_component_id=visualization_component_id)
+    return preview_id
