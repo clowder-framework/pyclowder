@@ -94,6 +94,22 @@ def download_info(connector, client, fileid):
 
     return result
 
+def download_summary(connector, client, fileid):
+    """Download file summary  from Clowder.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    client -- ClowderClient containing authentication credentials
+    fileid -- the file to fetch metadata of
+    """
+
+    url = '%s/api/v2/files/%s/summary' % (client.host, fileid)
+    headers = {"X-API-KEY": client.key}
+    # fetch data
+    result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
+
+    return result
+
 
 def download_metadata(connector, client, fileid, extractor=None):
     """Download file JSON-LD metadata from Clowder.
@@ -302,12 +318,12 @@ def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=Fa
 
     if os.path.exists(filepath):
         filename = os.path.basename(filepath)
-        m = MultipartEncoder(
-            fields={'File': (filename, open(filepath, 'rb'))}
-        )
-        headers = {"X-API-KEY": client.key,
-                   'Content-Type': m.content_type}
-        result = connector.post(url, data=m, headers=headers,
+        # m = MultipartEncoder(
+        #     fields={'File': (filename, open(filepath, 'rb'))}
+        # )
+        file_data = {"file": open(filepath, 'rb')}
+        headers = {"X-API-KEY": client.key}
+        result = connector.post(url, files=file_data, headers=headers,
                                 verify=connector.ssl_verify if connector else True)
 
         uploadedfileid = result.json()['id']
