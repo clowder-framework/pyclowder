@@ -45,8 +45,7 @@ class TestDatasetExtractor(Extractor):
         # Get file list under dataset
         file_list = pyclowder.datasets.get_file_list(connector, host, secret_key, dataset_id)
         logger.info("File list : %s", file_list)
-        is_in = file_id in [file['id'] for file in file_list]
-        if file_id in [file['id'] for file in file_list]:
+        if file_id in list(map(lambda file: file['id'], file_list)):
             logger.info("File uploading and retrieving file list succeeded")
         else:
             logger.error("File uploading/retrieving file list didn't succeed")
