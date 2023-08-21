@@ -69,6 +69,20 @@ def download_info(connector, host, key, fileid):
     return result.json()
 
 
+def download_summary(connector, host, key, fileid):
+    """Download file summary metadata from Clowder.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    fileid -- the file to fetch metadata of
+    """
+    client = ClowderClient(host=host, key=key)
+    result = files.download_summary(connector, client, fileid)
+    return result.json()
+
+
 def download_metadata(connector, host, key, fileid, extractor=None):
     """Download file JSON-LD metadata from Clowder.
 
@@ -240,7 +254,7 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
     """
     client = ClowderClient(host=host, key=key)
     if clowder_version == 2:
-        files.upload_to_dataset(connector, client, datasetid, filepath, check_duplicate)
+        return files.upload_to_dataset(connector, client, datasetid, filepath, check_duplicate)
     else:
         logger = logging.getLogger(__name__)
 
