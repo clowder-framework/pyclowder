@@ -565,6 +565,23 @@ class Connector(object):
 
         return response
 
+    def patch(self, url, data=None, json_data=None, raise_status=True, **kwargs):
+        """
+        This methods wraps the Python requests PATCH method
+        :param url: URl to use in PATCH request
+        :param data: (optional) data (Dictionary, bytes, or file-like object) to send in the body of PATCH request
+        :param json_data: (optional) json data to send with PATCH request
+        :param raise_status: (optional) If set to True, call raise_for_status. Default is True.
+        :param kwargs: List of other optional arguments to pass to PATCH call
+        :return: Response of the PATCH request
+        """
+
+        response = requests.patch(url, data=data, json=json_data, **kwargs)
+        if raise_status:
+            response.raise_for_status()
+
+        return response
+
     def put(self, url, data=None, raise_status=True, **kwargs):
         """
         This methods wraps the Python requests PUT method

@@ -94,6 +94,7 @@ def download_info(connector, client, fileid):
 
     return result
 
+
 def download_summary(connector, client, fileid):
     """Download file summary  from Clowder.
 
@@ -272,8 +273,7 @@ def upload_tags(connector, client, fileid, tags):
                             verify=connector.ssl_verify if connector else True)
 
 
-# TODO not implemented in v2
-def upload_thumbnail(connector, client, fileid, thumbnail):
+def upload_thumbnail(connector, client, fileid, thumbnailid):
     """Upload thumbnail to Clowder.
 
     Keyword arguments:
@@ -281,13 +281,16 @@ def upload_thumbnail(connector, client, fileid, thumbnail):
     host -- the clowder host, including http and port, should end with a /
     key -- the secret key to login to clowder
     fileid -- the file that the thumbnail should be associated with
-    thumbnail -- the file containing the thumbnail
+    thumbnailid -- the file containing the thumbnail
     """
 
-    # TODO: Update the code below after V2 endpoint for uploading a thumbnail is ready.
-    logger = logging.getLogger(__name__)
-    logger.info("Thumbnail upload is under construction and currently skipped in Clowder V2 extractors!")
-    pass
+    connector.message_process({"type": "file", "id": fileid}, "Uploading thumbnail to file.")
+    headers = {'Content-Type': 'application/json',
+               'X-API-KEY': client.key}
+    url = '%s/api/v2/files/%s/thumbnail/%s' % (client.host, fileid, thumbnailid)
+    result = connector.patch(url, headers=headers,
+                             verify=connector.ssl_verify if connector else True)
+    return result.json()["thumbnail_id"]
 
 
 def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=False):

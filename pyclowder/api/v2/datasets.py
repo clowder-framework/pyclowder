@@ -316,3 +316,22 @@ def upload_preview(connector, client, datasetid, previewfile, previewmetadata=No
 
     return preview_id
 
+def upload_thumbnail(connector, client, datasetid, thumbnailid):
+    """Upload thumbnail to Clowder.
+
+            Keyword arguments:
+            connector -- connector information, used to get missing parameters and send status updates
+            host -- the clowder host, including http and port, should end with a /
+            key -- the secret key to login to clowder
+            datasetid -- the dataset that the thumbnail should be associated with
+            thumbnailid -- the file containing the thumbnail
+            """
+
+    connector.message_process({"type": "dataset", "id": datasetid}, "Uploading thumbnail to dataset.")
+    headers = {'Content-Type': 'application/json',
+               'X-API-KEY': client.key}
+    url = '%s/api/v2/datasets/%s/thumbnail/%s' % (client.host, datasetid, thumbnailid)
+    result = connector.patch(url, headers=headers,
+                             verify=connector.ssl_verify if connector else True)
+    return result.json()["thumbnail_id"]
+
