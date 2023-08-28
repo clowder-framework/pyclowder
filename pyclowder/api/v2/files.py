@@ -273,7 +273,7 @@ def upload_tags(connector, client, fileid, tags):
                             verify=connector.ssl_verify if connector else True)
 
 
-def upload_thumbnail(connector, client, fileid, thumbnailid):
+def upload_thumbnail(connector, client, fileid, thumbnail):
     """Upload thumbnail to Clowder.
 
     Keyword arguments:
@@ -281,16 +281,31 @@ def upload_thumbnail(connector, client, fileid, thumbnailid):
     host -- the clowder host, including http and port, should end with a /
     key -- the secret key to login to clowder
     fileid -- the file that the thumbnail should be associated with
-    thumbnailid -- the file containing the thumbnail
+    thumbnail -- the file containing the thumbnail
     """
 
+    logger = logging.getLogger(__name__)
+
     connector.message_process({"type": "file", "id": fileid}, "Uploading thumbnail to file.")
-    headers = {'Content-Type': 'application/json',
-               'X-API-KEY': client.key}
-    url = '%s/api/v2/files/%s/thumbnail/%s' % (client.host, fileid, thumbnailid)
-    result = connector.patch(url, headers=headers,
-                             verify=connector.ssl_verify if connector else True)
-    return result.json()["thumbnail_id"]
+
+    url = '%s/api/v2/thumbnails' % (client.host)
+
+    if os.path.exists(thumbnail):
+        file_data = {"file": open(thumbnail, 'rb')}
+        headers = {"X-API-KEY": client.key}
+        result = connector.post(url, files=file_data, headers=headers,
+                                verify=connector.ssl_verify if connector else True)
+
+        thumbnailid = result.json()['id']
+        logger.debug("uploaded thumbnail id = [%s]", thumbnailid)
+        headers = {'Content-Type': 'application/json',
+                   'X-API-KEY': client.key}
+        url = '%s/api/v2/files/%s/thumbnail/%s' % (client.host, fileid, thumbnailid)
+        result = connector.patch(url, headers=headers,
+                                 verify=connector.ssl_verify if connector else True)
+        return result.json()["thumbnail_id"]
+    else:
+        logger.error("unable to upload thumbnail %s to file %s", thumbnail, fileid)
 
 
 def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=False):

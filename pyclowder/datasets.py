@@ -252,7 +252,7 @@ def upload_preview(connector, host, key, datasetid, previewfile, previewmetadata
     return preview_id
 
 
-def upload_thumbnail(connector, host, key, datasetid, thumbnailid):
+def upload_thumbnail(connector, host, key, datasetid, thumbnail):
     """Upload thumbnail to Clowder.
 
             Keyword arguments:
@@ -260,9 +260,9 @@ def upload_thumbnail(connector, host, key, datasetid, thumbnailid):
             host -- the clowder host, including http and port, should end with a /
             key -- the secret key to login to clowder
             datasetid -- the dataset that the thumbnail should be associated with
-            thumbnailid -- the file containing the thumbnail
+            thumbnail -- the file containing the thumbnail
             """
     logger = logging.getLogger(__name__)
 
     client = ClowderClient(host=host, key=key)
-    return datasets.upload_thumbnail(connector, client, datasetid, thumbnailid)
+    return datasets.upload_thumbnail(connector, client, datasetid, thumbnail)

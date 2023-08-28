@@ -260,7 +260,7 @@ def upload_metadata(connector, client, datasetid, metadata):
                            verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
-def upload_thumbnail(connector, host, key, datasetid, thumbnailid):
+def upload_thumbnail(connector, host, key, datasetid, thumbnail):
     """Upload thumbnail to Clowder.
 
         Keyword arguments:
@@ -268,7 +268,7 @@ def upload_thumbnail(connector, host, key, datasetid, thumbnailid):
         host -- the clowder host, including http and port, should end with a /
         key -- the secret key to login to clowder
         datasetid -- the dataset that the thumbnail should be associated with
-        thumbnailid -- the file containing the thumbnail
+        thumbnail -- the file containing the thumbnail
         """
     logger = logging.getLogger(__name__)
     logger.info("Upload thumbnails to datasets is not available in V1")
