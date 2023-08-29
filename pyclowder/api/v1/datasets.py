@@ -260,6 +260,40 @@ def upload_metadata(connector, client, datasetid, metadata):
                            verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
+def upload_thumbnail(connector, host, key, datasetid, thumbnail):
+    """Upload thumbnail to Clowder.
+
+        Keyword arguments:
+        connector -- connector information, used to get missing parameters and send status updates
+        host -- the clowder host, including http and port, should end with a /
+        key -- the secret key to login to clowder
+        datasetid -- the dataset that the thumbnail should be associated with
+        thumbnail -- the file containing the thumbnail
+        """
+    logger = logging.getLogger(__name__)
+    logger.info("Upload thumbnails to datasets is not available in V1")
+
+
+def upload_preview(connector, host, key, datasetid, previewfile, previewmetadata=None, preview_mimetype=None,
+                   visualization_name=None, visualization_description=None, visualization_config_data=None,
+                   visualization_component_id=None):
+    """Upload preview to Clowder.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    datasetid -- the dataset that is currently being processed
+    previewfile -- the file containing the preview
+    previewmetadata -- any metadata to be associated with preview, can contain a section_id
+                    to indicate the section this preview should be associated with.
+    preview_mimetype -- (optional) MIME type of the preview file. By default, this is obtained from the
+                    file itself and this parameter can be ignored. E.g. 'application/vnd.clowder+custom+xml'
+    """
+
+    logger = logging.getLogger(__name__)
+    logger.info("Upload preview to datasets is not available in V1")
+
 
 # TODO not done yet, need more testing
 class DatasetsApi(object):

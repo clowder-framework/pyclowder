@@ -9,6 +9,7 @@ import os
 import tempfile
 
 import requests
+from requests_toolbelt.multipart.encoder import MultipartEncoder
 
 from pyclowder.client import ClowderClient
 from pyclowder.collections import get_datasets, get_child_collections, delete as delete_collection
@@ -233,3 +234,120 @@ def upload_metadata(connector, client, datasetid, metadata):
                            verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
+def upload_preview(connector, client, datasetid, previewfile, previewmetadata=None, preview_mimetype=None,
+                   visualization_name=None, visualization_description=None, visualization_config_data=None,
+                   visualization_component_id=None):
+    """Upload visualization to Clowder.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    client -- ClowderClient containing authentication credentials
+    datsetid -- the dataset that is currently being processed
+    previewfile -- the file containing the preview
+    previewmetadata -- any metadata to be associated with preview, can contain a section_id
+                    to indicate the section this preview should be associated with.
+    preview_mimetype -- (optional) MIME type of the preview file. By default, this is obtained from the
+                    file itself and this parameter can be ignored. E.g. 'application/vnd.clowder+custom+xml'
+    """
+
+    connector.message_process({"type": "dataset", "id": datasetid}, "Uploading dataset preview.")
+    logger = logging.getLogger(__name__)
+
+    preview_id = None
+    visualization_config_id = None
+
+    if os.path.exists(previewfile):
+
+        # upload visualization URL
+        visualization_config_url = '%s/api/v2/visualizations/config' % client.host
+
+        if visualization_config_data is None:
+            visualization_config_data = dict()
+
+        payload = json.dumps({
+            "resource": {
+                "collection": "datasets",
+                "resource_id": datasetid
+            },
+            "client": client.host,
+            "parameters": visualization_config_data,
+            "visualization_mimetype": preview_mimetype,
+            "visualization_component_id": visualization_component_id
+        })
+
+        headers = {
+            "X-API-KEY": client.key,
+            "Content-Type": "application/json"
+        }
+
+        response = connector.post(visualization_config_url, headers=headers, data=payload,
+                                  verify=connector.ssl_verify if connector else True)
+
+        if response.status_code == 200:
+            visualization_config_id = response.json()['id']
+            logger.debug("Uploaded visualization config ID = [%s]", visualization_config_id)
+        else:
+            logger.error("An error occurred when uploading visualization config to dataset: " + datasetid)
+
+        if visualization_config_id is not None:
+
+            # upload visualization URL
+            visualization_url = '%s/api/v2/visualizations?name=%s&description=%s&config=%s' % (
+                client.host, visualization_name, visualization_description, visualization_config_id)
+
+            filename = os.path.basename(previewfile)
+            if preview_mimetype is not None:
+                multipart_encoder_object = MultipartEncoder(
+                    fields={'file': (filename, open(previewfile, 'rb'), preview_mimetype)})
+            else:
+                multipart_encoder_object = MultipartEncoder(fields={'file': (filename, open(previewfile, 'rb'))})
+            headers = {'X-API-KEY': client.key,
+                       'Content-Type': multipart_encoder_object.content_type}
+            response = connector.post(visualization_url, data=multipart_encoder_object, headers=headers,
+                                      verify=connector.ssl_verify if connector else True)
+
+            if response.status_code == 200:
+                preview_id = response.json()['id']
+                logger.debug("Uploaded visualization data ID = [%s]", preview_id)
+            else:
+                logger.error("An error occurred when uploading the visualization data to dataset: " + datasetid)
+    else:
+        logger.error("Visualization data file not found")
+
+    return preview_id
+
+def upload_thumbnail(connector, client, datasetid, thumbnail):
+    """Upload thumbnail to Clowder.
+
+            Keyword arguments:
+            connector -- connector information, used to get missing parameters and send status updates
+            host -- the clowder host, including http and port, should end with a /
+            key -- the secret key to login to clowder
+            datasetid -- the dataset that the thumbnail should be associated with
+            thumbnail -- the file containing the thumbnail
+            """
+
+    logger = logging.getLogger(__name__)
+
+    connector.message_process({"type": "dataset", "id": datasetid}, "Uploading thumbnail to dataset.")
+
+    url = '%s/api/v2/thumbnails' % (client.host)
+
+    if os.path.exists(thumbnail):
+        file_data = {"file": open(thumbnail, 'rb')}
+        headers = {"X-API-KEY": client.key}
+        result = connector.post(url, files=file_data, headers=headers,
+                                verify=connector.ssl_verify if connector else True)
+
+        thumbnailid = result.json()['id']
+        logger.debug("uploaded thumbnail id = [%s]", thumbnailid)
+
+        connector.message_process({"type": "dataset", "id": datasetid}, "Uploading thumbnail to dataset.")
+        headers = {'Content-Type': 'application/json',
+                   'X-API-KEY': client.key}
+        url = '%s/api/v2/datasets/%s/thumbnail/%s' % (client.host, datasetid, thumbnailid)
+        result = connector.patch(url, headers=headers,
+                                 verify=connector.ssl_verify if connector else True)
+        return result.json()["thumbnail_id"]
+    else:
+        logger.error("unable to upload thumbnail %s to dataset %s", thumbnail, datasetid)
