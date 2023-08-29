@@ -76,6 +76,14 @@ class TestDatasetExtractor(Extractor):
         else:
             logger.info("Preview %s uploaded to dataset successfully ", preview_id)
 
+        # Uploaing thumbnail
+        thumbnail = "thumbnail.jpeg"
+        thumbnail_id = pyclowder.datasets.upload_thumbnail(connector, host, secret_key, dataset_id, thumbnail)
+        if thumbnail_id is None:
+            logger.info("Error in uploading thumbnail to dataset")
+        else:
+            logger.error("Success in uploading thumbnail to dataset")
+
 
 
 

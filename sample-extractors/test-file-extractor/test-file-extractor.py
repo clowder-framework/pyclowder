@@ -62,6 +62,14 @@ class TestFileExtractor(Extractor):
         else:
             logger.error("Error in downloading file summary")
 
+        # Uploaing thumbnail
+        thumbnail = "thumbnail.jpeg"
+        thumbnail_id = pyclowder.files.upload_thumbnail(connector, host, secret_key, file_id, thumbnail)
+        if thumbnail_id is None:
+            logger.info("Error in uploading thumbnail to file")
+        else:
+            logger.error("Success in uploading thumbnail to file")
+
 
 
 if __name__ == "__main__":
