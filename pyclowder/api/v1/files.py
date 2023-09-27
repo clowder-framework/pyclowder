@@ -295,7 +295,7 @@ def upload_thumbnail(connector, client, fileid, thumbnail):
     """
 
     logger = logging.getLogger(__name__)
-    url = client.host + 'api/fileThumbnail?key=' + client.key
+    url = '%s/api/fileThumbnail?key=%s' % (client.host, client.key)
 
     # upload preview
     with open(thumbnail, 'rb') as inputfile:
@@ -303,10 +303,10 @@ def upload_thumbnail(connector, client, fileid, thumbnail):
     thumbnailid = result.json()['id']
     logger.debug("thumbnail id = [%s]", thumbnailid)
 
-    # associate uploaded preview with orginal file/dataset
+    # associate uploaded preview with original file/dataset
     if fileid:
         headers = {'Content-Type': 'application/json'}
-        url = client.host + 'api/files/' + fileid + '/thumbnails/' + thumbnailid + '?key=' + client.key
+        url = '%s/api/files/%s/thumbnails/%s?key=%s' % (client.host, fileid, thumbnailid, client.key)
         connector.post(url, headers=headers, data=json.dumps({}), verify=connector.ssl_verify if connector else True)
 
     return thumbnailid
