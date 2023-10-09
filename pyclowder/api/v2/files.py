@@ -132,6 +132,22 @@ def download_metadata(connector, client, fileid, extractor=None):
     return result
 
 
+def delete(connector, client , fileid):
+    """Delete file from Clowder.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    client -- ClowderClient containing authentication credentials
+    fileid -- the dataset to delete
+    """
+    headers = {"X-API-KEY": client.key}
+    url = "%s/api/v2/files/%s" % (client.host, fileid)
+
+    result = requests.delete(url, headers=headers, verify=connector.ssl_verify if connector else True)
+    result.raise_for_status()
+
+    return json.loads(result.text)
+
 def submit_extraction(connector, client, fileid, extractorname):
     """Submit file for extraction by given extractor.
 
