@@ -324,7 +324,7 @@ def upload_thumbnail(connector, client, fileid, thumbnail):
         logger.error("unable to upload thumbnail %s to file %s", thumbnail, fileid)
 
 
-def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=False):
+def upload_to_dataset(connector, client, datasetid, filepath, folder_id=None, check_duplicate=False):
     """Upload file to existing Clowder dataset.
 
     Keyword arguments:
@@ -332,6 +332,7 @@ def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=Fa
     client -- ClowderClient containing authentication credentials
     datasetid -- the dataset that the file should be associated with
     filepath -- path to file
+    folder_id -- the folder that the file should be uploaded to
     check_duplicate -- check if filename already exists in dataset and skip upload if so
     """
 
@@ -348,7 +349,7 @@ def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=Fa
         if filepath.startswith(connector.mounted_paths[source_path]):
             return _upload_to_dataset_local(connector, client, datasetid, filepath)
 
-    url = '%s/api/v2/datasets/%s/files' % (client.host, datasetid)
+    url = '%s/api/v2/datasets/%s/files?folder_id=%s' % (client.host, datasetid, folder_id)
 
     if os.path.exists(filepath):
         filename = os.path.basename(filepath)
