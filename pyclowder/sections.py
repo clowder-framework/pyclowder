@@ -5,7 +5,7 @@ This module provides simple wrappers around the clowder Datasets API
 
 import json
 import logging
-
+import posixpath
 import requests
 
 
@@ -23,7 +23,7 @@ def upload(connector, host, key, sectiondata):
     headers = {'Content-Type': 'application/json'}
 
     # upload section
-    url = '%sapi/sections?key=%s' % (host, key)
+    url = posixpath.join(host, 'api/sections?key=%s' % key)
     result = requests.post(url, headers=headers, data=json.dumps(sectiondata),
                            verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
@@ -48,7 +48,7 @@ def upload_tags(connector, host, key, sectionid, tags):
     connector.message_process({"type": "section", "id": sectionid}, "Uploading section tags.")
 
     headers = {'Content-Type': 'application/json'}
-    url = '%sapi/sections/%s/tags?key=%s' % (host, sectionid, key)
+    url = posixpath.join(host, 'api/sections/%s/tags?key=%s' % (sectionid, key))
     result = requests.post(url, headers=headers, data=json.dumps(tags),
                            verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
@@ -69,7 +69,7 @@ def upload_description(connector, host, key, sectionid, description):
                               "Uploading section description.")
 
     headers = {'Content-Type': 'application/json'}
-    url = '%sapi/sections/%s/description?key=%s' % (host, sectionid, key)
+    url = posixpath.join(host, 'api/sections/%s/description?key=%s' % (sectionid, key))
     result = requests.post(url, headers=headers, data=json.dumps(description),
                            verify=connector.ssl_verify if connector else True)
     result.raise_for_status()

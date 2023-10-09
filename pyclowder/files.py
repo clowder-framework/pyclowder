@@ -6,7 +6,7 @@ This module provides simple wrappers around the clowder Files API
 import json
 import logging
 import os
-
+import posixpath
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
@@ -235,7 +235,7 @@ def upload_tags(connector, host, key, fileid, tags):
     connector.message_process({"type": "file", "id": fileid}, "Uploading file tags.")
 
     headers = {'Content-Type': 'application/json'}
-    url = '%sapi/files/%s/tags?key=%s' % (client.host, fileid, client.key)
+    url = posixpath.join(client.host, 'api/files/%s/tags?key=%s' % (fileid, client.key))
     result = connector.post(url, headers=headers, data=json.dumps(tags),
                             verify=connector.ssl_verify if connector else True)
 
@@ -284,7 +284,7 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
             if filepath.startswith(connector.mounted_paths[source_path]):
                 return _upload_to_dataset_local(connector, client.host, client.key, datasetid, filepath)
 
-        url = '%sapi/uploadToDataset/%s?key=%s' % (client.host, datasetid, client.key)
+        url = posixpath.join(client.host, 'api/uploadToDataset/%s?key=%s' % (datasetid, client.key))
 
         if os.path.exists(filepath):
             filename = os.path.basename(filepath)
