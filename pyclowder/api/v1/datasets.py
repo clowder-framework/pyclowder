@@ -2,7 +2,7 @@ import json
 import logging
 import os
 import tempfile
-
+import posixpath
 import requests
 from pyclowder.client import ClowderClient
 from pyclowder.collections import get_datasets, get_child_collections, delete as delete_collection
@@ -22,7 +22,7 @@ def create_empty(connector, client, datasetname, description, parentid=None, spa
     """
     logger = logging.getLogger(__name__)
 
-    url = '%s/api/datasets/createempty?key=%s' % (client.host, client.key)
+    url = posixpath.join(client.host, 'api/datasets/createempty?key=%s' % client.key)
 
     if parentid:
         if spaceid:
@@ -61,7 +61,7 @@ def delete(connector, client, datasetid):
     client -- ClowderClient containing authentication credentials
     datasetid -- the dataset to delete
     """
-    url = "%s/api/datasets/%s?key=%s" % (client.host, datasetid, client.key)
+    url = posixpath.join(client.host, "api/datasets/%s?key=%s" % (datasetid, client.key))
 
     result = requests.delete(url, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
@@ -102,7 +102,7 @@ def download(connector, client, datasetid):
     connector.message_process({"type": "dataset", "id": datasetid}, "Downloading dataset.")
 
     # fetch dataset zipfile
-    url = '%s/api/datasets/%s/download?key=%s' % (client.host, datasetid,client.key)
+    url = posixpath.join(client.host, 'api/datasets/%s/download?key=%s' % datasetid,client.key)
     result = requests.get(url, stream=True,
                           verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
@@ -124,7 +124,7 @@ def download_metadata(connector, client, datasetid, extractor=None):
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = '%s/api/datasets/%s/metadata?key=%s' % (client.host, datasetid, client.key + filterstring)
+    url = posixpath.join(client.host, 'api/datasets/%s/metadata?key=%s' % (datasetid, client.key + filterstring))
 
     # fetch data
     result = requests.get(url, stream=True,
@@ -142,7 +142,7 @@ def get_info(connector, client, datasetid):
     datasetid -- the dataset to get info of
     """
 
-    url = "%s/api/datasets/%s?key=%s" % (client.host, datasetid, client.key)
+    url = posixpath.join(client.host, "api/datasets/%s?key=%s" % (datasetid, client.key))
 
     result = requests.get(url, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
@@ -157,7 +157,7 @@ def get_file_list(connector, client, datasetid):
     client -- ClowderClient containing authentication credentials
     datasetid -- the dataset to get filelist of
     """
-    url = "%s/api/datasets/%s/files?key=%s" % (client.host, datasetid, client.key)
+    url = posixpath.join(client.host, "api/datasets/%s/files?key=%s" % (datasetid, client.key))
 
     result = requests.get(url, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
@@ -175,7 +175,7 @@ def remove_metadata(connector, client, datasetid, extractor=None):
                     !!! ALL JSON-LD METADATA WILL BE REMOVED IF NO extractor PROVIDED !!!
     """
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = '%s/api/datasets/%s/metadata?key=%s' % (client.host, datasetid, client.key)
+    url = posixpath.join(client.host, 'api/datasets/%s/metadata?key=%s' % (datasetid, client.key))
 
     # fetch data
     result = requests.delete(url, stream=True, verify=connector.ssl_verify if connector else True)
@@ -192,7 +192,7 @@ def submit_extraction(connector, client, datasetid, extractorname):
     """
     headers = {'Content-Type': 'application/json'}
 
-    url = "%s/api/datasets/%s/extractions?key=%s" % (client.host, datasetid, client.key)
+    url = posixpath.join(client.host, "api/datasets/%s/extractions?key=%s" % (datasetid, client.key))
 
     result = requests.post(url,
                            headers=headers,
@@ -238,7 +238,7 @@ def upload_tags(connector, client, datasetid, tags):
     connector.status_update(StatusMessage.processing, {"type": "dataset", "id": datasetid}, "Uploading dataset tags.")
 
     headers = {'Content-Type': 'application/json'}
-    url = '%s/api/datasets/%s/tags?key=%s' % (client.host, datasetid, client.key)
+    url = posixpath.join(client.host, 'api/datasets/%s/tags?key=%s' % (client.host, datasetid, client.key))
     result = connector.post(url, headers=headers, data=json.dumps(tags),
                             verify=connector.ssl_verify if connector else True)
 
@@ -255,7 +255,7 @@ def upload_metadata(connector, client, datasetid, metadata):
     headers = {'Content-Type': 'application/json'}
     connector.message_process({"type": "dataset", "id": datasetid}, "Uploading dataset metadata.")
 
-    url = '%s/api/datasets/%s/metadata?key=%s' % (client.host, datasetid, client.key)
+    url = posixpath.join(client.host, 'api/datasets/%s/metadata?key=%s' % (datasetid, client.key))
     result = requests.post(url, headers=headers, data=json.dumps(metadata),
                            verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
