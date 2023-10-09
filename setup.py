@@ -8,7 +8,7 @@ long_description = (here / 'description.rst').read_text(encoding='utf-8')
 
 setup(
     name='pyclowder',
-    version='3.0.4',
+    version='3.0.5',
     description='Python SDK for the Clowder Data Management System',
     long_description=long_description,
 

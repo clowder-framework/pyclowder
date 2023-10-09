@@ -98,6 +98,21 @@ def download_metadata(connector, host, key, fileid, extractor=None):
     return result.json()
 
 
+def delete(connector, host, key, fileid):
+    """Delete file from Clowder.
+
+        Keyword arguments:
+        connector -- connector information, used to get missing parameters and send status updates
+        host -- the clowder host, including http and port, should end with a /
+        key -- the secret key to login to clowder
+        fileid -- the file to delete
+        """
+    client = ClowderClient(host=host, key=key)
+    result = files.delete(connector, client, fileid)
+    result.raise_for_status()
+
+    return json.loads(result.text)
+
 def submit_extraction(connector, host, key, fileid, extractorname):
     """Submit file for extraction by given extractor.
 
