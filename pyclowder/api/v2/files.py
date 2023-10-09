@@ -349,7 +349,9 @@ def upload_to_dataset(connector, client, datasetid, filepath, folder_id=None, ch
         if filepath.startswith(connector.mounted_paths[source_path]):
             return _upload_to_dataset_local(connector, client, datasetid, filepath)
 
-    url = '%s/api/v2/datasets/%s/files?folder_id=%s' % (client.host, datasetid, folder_id)
+    url = '%s/api/v2/datasets/%s/files' % (client.host, datasetid)
+    if folder_id is not None:
+        url = '%s?folder_id=%s' % (url, folder_id)
 
     if os.path.exists(filepath):
         filename = os.path.basename(filepath)
