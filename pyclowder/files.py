@@ -109,8 +109,7 @@ def delete(connector, host, key, fileid):
         """
     client = ClowderClient(host=host, key=key)
     result = files.delete(connector, client, fileid)
-
-    return json.loads(result.text)
+    return result
 
 def submit_extraction(connector, host, key, fileid, extractorname):
     """Submit file for extraction by given extractor.
