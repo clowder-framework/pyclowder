@@ -47,7 +47,6 @@ def delete(connector, host, key, datasetid):
     """
     client = ClowderClient(host=host, key=key)
     result = datasets.delete(connector, client, datasetid)
-    result.raise_for_status()
 
     return json.loads(result.text)
 

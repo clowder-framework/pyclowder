@@ -109,7 +109,6 @@ def delete(connector, host, key, fileid):
         """
     client = ClowderClient(host=host, key=key)
     result = files.delete(connector, client, fileid)
-    result.raise_for_status()
 
     return json.loads(result.text)
 

@@ -96,7 +96,7 @@ def get_datasets(connector, host, key, collectionid):
     datasetid -- the collection to get datasets of
     """
 
-    url = posixpath.join(host, "api/collections/%s/datasets?key=%s" % (host, collectionid, key)
+    url = posixpath.join(host, "api/collections/%s/datasets?key=%s" % (collectionid, key))
 
     result = requests.get(url,
                           verify=connector.ssl_verify if connector else True)
