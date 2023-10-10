@@ -1,0 +1,27 @@
+{
+  "@context": "https://vega.github.io/vega/examples/word-cloud/",
+  "name": "ncsa.word-cloud-extractor",
+  "version": "2.0",
+  "description": "Word cloud extractor using VegaLite. Visualize word cloud out of a csv file with 2 columns.",
+  "author": "Dipannita Dey <ddey2@illinois.edu>",
+  "contributors": [],
+  "contexts": [
+    {
+      "url" : "https://vega.github.io/vega/examples/word-cloud/"
+    }
+  ],
+  "repository": [
+    {
+      "repType": "git",
+      "repUrl": "https://opensource.ncsa.illinois.edu/stash/scm/cats/pyclowder.git"
+    }
+  ],
+  "process": {
+    "file": [
+      "csv"
+    ]
+  },
+  "external_services": [],
+  "dependencies": [],
+  "bibtex": []
+}
