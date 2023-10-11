@@ -238,7 +238,7 @@ def upload_tags(connector, client, datasetid, tags):
     connector.status_update(StatusMessage.processing, {"type": "dataset", "id": datasetid}, "Uploading dataset tags.")
 
     headers = {'Content-Type': 'application/json'}
-    url = posixpath.join(client.host, 'api/datasets/%s/tags?key=%s' % (client.host, datasetid, client.key))
+    url = posixpath.join(client.host, 'api/datasets/%s/tags?key=%s' % (datasetid, client.key))
     result = connector.post(url, headers=headers, data=json.dumps(tags),
                             verify=connector.ssl_verify if connector else True)
 

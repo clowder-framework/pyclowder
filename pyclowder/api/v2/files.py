@@ -211,7 +211,7 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
     if os.path.exists(previewfile):
 
         # upload visualization URL
-        visualization_config_url = posixpath.join(client.host, 'api/v2/visualizations/config' % client.host)
+        visualization_config_url = posixpath.join(client.host, 'api/v2/visualizations/config')
 
         if visualization_config_data is None:
             visualization_config_data = dict()
@@ -244,10 +244,9 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
         if visualization_config_id is not None:
 
             # upload visualization URL
-            visualization_url = url = posixpath.join(client.host,
-                                                     'api/v2/visualizations?name=%s&description=%s&config=%s' % (
-                                                         client.host, visualization_name,
-                                                         visualization_description, visualization_config_id))
+            visualization_url = posixpath.join(client.host,
+                                               'api/v2/visualizations?name=%s&description=%s&config=%s' % (
+                                                   visualization_name, visualization_description, visualization_config_id))
 
             filename = os.path.basename(previewfile)
             if preview_mimetype is not None:
