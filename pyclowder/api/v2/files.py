@@ -324,7 +324,7 @@ def upload_thumbnail(connector, client, fileid, thumbnail):
         logger.error("unable to upload thumbnail %s to file %s", thumbnail, fileid)
 
 
-def upload_to_dataset(connector, client, datasetid, filepath, folder_id=None, check_duplicate=False):
+def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=False, folder_id=None):
     """Upload file to existing Clowder dataset.
 
     Keyword arguments:
