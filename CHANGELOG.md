@@ -5,7 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
-- ## 3.0.6 - 2023-10-09
+
+## 3.0.7 - 2023-10-11
+
+### Added
+
+- Modified v1 and v2 endpoints to ignore trailing slashes on Clowder host URLs.
+
+- ## 3.0.6 - 2023-10-10
 
 ### Added
 

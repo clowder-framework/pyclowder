@@ -7,7 +7,7 @@ import json
 import logging
 import os
 import tempfile
-
+import posixpath
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
@@ -40,7 +40,7 @@ def get_download_url(connector, client, fileid, intermediatefileid=None, ext="")
     if not intermediatefileid:
         intermediatefileid = fileid
 
-    url = '%s/api/v2/files/%s' % (client.host, intermediatefileid)
+    url = posixpath.join(client.host, 'api/v2/files/%s' % intermediatefileid)
     return url
 
 
@@ -62,7 +62,7 @@ def download(connector, client, fileid, intermediatefileid=None, ext=""):
     if not intermediatefileid:
         intermediatefileid = fileid
 
-    url = '%s/api/v2/files/%s' % (client.host, intermediatefileid)
+    url = posixpath.join(client.host, 'api/v2/files/%s' % intermediatefileid)
     headers = {"X-API-KEY": client.key}
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
 
@@ -87,7 +87,7 @@ def download_info(connector, client, fileid):
     fileid -- the file to fetch metadata of
     """
 
-    url = '%s/api/v2/files/%s/metadata' % (client.host, fileid)
+    url = posixpath.join(client.host, 'api/v2/files/%s/metadata' % fileid)
     headers = {"X-API-KEY": client.key}
     # fetch data
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
@@ -104,7 +104,7 @@ def download_summary(connector, client, fileid):
     fileid -- the file to fetch metadata of
     """
 
-    url = '%s/api/v2/files/%s/summary' % (client.host, fileid)
+    url = posixpath.join(client.host, 'api/v2/files/%s/summary' % fileid)
     headers = {"X-API-KEY": client.key}
     # fetch data
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True, headers=headers)
@@ -123,7 +123,7 @@ def download_metadata(connector, client, fileid, extractor=None):
     """
 
     filterstring = "" if extractor is None else "?extractor=%s" % extractor
-    url = '%s/api/v2/files/%s/metadata%s' % (client.host, fileid, filterstring)
+    url = posixpath.join(client.host, 'api/v2/files/%s/metadata%s' % (fileid, filterstring))
     headers = {"X-API-KEY": client.key}
 
     # fetch data
@@ -141,7 +141,7 @@ def delete(connector, client , fileid):
     fileid -- the dataset to delete
     """
     headers = {"X-API-KEY": client.key}
-    url = "%s/api/v2/files/%s" % (client.host, fileid)
+    url = posixpath.join(client.host, 'api/v2/files/%s' % fileid)
 
     result = requests.delete(url, headers=headers, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
@@ -158,10 +158,9 @@ def submit_extraction(connector, client, fileid, extractorname):
     extractorname -- registered name of extractor to trigger
     """
 
-    url = "%s/api/v2/files/%s/extractions?key=%s" % (client.host, fileid, client.key)
+    url = posixpath.join(client.host, "api/v2/files/%s/extractions" % fileid)
     result = connector.post(url,
-                            headers={'Content-Type': 'application/json',
-                                     "X-API-KEY": client.key},
+                            headers={'Content-Type': 'application/json', "X-API-KEY": client.key},
                             data=json.dumps({"extractor": extractorname}),
                             verify=connector.ssl_verify if connector else True)
 
@@ -181,7 +180,7 @@ def upload_metadata(connector, client, fileid, metadata):
     connector.message_process({"type": "file", "id": fileid}, "Uploading file metadata.")
     headers = {'Content-Type': 'application/json',
                'X-API-KEY': client.key}
-    url = '%s/api/v2/files/%s/metadata' % (client.host, fileid)
+    url = posixpath.join(client.host, 'api/v2/files/%s/metadata' % fileid)
     result = connector.post(url, headers=headers, data=json.dumps(metadata),
                             verify=connector.ssl_verify if connector else True)
 
@@ -212,7 +211,7 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
     if os.path.exists(previewfile):
 
         # upload visualization URL
-        visualization_config_url = '%s/api/v2/visualizations/config' % client.host
+        visualization_config_url = posixpath.join(client.host, 'api/v2/visualizations/config')
 
         if visualization_config_data is None:
             visualization_config_data = dict()
@@ -245,8 +244,9 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
         if visualization_config_id is not None:
 
             # upload visualization URL
-            visualization_url = '%s/api/v2/visualizations?name=%s&description=%s&config=%s' % (
-                client.host, visualization_name, visualization_description, visualization_config_id)
+            visualization_url = posixpath.join(client.host,
+                                               'api/v2/visualizations?name=%s&description=%s&config=%s' % (
+                                                   visualization_name, visualization_description, visualization_config_id))
 
             filename = os.path.basename(previewfile)
             if preview_mimetype is not None:
@@ -284,7 +284,7 @@ def upload_tags(connector, client, fileid, tags):
     connector.message_process({"type": "file", "id": fileid}, "Uploading file tags.")
 
     headers = {'Content-Type': 'application/json'}
-    url = '%s/api/files/%s/tags?key=%s' % (client.host, fileid, client.key)
+    url = posixpath.join(client.host, 'api/files/%s/tags?key=%s' % (fileid, client.key))
     result = connector.post(url, headers=headers, data=json.dumps(tags),
                             verify=connector.ssl_verify if connector else True)
 
@@ -304,7 +304,7 @@ def upload_thumbnail(connector, client, fileid, thumbnail):
 
     connector.message_process({"type": "file", "id": fileid}, "Uploading thumbnail to file.")
 
-    url = '%s/api/v2/thumbnails' % (client.host)
+    url = posixpath.join(client.host, 'api/v2/thumbnails')
 
     if os.path.exists(thumbnail):
         file_data = {"file": open(thumbnail, 'rb')}
@@ -316,7 +316,7 @@ def upload_thumbnail(connector, client, fileid, thumbnail):
         logger.debug("uploaded thumbnail id = [%s]", thumbnailid)
         headers = {'Content-Type': 'application/json',
                    'X-API-KEY': client.key}
-        url = '%s/api/v2/files/%s/thumbnail/%s' % (client.host, fileid, thumbnailid)
+        url = posixpath.join(client.host, 'api/v2/files/%s/thumbnail/%s' % (fileid, thumbnailid))
         result = connector.patch(url, headers=headers,
                                  verify=connector.ssl_verify if connector else True)
         return result.json()["thumbnail_id"]
@@ -349,7 +349,7 @@ def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=Fa
         if filepath.startswith(connector.mounted_paths[source_path]):
             return _upload_to_dataset_local(connector, client, datasetid, filepath)
 
-    url = '%s/api/v2/datasets/%s/files' % (client.host, datasetid)
+    url = posixpath.join(client.host, 'api/v2/datasets/%s/files' % datasetid)
     if folder_id is not None:
         url = '%s?folder_id=%s' % (url, folder_id)
 
@@ -381,7 +381,7 @@ def _upload_to_dataset_local(connector, client, datasetid, filepath):
     filepath -- path to file
     """
     logger = logging.getLogger(__name__)
-    url = '%s/api/v2/datatsets/%s/files' % (client.host, datasetid)
+    url = posixpath.join(client.host, 'api/v2/datatsets/%s/files' % datasetid)
 
     if os.path.exists(filepath):
         # Replace local path with remote path before uploading

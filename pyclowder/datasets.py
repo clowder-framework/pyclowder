@@ -6,12 +6,8 @@ This module provides simple wrappers around the clowder Datasets API
 import json
 import logging
 import os
-import tempfile
-
-import requests
+import posixpath
 from pyclowder.client import ClowderClient
-import pyclowder.api.v2.datasets as v2datasets
-import pyclowder.api.v1.datasets as v1datasets
 from pyclowder.collections import get_datasets, get_child_collections, delete as delete_collection
 from pyclowder.utils import StatusMessage
 
@@ -51,9 +47,7 @@ def delete(connector, host, key, datasetid):
     """
     client = ClowderClient(host=host, key=key)
     result = datasets.delete(connector, client, datasetid)
-    result.raise_for_status()
-
-    return json.loads(result.text)
+    return result
 
 
 def delete_by_collection(connector, host, key, collectionid, recursive=True, delete_colls=False):
@@ -207,7 +201,7 @@ def upload_tags(connector, host, key, datasetid, tags):
     connector.status_update(StatusMessage.processing, {"type": "dataset", "id": datasetid}, "Uploading dataset tags.")
 
     headers = {'Content-Type': 'application/json'}
-    url = '%sapi/datasets/%s/tags?key=%s' % (client.host, datasetid, client.key)
+    url = posixpath.join(client.host, 'api/datasets/%s/tags?key=%s' % (datasetid, client.key))
     result = connector.post(url, headers=headers, data=json.dumps(tags),
                             verify=connector.ssl_verify if connector else True)
 
