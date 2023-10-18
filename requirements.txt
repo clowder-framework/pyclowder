@@ -20,5 +20,5 @@ requests==2.31.0
     #   requests-toolbelt
 requests-toolbelt==0.9.1
     # via pyclowder (setup.py)
-urllib3==1.26.8
+urllib3==1.26.18
     # via requests
