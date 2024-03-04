@@ -3,7 +3,7 @@ name: Docker
 # This will run when:
 # - a new release is created, to make sure the right tags of the
 #   docker images are pushed (expects tags to be v1.8.4).
-# - when new code is pushed to main/develop to push the tags
+# - when new code is pushed to master/develop to push the tags
 #   latest and develop
 # - when a pull request is created and updated  to make sure the
 #   Dockerfile is still valid.
@@ -18,7 +18,7 @@ on:
 
   pull_request:
 
-# Certain actions will only run when this is the main repo.
+# Certain actions will only run when this is the master repo.
 env:
   MAIN_REPO: clowder-framework/pyclowder
   DOCKERHUB_ORG: clowder
@@ -56,7 +56,7 @@ jobs:
           # should we push to dockerhub, and is there a README
           DOCKERHUB_PUSH="false"
           DOCKERHUB_README="false"
-          if [ "$BRANCH" == "main" -a "${{ github.repository }}" == "${{ env.MAIN_REPO }}" ]; then
+          if [ "$BRANCH" == "master" -a "${{ github.repository }}" == "${{ env.MAIN_REPO }}" ]; then
             if [ "${{ secrets.DOCKERHUB_USERNAME }}" != "" -a "${{ secrets.DOCKERHUB_PASSWORD }}" != "" ]; then
               DOCKERHUB_PUSH="true"
               if [ -e "${{ matrix.FOLDER }}/README.md" ]; then
@@ -66,7 +66,7 @@ jobs:
           fi
 
           # calculate the version and all tags
-          if [ "$BRANCH" == "main" ]; then
+          if [ "$BRANCH" == "master" ]; then
             VERSION="$(awk '/"version":/ { print $2 }' ${{ matrix.FOLDER }}/extractor_info.json | sed 's/^.*"\([0-9\.]*\)".*$/\1/')"
             tags="latest"
             oldversion=""
