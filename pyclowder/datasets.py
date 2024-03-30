@@ -128,7 +128,7 @@ def get_file_list(connector, host, key, datasetid):
     datasetid -- the dataset to get filelist of
     """
     client = ClowderClient(host=host, key=key)
-    file_list = datasets.get_file_list(connector, client, datasetid)
+    file_list = datasets.get_file_list(connector, client, datasetid)['data']
     return file_list
 
 
