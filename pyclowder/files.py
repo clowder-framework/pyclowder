@@ -248,7 +248,7 @@ def upload_thumbnail(connector, host, key, fileid, thumbnail):
     fileid -- the file that the thumbnail should be associated with
     thumbnail -- the file containing the thumbnail
     """
-    
+
     client = ClowderClient(host=host, key=key)
     thumbnail_id = files.upload_thumbnail(connector, client, fileid, thumbnail)
     return thumbnail_id
@@ -284,6 +284,8 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
                 return _upload_to_dataset_local(connector, client.host, client.key, datasetid, filepath)
 
         url = posixpath.join(client.host, 'api/uploadToDataset/%s?key=%s' % (datasetid, client.key))
+        if folder_id:
+            url += "&folder_id=%s" % folder_id
 
         if os.path.exists(filepath):
             filename = os.path.basename(filepath)
