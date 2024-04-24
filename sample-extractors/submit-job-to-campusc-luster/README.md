@@ -1,0 +1,86 @@
+# Submit job to HPC cluster
+
+This extractor  facilitates users in seamlessly sending jobs to an HPC cluster from Clowder V2. 
+Feel free to adjust the hostname, username, password/private key details in the submitJob.py script. Specify the command
+you want to execute and submit the job. Users can monitor the status and output of the job on Clowder.
+
+For example, this particular extractor submits a job to execute [ED2](https://github.com/EDmodel/) model on 
+[CampusCluster](https://campuscluster.illinois.edu). It generates an output file on the cluster, monitors 
+the live job status, displays the status and output, and transfers the output file to Clowder.
+
+# Docker
+
+This extractor is ready to be run as a docker container, the only dependency is a running Clowder instance. Simply build and run.
+
+1. Start Clowder. For help starting Clowder, see our [getting started guide](https://github.com/clowder-framework/clowder/blob/develop/doc/src/sphinx/userguide/installing_clowder.rst).
+
+2. First build the extractor Docker container:
+
+```
+# from this directory, run:
+
+docker build -t clowder_submitjob .
+```
+
+3. Finally run the extractor:
+
+```
+docker run -t -i --rm --net clowder_clowder -e "RABBITMQ_URI=amqp://guest:guest@rabbitmq:5672/%2f" --name "submitjob" clowder_submitjob
+```
+
+Then open the Clowder web app and run the submitjob extractor on a .txt file (or similar)! Done.
+
+### Python and Docker details
+
+You may use any version of Python 3. Simply edit the first line of the `Dockerfile`, by default it uses `FROM python:3.8`.
+
+Docker flags:
+
+- `--net` links the extractor to the Clowder Docker network (run `docker network ls` to identify your own.)
+- `-e RABBITMQ_URI=` sets the environment variables can be used to control what RabbitMQ server and exchange it will bind itself to. Setting the `RABBITMQ_EXCHANGE` may also help.
+  - You can also use `--link` to link the extractor to a RabbitMQ container.
+- `--name` assigns the container a name visible in Docker Desktop.
+
+## Troubleshooting
+
+**If you run into _any_ trouble**, please reach out on our Clowder Slack in the [#pyclowder channel](https://clowder-software.slack.com/archives/CNC2UVBCP).
+
+Alternate methods of running extractors are below.
+
+# Commandline Execution
+
+To execute the extractor from the command line you will need to have the required packages installed. It is highly recommended to use python virtual environment for this. You will need to create a virtual environment first, then activate it and finally install all required packages.
+
+```
+virtualenv /home/clowder/virtualenv/wordcount
+. /home/clowder/virtualenv/wordcount/bin/activate
+pip install -r /home/clowder/extractors/wordcount/requirements.txt
+```
+
+To start the extractor you will need to load the virtual environment and start the extractor.
+
+```
+. /home/clowder/virtualenv/wordcount/bin/activate
+/home/clowder/extractors/wordcount/wordcount.py
+```
+
+# Systemd Start
+
+The example service file provided in sample-extractors will start the docker container at system startup. This can be used with CoreOS or RedHat systems to make sure the wordcount extractor starts when the machine comes online. This expects the docker system to be installed.
+
+All you need to do is copy clowder-wordcount.service to /etc/systemd/system and run, edit it to set the parameters for rabbitmq and run the following commands:
+
+```
+systemctl enable clowder-wordcount.service
+systemctl start clowder-wordcount.service
+```
+
+To see the log you can use:
+
+```
+journalctl -f -u clowder-wordcount.service
+```
+
+# Upstart
+
+The example conf file provided in sample-extractors will start the extractor on an Ubuntu system. This assumes that the system is setup for commandline execution. This will make it so the wordcount extractor starts when the system boots up. This extractor can be configured by specifying the same environment variables as using in the docker container. Any of the console output will go into /var/log/upstart/wordcount.log.
