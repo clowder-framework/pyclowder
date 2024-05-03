@@ -76,6 +76,8 @@ class Connector(object):
         self.clowder_url = clowder_url
         self.clowder_email = clowder_email
         self.extractor_key = extractor_key
+        if extractor_key:
+            self.extractor_info["unique_key"] = extractor_key
         self.max_retry = max_retry
 
         filename = 'notifications.json'
