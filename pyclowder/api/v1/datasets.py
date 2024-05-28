@@ -124,7 +124,7 @@ def download_metadata(connector, client, datasetid, extractor=None):
     extractor -- extractor name to filter results (if only one extractor's metadata is desired)
     """
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = posixpath.join(client.host, 'api/datasets/%s/metadata?key=%s' % (datasetid, client.key + filterstring))
+    url = posixpath.join(client.host, 'api/datasets/%s/metadata.jsonld?key=%s' % (datasetid, client.key + filterstring))
 
     # fetch data
     result = requests.get(url, stream=True,
@@ -175,7 +175,7 @@ def remove_metadata(connector, client, datasetid, extractor=None):
                     !!! ALL JSON-LD METADATA WILL BE REMOVED IF NO extractor PROVIDED !!!
     """
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = posixpath.join(client.host, 'api/datasets/%s/metadata?key=%s' % (datasetid, client.key))
+    url = posixpath.join(client.host, 'api/datasets/%s/metadata.jsonld?key=%s' % (datasetid, client.key))
 
     # fetch data
     result = requests.delete(url, stream=True, verify=connector.ssl_verify if connector else True)
@@ -255,7 +255,7 @@ def upload_metadata(connector, client, datasetid, metadata):
     headers = {'Content-Type': 'application/json'}
     connector.message_process({"type": "dataset", "id": datasetid}, "Uploading dataset metadata.")
 
-    url = posixpath.join(client.host, 'api/datasets/%s/metadata?key=%s' % (datasetid, client.key))
+    url = posixpath.join(client.host, 'api/datasets/%s/metadata.jsonld?key=%s' % (datasetid, client.key))
     result = requests.post(url, headers=headers, data=json.dumps(metadata),
                            verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
