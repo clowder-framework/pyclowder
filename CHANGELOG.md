@@ -77,6 +77,12 @@ This will result in only those donwloads to be counted by users, not extractors.
 
 - Ask not to track a download from an extractor.
 
+## Unreleased
+
+### Added
+- Add support for `EXTRACTOR_KEY` and `CLOWDER_EMAIL` environment variables to register
+an extractor for just one user.
+
 ## 2.6.0 - 2022-06-14
 
 This will change how clowder sees the extractors. If you have an extractor, and you specify
