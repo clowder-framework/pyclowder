@@ -166,7 +166,7 @@ def get_file_list(connector, client, datasetid):
     result = requests.get(url, headers=headers, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
-    return json.loads(result.text)
+    return json.loads(result.text)['data']
 
 
 def remove_metadata(connector, client, datasetid, extractor=None):
