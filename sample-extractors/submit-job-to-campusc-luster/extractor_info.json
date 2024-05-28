@@ -1,0 +1,27 @@
+{
+  "@context": "http://clowder.ncsa.illinois.edu/contexts/extractors.jsonld",
+  "name": "ncsa.submitjob",
+  "version": "2.0",
+  "description": "SubmitJob extractor. Submits job to Campus Cluster.",
+  "author": "Dipannita Dey <ddey2@illinois.edu>",
+  "contributors": [],
+  "contexts": [
+    {
+    }
+  ],
+  "repository": [
+    {
+      "repType": "git",
+      "repUrl": ""
+    }
+  ],
+  "process": {
+    "file": [
+      "text/*",
+      "application/json"
+    ]
+  },
+  "external_services": [],
+  "dependencies": [],
+  "bibtex": []
+}
