@@ -63,7 +63,7 @@ class Connector(object):
     """
 
     def __init__(self, extractor_name, extractor_info, check_message=None, process_message=None, ssl_verify=True,
-                 mounted_paths=None, clowder_url=None, max_retry=10):
+                 mounted_paths=None, clowder_url=None, max_retry=10, extractor_key=None, clowder_email=None):
         self.extractor_name = extractor_name
         self.extractor_info = extractor_info
         self.check_message = check_message
@@ -74,6 +74,10 @@ class Connector(object):
         else:
             self.mounted_paths = mounted_paths
         self.clowder_url = clowder_url
+        self.clowder_email = clowder_email
+        self.extractor_key = extractor_key
+        if extractor_key:
+            self.extractor_info["unique_key"] = extractor_key
         self.max_retry = max_retry
 
         filename = 'notifications.json'
@@ -625,15 +629,18 @@ class RabbitMQConnector(Connector):
     def __init__(self, extractor_name, extractor_info,
                  rabbitmq_uri, rabbitmq_key=None, rabbitmq_queue=None,
                  check_message=None, process_message=None, ssl_verify=True, mounted_paths=None,
-                 heartbeat=5*60, clowder_url=None, max_retry=10):
+                 heartbeat=10, clowder_url=None, max_retry=10, extractor_key=None, clowder_email=None):
         super(RabbitMQConnector, self).__init__(extractor_name, extractor_info, check_message, process_message,
-                                                ssl_verify, mounted_paths, clowder_url, max_retry)
+                                                ssl_verify, mounted_paths, clowder_url, max_retry, extractor_key, clowder_email)
         self.rabbitmq_uri = rabbitmq_uri
         self.rabbitmq_key = rabbitmq_key
         if rabbitmq_queue is None:
             self.rabbitmq_queue = extractor_info['name']
         else:
             self.rabbitmq_queue = rabbitmq_queue
+        self.extractor_key = extractor_key
+        if extractor_key:
+            self.rabbitmq_queue = "private.%s.%s" % (extractor_key, self.rabbitmq_queue)
         self.channel = None
         self.connection = None
         self.consumer_tag = None
@@ -659,7 +666,7 @@ class RabbitMQConnector(Connector):
         self.channel.queue_declare(queue='error.'+self.rabbitmq_queue, durable=True)
 
         # start the extractor announcer
-        self.announcer = RabbitMQBroadcast(self.rabbitmq_uri, self.extractor_info, self.rabbitmq_queue, self.heartbeat)
+        self.announcer = RabbitMQBroadcast(self.rabbitmq_uri, self.extractor_info, self.clowder_email, self.rabbitmq_queue, self.heartbeat)
         self.announcer.start_thread()
 
     def listen(self):
@@ -765,10 +772,11 @@ class RabbitMQConnector(Connector):
 
 
 class RabbitMQBroadcast:
-    def __init__(self, rabbitmq_uri, extractor_info, rabbitmq_queue, heartbeat):
+    def __init__(self, rabbitmq_uri, extractor_info, clowder_email, rabbitmq_queue, heartbeat):
         self.active = True
         self.rabbitmq_uri = rabbitmq_uri
         self.extractor_info = extractor_info
+        self.clowder_email = clowder_email
         self.rabbitmq_queue = rabbitmq_queue
         self.heartbeat = heartbeat
         self.id = str(uuid.uuid4())
@@ -798,6 +806,7 @@ class RabbitMQBroadcast:
         message = {
             'id': self.id,
             'queue': self.rabbitmq_queue,
+            'owner': self.clowder_email,
             'extractor_info': self.extractor_info
         }
         next_heartbeat = time.time()
