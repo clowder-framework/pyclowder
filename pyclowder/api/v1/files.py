@@ -7,7 +7,7 @@ import json
 import logging
 import os
 import tempfile
-
+import posixpath
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
@@ -43,7 +43,7 @@ def get_download_url(connector, client, fileid, intermediatefileid=None, ext="")
     if not intermediatefileid:
         intermediatefileid = fileid
 
-    url = '%s/api/files/%s?key=%s' % (client.host, intermediatefileid, client.key)
+    url = posixpath.join(client.host, 'api/files/%s?key=%s' % (intermediatefileid, client.key))
     return url
 
 
@@ -65,7 +65,7 @@ def download(connector, client, fileid, intermediatefileid=None, ext=""):
     if not intermediatefileid:
         intermediatefileid = fileid
 
-    url = '%s/api/files/%s?key=%s' % (client.host, intermediatefileid, client.key)
+    url = posixpath.join(client.host, 'api/files/%s?key=%s' % (intermediatefileid, client.key))
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
 
     (inputfile, inputfilename) = tempfile.mkstemp(suffix=ext)
@@ -89,7 +89,7 @@ def download_info(connector, client, fileid):
     fileid -- the file to fetch metadata of
     """
 
-    url = '%s/api/files/%s/metadata?key=%s' % (client.host, fileid, client.key)
+    url = posixpath.join(client.host, 'api/files/%s/metadata?key=%s' % (fileid, client.key))
 
     # fetch data
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
@@ -121,12 +121,28 @@ def download_metadata(connector, client, fileid, extractor=None):
     """
 
     filterstring = "" if extractor is None else "&extractor=%s" % extractor
-    url = '%s/api/files/%s/metadata.jsonld?key=%s%s' % (client.host, fileid, client.key, filterstring)
+    url = posixpath.join(client.host, 'api/files/%s/metadata.jsonld?key=%s%s' % (fileid, client.key, filterstring))
 
     # fetch data
     result = connector.get(url, stream=True, verify=connector.ssl_verify if connector else True)
 
     return result
+
+
+def delete(connector, client, fileid):
+    """Delete file from Clowder.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    client -- ClowderClient containing authentication credentials
+    fileid -- the dataset to delete
+    """
+    url = posixpath.join(client.host, "api/files/%s?key=%s" % (fileid, client.key))
+
+    result = requests.delete(url, verify=connector.ssl_verify if connector else True)
+    result.raise_for_status()
+
+    return json.loads(result.text)
 
 
 def submit_extraction(connector, client, fileid, extractorname):
@@ -139,7 +155,7 @@ def submit_extraction(connector, client, fileid, extractorname):
     extractorname -- registered name of extractor to trigger
     """
 
-    url = "%s/api/files/%s/extractions?key=%s" % (client.host, fileid, client.key)
+    url = posixpath.join(client.host, "api/files/%s/extractions?key=%s" % (fileid, client.key))
 
     result = connector.post(url,
                             headers={'Content-Type': 'application/json'},
@@ -213,7 +229,7 @@ def upload_metadata(connector, client, fileid, metadata):
     connector.message_process({"type": "file", "id": fileid}, "Uploading file metadata.")
 
     headers = {'Content-Type': 'application/json'}
-    url = '%s/api/files/%s/metadata.jsonld?key=%s' % (client.host, fileid, client.key)
+    url = posixpath.join(client.host, 'api/files/%s/metadata.jsonld?key=%s' % (fileid, client.key))
     result = connector.post(url, headers=headers, data=json.dumps(metadata),
                             verify=connector.ssl_verify if connector else True)
 
@@ -239,7 +255,7 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
     headers = {'Content-Type': 'application/json'}
 
     # upload preview
-    url = '%s/api/previews?key=%s' % (client.host, client.key)
+    url = posixpath.join(client.host, 'api/previews?key=%s' % client.key)
     with open(previewfile, 'rb') as filebytes:
         # If a custom preview file MIME type is provided, use it to generate the preview file object.
         if preview_mimetype is not None:
@@ -253,13 +269,13 @@ def upload_preview(connector, client, fileid, previewfile, previewmetadata=None,
 
     # associate uploaded preview with orginal file
     if fileid and not (previewmetadata and 'section_id' in previewmetadata and previewmetadata['section_id']):
-        url = '%s/api/files/%s/previews/%s?key=%s' % (client.host, fileid, previewid, client.key)
+        url = posixpath.join(client.host, 'api/files/%s/previews/%s?key=%s' % (fileid, previewid, client.key))
         result = connector.post(url, headers=headers, data=json.dumps({}),
                                 verify=connector.ssl_verify if connector else True)
 
     # associate metadata with preview
     if previewmetadata is not None:
-        url = '%s/api/previews/%s/metadata?key=%s' % (client.host, previewid, client.key)
+        url = posixpath.join(client.host, 'api/previews/%s/metadata?key=%s' % (previewid, client.key))
         result = connector.post(url, headers=headers, data=json.dumps(previewmetadata),
                                 verify=connector.ssl_verify if connector else True)
 
@@ -279,7 +295,7 @@ def upload_tags(connector, client, fileid, tags):
     connector.message_process({"type": "file", "id": fileid}, "Uploading file tags.")
 
     headers = {'Content-Type': 'application/json'}
-    url = '%s/api/files/%s/tags?key=%s' % (client.host, fileid, client.key)
+    url = posixpath.join(client.host, 'api/files/%s/tags?key=%s' % (fileid, client.key))
     result = connector.post(url, headers=headers, data=json.dumps(tags),
                             verify=connector.ssl_verify if connector else True)
 
@@ -295,7 +311,7 @@ def upload_thumbnail(connector, client, fileid, thumbnail):
     """
 
     logger = logging.getLogger(__name__)
-    url = client.host + 'api/fileThumbnail?key=' + client.key
+    url = posixpath.join(client.host, 'api/fileThumbnail?key=%s' % client.key)
 
     # upload preview
     with open(thumbnail, 'rb') as inputfile:
@@ -303,10 +319,10 @@ def upload_thumbnail(connector, client, fileid, thumbnail):
     thumbnailid = result.json()['id']
     logger.debug("thumbnail id = [%s]", thumbnailid)
 
-    # associate uploaded preview with orginal file/dataset
+    # associate uploaded preview with original file/dataset
     if fileid:
         headers = {'Content-Type': 'application/json'}
-        url = client.host + 'api/files/' + fileid + '/thumbnails/' + thumbnailid + '?key=' + client.key
+        url = posixpath.join(client.host, 'api/files/%s/thumbnails/%s?key=%s' % (fileid, thumbnailid, client.key))
         connector.post(url, headers=headers, data=json.dumps({}), verify=connector.ssl_verify if connector else True)
 
     return thumbnailid
@@ -336,7 +352,7 @@ def upload_to_dataset(connector, client, datasetid, filepath, check_duplicate=Fa
         if filepath.startswith(connector.mounted_paths[source_path]):
             return _upload_to_dataset_local(connector, client, datasetid, filepath)
 
-    url = '%s/api/uploadToDataset/%s?key=%s' % (client.host, datasetid, client.key)
+    url = posixpath.join(client.host, 'api/uploadToDataset/%s?key=%s' % (datasetid, client.key))
 
     if os.path.exists(filepath):
         filename = os.path.basename(filepath)
@@ -365,7 +381,7 @@ def _upload_to_dataset_local(connector, client, datasetid, filepath):
     """
 
     logger = logging.getLogger(__name__)
-    url = '%s/api/uploadToDataset/%s?key=%s' % (client.host, datasetid, client.key)
+    url = posixpath.join(client.host, 'api/uploadToDataset/%s?key=%s' % (datasetid, client.key))
 
     if os.path.exists(filepath):
         # Replace local path with remote path before uploading

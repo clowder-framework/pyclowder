@@ -5,7 +5,7 @@ This module provides simple wrappers around the clowder Geostreams API
 
 import json
 import logging
-
+import posixpath
 import requests
 
 
@@ -36,7 +36,7 @@ def create_sensor(connector, host, key, sensorname, geom, type, region):
         }
     }
 
-    url = "%sapi/geostreams/sensors?key=%s" % (host, key)
+    url = posixpath.join(host, "api/geostreams/sensors?key=%s" % key)
 
     result = requests.post(url, headers={'Content-type': 'application/json'},
                            data=json.dumps(body),
@@ -75,7 +75,7 @@ def create_stream(connector, host, key, streamname, sensorid, geom, properties=N
         "sensor_id": str(sensorid)
     }
 
-    url = "%sapi/geostreams/streams?key=%s" % (host, key)
+    url = posixpath.join(host, "api/geostreams/streams?key=%s" % key)
 
     result = requests.post(url, headers={'Content-type': 'application/json'},
                            data=json.dumps(body),
@@ -116,7 +116,7 @@ def create_datapoint(connector, host, key, streamid, geom, starttime, endtime, p
         "stream_id": str(streamid)
     }
 
-    url = '%sapi/geostreams/datapoints?key=%s' % (host, key)
+    url = posixpath.join(host, 'api/geostreams/datapoints?key=%s' % key)
 
     result = requests.post(url, headers={'Content-type': 'application/json'},
                            data=json.dumps(body),
@@ -141,7 +141,7 @@ def get_sensor_by_name(connector, host, key, sensorname):
 
     logger = logging.getLogger(__name__)
 
-    url = "%sapi/geostreams/sensors?sensor_name=%s&key=%s" % (host, sensorname, key)
+    url = posixpath.join(host, "api/geostreams/sensors?sensor_name=%s&key=%s" % (sensorname, key))
 
     result = requests.get(url,
                           verify=connector.ssl_verify if connector else True)
@@ -167,7 +167,7 @@ def get_sensors_by_circle(connector, host, key, lon, lat, radius=0):
     radius -- distance in meters around point to search
     """
 
-    url = "%sapi/geostreams/sensors?geocode=%s,%s,%s&key=%s" % (host, lat, lon, radius, key)
+    url = posixpath.join(host, "api/geostreams/sensors?geocode=%s,%s,%s&key=%s" % (lat, lon, radius, key))
 
     result = requests.get(url,
                           verify=connector.ssl_verify if connector else True)
@@ -192,10 +192,9 @@ def get_sensors_by_polygon(connector, host, key, coord_list):
     """
 
     coord_strings = [str(i) for i in coord_list]
-    url = "%sapi/geostreams/sensors?geocode=%s&key=%s" % (host, ','.join(coord_strings), key)
+    url = posixpath.join(host, "api/geostreams/sensors?geocode=%s&key=%s" % (','.join(coord_strings), key))
 
-    result = requests.get(url,
-                          verify=connector.ssl_verify if connector else True)
+    result = requests.get(url, verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
 
     # Return first sensor
@@ -218,7 +217,7 @@ def get_stream_by_name(connector, host, key, streamname):
 
     logger = logging.getLogger(__name__)
 
-    url = "%sapi/geostreams/streams?stream_name=%s&key=%s" % (host, streamname, key)
+    url = posixpath.join(host, "api/geostreams/streams?stream_name=%s&key=%s" % (streamname, key))
 
     result = requests.get(url,
                           verify=connector.ssl_verify if connector else True)
@@ -244,7 +243,7 @@ def get_streams_by_circle(connector, host, key, lon, lat, radius=0):
     radius -- distance in meters around point to search
     """
 
-    url = "%sapi/geostreams/stream?geocode=%s,%s,%s&key=%s" % (host, lat, lon, radius, key)
+    url = posixpath.join(host, "api/geostreams/stream?geocode=%s,%s,%s&key=%s" % (lat, lon, radius, key))
 
     result = requests.get(url,
                           verify=connector.ssl_verify if connector else True)
@@ -268,7 +267,7 @@ def get_streams_by_polygon(connector, host, key, coord_list):
     """
 
     coord_strings = [str(i) for i in coord_list]
-    url = "%sapi/geostreams/stream?geocode=%s&key=%s" % (host, ','.join(coord_strings), key)
+    url = posixpath.join(host, "api/geostreams/stream?geocode=%s&key=%s" % (','.join(coord_strings), key))
 
     result = requests.get(url,
                           verify=connector.ssl_verify if connector else True)

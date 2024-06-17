@@ -6,7 +6,7 @@ This module provides simple wrappers around the clowder Files API
 import json
 import logging
 import os
-
+import posixpath
 import requests
 from requests_toolbelt.multipart.encoder import MultipartEncoder
 
@@ -97,6 +97,19 @@ def download_metadata(connector, host, key, fileid, extractor=None):
     result = files.download_metadata(connector, client, fileid, extractor)
     return result.json()
 
+
+def delete(connector, host, key, fileid):
+    """Delete file from Clowder.
+
+        Keyword arguments:
+        connector -- connector information, used to get missing parameters and send status updates
+        host -- the clowder host, including http and port, should end with a /
+        key -- the secret key to login to clowder
+        fileid -- the file to delete
+        """
+    client = ClowderClient(host=host, key=key)
+    result = files.delete(connector, client, fileid)
+    return result
 
 def submit_extraction(connector, host, key, fileid, extractorname):
     """Submit file for extraction by given extractor.
@@ -220,7 +233,7 @@ def upload_tags(connector, host, key, fileid, tags):
     connector.message_process({"type": "file", "id": fileid}, "Uploading file tags.")
 
     headers = {'Content-Type': 'application/json'}
-    url = '%sapi/files/%s/tags?key=%s' % (client.host, fileid, client.key)
+    url = posixpath.join(client.host, 'api/files/%s/tags?key=%s' % (fileid, client.key))
     result = connector.post(url, headers=headers, data=json.dumps(tags),
                             verify=connector.ssl_verify if connector else True)
 
@@ -241,7 +254,7 @@ def upload_thumbnail(connector, host, key, fileid, thumbnail):
     return thumbnail_id
 
 
-def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate=False):
+def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate=False, folder_id=None):
     """Upload file to existing Clowder dataset.
 
     Keyword arguments:
@@ -251,10 +264,11 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
     datasetid -- the dataset that the file should be associated with
     filepath -- path to file
     check_duplicate -- check if filename already exists in dataset and skip upload if so
+    folder_id -- the folder that the file should be associated with
     """
     client = ClowderClient(host=host, key=key)
     if clowder_version == 2:
-        return files.upload_to_dataset(connector, client, datasetid, filepath, check_duplicate)
+        return files.upload_to_dataset(connector, client, datasetid, filepath, check_duplicate, folder_id)
     else:
         logger = logging.getLogger(__name__)
 
@@ -269,7 +283,7 @@ def upload_to_dataset(connector, host, key, datasetid, filepath, check_duplicate
             if filepath.startswith(connector.mounted_paths[source_path]):
                 return _upload_to_dataset_local(connector, client.host, client.key, datasetid, filepath)
 
-        url = '%sapi/uploadToDataset/%s?key=%s' % (client.host, datasetid, client.key)
+        url = posixpath.join(client.host, 'api/uploadToDataset/%s?key=%s' % (datasetid, client.key))
 
         if os.path.exists(filepath):
             filename = os.path.basename(filepath)

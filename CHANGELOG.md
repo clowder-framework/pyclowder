@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/)
 and this project adheres to [Semantic Versioning](https://semver.org/).
 
+
+## 3.0.7 - 2023-10-11
+
+### Added
+
+- Modified v1 and v2 endpoints to ignore trailing slashes on Clowder host URLs.
+
+- ## 3.0.6 - 2023-10-10
+
+### Added
+
+- Allow folder id to be passed to api/v2 upload_to_dataset
+
+- ## 3.0.5 - 2023-10-09
+
+### Added
+
+- Support for deletion of individual files.
+
+## 3.0.4 - 2023-09-27
+
+### Fixed
+
+- Fixed host bug on v1 file thumbnail endpoint.
+
+## 3.0.3 - 2023-08-29
+
+### Added
+
+- Support for Clowder V2 thumbnails endpoints.
+
 ## 3.0.2 - 2023-07-20
 
 ### Added
@@ -45,6 +76,12 @@ This will result in only those donwloads to be counted by users, not extractors.
 ### Changed
 
 - Ask not to track a download from an extractor.
+
+## Unreleased
+
+### Added
+- Add support for `EXTRACTOR_KEY` and `CLOWDER_EMAIL` environment variables to register
+an extractor for just one user.
 
 ## 2.6.0 - 2022-06-14
 

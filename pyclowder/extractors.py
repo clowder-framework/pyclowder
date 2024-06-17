@@ -68,6 +68,8 @@ class Extractor(object):
         rabbitmq_uri = os.getenv('RABBITMQ_URI', "amqp://guest:guest@127.0.0.1/%2f")
         clowder_url = os.getenv("CLOWDER_URL", "")
         registration_endpoints = os.getenv('REGISTRATION_ENDPOINTS', "")
+        extractor_key = os.getenv("EXTRACTOR_KEY", "")
+        clowder_email = os.getenv("CLOWDER_EMAIL", "")
         logging_config = os.getenv("LOGGING")
         mounted_paths = os.getenv("MOUNTED_PATHS", "{}")
         input_file_path = os.getenv("INPUT_FILE_PATH")
@@ -90,6 +92,12 @@ class Extractor(object):
                                  help='pickle file that needs to be processed (only needed for HPC)')
         self.parser.add_argument('--clowderURL', nargs='?', dest='clowder_url', default=clowder_url,
                                  help='Clowder host URL')
+        self.parser.add_argument('--key', '-k', dest="extractor_key",
+                                 default=extractor_key,
+                                 help='Unique key to use for extractor queue ID (sets extractor to private)')
+        self.parser.add_argument('--user', '-u', dest="clowder_email",
+                                 default=clowder_email,
+                                 help='Email address of Clowder user who will initially be assigned ownership (ignored if no --key provided)')
         self.parser.add_argument('--rabbitmqURI', nargs='?', dest='rabbitmq_uri', default=rabbitmq_uri,
                                  help='rabbitMQ URI (default=%s)' % rabbitmq_uri.replace("%", "%%"))
         self.parser.add_argument('--rabbitmqQUEUE', nargs='?', dest='rabbitmq_queuename',
@@ -169,7 +177,9 @@ class Extractor(object):
                                               mounted_paths=json.loads(self.args.mounted_paths),
                                               clowder_url=self.args.clowder_url,
                                               max_retry=self.args.max_retry,
-                                              heartbeat=self.args.heartbeat)
+                                              heartbeat=self.args.heartbeat,
+                                              extractor_key=self.args.extractor_key,
+                                              clowder_email=self.args.clowder_email)
                 connector.connect()
                 threading.Thread(target=connector.listen, name="RabbitMQConnector").start()
 
@@ -217,17 +227,11 @@ class Extractor(object):
 
     def _get_extractor_info_v2(self):
         current_extractor_info = self.extractor_info.copy()
-        old_repository = self.extractor_info['repository']
-        new_repository_list = []
-        for repo in old_repository:
-            repo_type = repo['repType']
-            repo_url = repo['repUrl']
-            new_repo = dict()
-            new_repo['repository_url'] = repo_url
-            new_repo['repository_type'] = repo_type
-            new_repository_list.append(new_repo)
-        current_extractor_info['repository'] = new_repository_list
-        return current_extractor_info
+        listener_data = dict()
+        listener_data['name'] = current_extractor_info['name']
+        listener_data['version'] = current_extractor_info['version']
+        listener_data['description'] = current_extractor_info['version']
+        return listener_data
 
 
     def get_metadata(self, content, resource_type, resource_id, server=None, contexts=None):
@@ -263,7 +267,7 @@ class Extractor(object):
             md["context_url"] = context_url
             md["content"] = content
             md["contents"] = content
-            md["extractor_info"] = new_extractor_info
+            md["listener"] = new_extractor_info
             return md
         else:
             # TODO handle cases where contexts are either not available or are dynamnically generated
