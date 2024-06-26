@@ -1,0 +1,34 @@
+{
+  "@context": "http://clowder.ncsa.illinois.edu/contexts/extractors.jsonld",
+  "name": "ncsa.image_annotator",
+  "version": "2.0",
+  "description": "Saves user image annotations as metadata",
+  "author": "Vismayak Mohanarajan <mohanar2@illinois.edu>",
+  "contributors": [],
+  "contexts": [
+  ],
+  "repository": [
+    {
+      "repType": "git",
+      "repUrl": "https://opensource.ncsa.illinois.edu/stash/scm/cats/pyclowder.git"
+    }
+  ],
+  "process": {
+    "file": [
+      "text/*",
+      "application/json"
+    ]
+  },
+  "external_services": [],
+  "dependencies": [],
+  "bibtex": [],
+  "parameters": {
+    "schema": {
+      "IMAGE_ANNOTATIONS": {
+        "type": "string",
+        "title": "Annotate image",
+        "format": "ImageAnnotator"
+      }
+    }
+  }
+}
