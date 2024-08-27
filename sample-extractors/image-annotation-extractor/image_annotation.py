@@ -11,7 +11,7 @@ from pyclowder.extractors import Extractor
 import pyclowder.files
 
 
-class WordCount(Extractor):
+class ImageAnnotator(Extractor):
     """Count the number of characters, words and lines in a text file."""
     def __init__(self):
         Extractor.__init__(self)
@@ -33,6 +33,7 @@ class WordCount(Extractor):
         logger = logging.getLogger(__name__)
         inputfile = resource["local_paths"][0]
         file_id = resource['id']
+        print(f"Parameters: {parameters}")
 
         if 'parameters' in parameters:
             params = None
@@ -58,5 +59,5 @@ class WordCount(Extractor):
             pyclowder.files.upload_metadata(connector, host, secret_key, file_id, metadata)
 
 if __name__ == "__main__":
-    extractor = WordCount()
+    extractor = ImageAnnotator()
     extractor.start()
