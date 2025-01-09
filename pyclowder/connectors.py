@@ -277,7 +277,6 @@ class Connector(object):
         # Check if file is present in a minio mount (only valid for Clowder v2)
         if self.minio_mounted_path and file_id:
             minio_file_path = self.minio_mounted_path + "/" + file_id
-            print("Checking for minio local file: %s" % minio_file_path)
             if os.path.isfile(minio_file_path):
                 return minio_file_path
 
@@ -327,7 +326,14 @@ class Connector(object):
         temp_link_dir = tempfile.mkdtemp()
         tmp_dirs_created.append(temp_link_dir)
 
-        # first check if any files in dataset accessible locally
+        # Check if miniomounted path is set and if the file is in the minio mounted path
+        if self.minio_mounted_path:
+            for file in resource['files']:
+                file_path = self._check_for_local_file(file, file['id'])
+                if file_path:
+                    # print("Found file locally: %s" % file_path)
+                    located_files.append(file_path)
+        #check if any files in dataset accessible locally
         ds_file_list = pyclowder.datasets.get_file_list(self, host, secret_key, resource["id"])
         for ds_file in ds_file_list:
             file_path = self._check_for_local_file(ds_file)
