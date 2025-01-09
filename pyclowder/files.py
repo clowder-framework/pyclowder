@@ -38,7 +38,7 @@ def get_download_url(connector, host, key, fileid, intermediatefileid=None, ext=
 
 
 # pylint: disable=too-many-arguments
-def download(connector, host, key, fileid, intermediatefileid=None, ext="", tracking=True):
+def download(connector, host, key, fileid, intermediatefileid=None, ext="", tracking=True, mounted_filesystem = False, mounted_dir = "None"):
     """Download file to be processed from Clowder.
 
     Keyword arguments:
@@ -49,7 +49,14 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext="", trac
     intermediatefileid -- either same as fileid, or the intermediate file to be used
     ext -- the file extension, the downloaded file will end with this extension
     tracking -- should the download action be tracked
+    mounted_filesystem -- if the minio storage is mounted to the local filesystem
     """
+
+    if mounted_filesystem:
+        if mounted_dir == "None":
+            mounted_dir = "/clowderfs"
+        inputfilename = "/clowderfs/" + fileid
+        return inputfilename
     client = ClowderClient(host=host, key=key)
     inputfilename = files.download(connector, client, fileid, intermediatefileid, ext)
     return inputfilename
