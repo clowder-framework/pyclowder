@@ -72,6 +72,7 @@ class Extractor(object):
         clowder_email = os.getenv("CLOWDER_EMAIL", "")
         logging_config = os.getenv("LOGGING")
         mounted_paths = os.getenv("MOUNTED_PATHS", "{}")
+        minio_mounted_path = os.getenv("MINIO_MOUNTED_PATH", "")
         input_file_path = os.getenv("INPUT_FILE_PATH")
         output_file_path = os.getenv("OUTPUT_FILE_PATH")
         connector_default = "RabbitMQ"
@@ -105,6 +106,8 @@ class Extractor(object):
                                  help='rabbitMQ queue name (default=%s)' % rabbitmq_queuename)
         self.parser.add_argument('--mounts', '-m', dest="mounted_paths", default=mounted_paths,
                                  help="dictionary of {'remote path':'local path'} mount mappings")
+        self.parser.add_argument('--minio-mount', dest="minio_mounted_path", default=minio_mounted_path,
+                                    help="path to mount Minio storage")
         self.parser.add_argument('--input-file-path', '-ifp', dest="input_file_path", default=input_file_path,
                                  help="Full path to local input file to be processed (used by Big Data feature)")
         self.parser.add_argument('--output-file-path', '-ofp', dest="output_file_path", default=output_file_path,
@@ -175,6 +178,7 @@ class Extractor(object):
                                               rabbitmq_key=rabbitmq_key,
                                               rabbitmq_queue=self.args.rabbitmq_queuename,
                                               mounted_paths=json.loads(self.args.mounted_paths),
+                                              minio_mounted_path=self.args.minio_mounted_path,
                                               clowder_url=self.args.clowder_url,
                                               max_retry=self.args.max_retry,
                                               heartbeat=self.args.heartbeat,
@@ -193,6 +197,7 @@ class Extractor(object):
                                          process_message=self.process_message,
                                          picklefile=self.args.hpc_picklefile,
                                          mounted_paths=json.loads(self.args.mounted_paths),
+                                         minio_mounted_path=self.args.minio_mounted_path,
                                          max_retry=self.args.max_retry)
                 threading.Thread(target=connector.listen, name="HPCConnector").start()
 
