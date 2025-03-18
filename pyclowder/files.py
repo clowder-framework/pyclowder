@@ -51,6 +51,14 @@ def download(connector, host, key, fileid, intermediatefileid=None, ext="", trac
     tracking -- should the download action be tracked
     """
     client = ClowderClient(host=host, key=key)
+    # Check if minio mounted path is set
+    minio_mounted_path = os.getenv("MINIO_MOUNTED_PATH", "")
+    if minio_mounted_path:
+        # Check if the file is stored in Minio mount path
+        minio_file_path = minio_mounted_path + "/" + fileid
+        if os.path.isfile(minio_file_path):
+            return minio_file_path
+    # Else download the file from Clowder
     inputfilename = files.download(connector, client, fileid, intermediatefileid, ext)
     return inputfilename
 

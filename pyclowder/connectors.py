@@ -63,7 +63,7 @@ class Connector(object):
     """
 
     def __init__(self, extractor_name, extractor_info, check_message=None, process_message=None, ssl_verify=True,
-                 mounted_paths=None, clowder_url=None, max_retry=10, extractor_key=None, clowder_email=None):
+                 mounted_paths=None, minio_mounted_path=None, clowder_url=None, max_retry=10, extractor_key=None, clowder_email=None):
         self.extractor_name = extractor_name
         self.extractor_info = extractor_info
         self.check_message = check_message
@@ -73,6 +73,10 @@ class Connector(object):
             self.mounted_paths = {}
         else:
             self.mounted_paths = mounted_paths
+        if minio_mounted_path is None:
+            self.minio_mounted_path = ''
+        else:
+            self.minio_mounted_path = minio_mounted_path
         self.clowder_url = clowder_url
         self.clowder_email = clowder_email
         self.extractor_key = extractor_key
@@ -268,8 +272,13 @@ class Connector(object):
                 "metadata": body['metadata']
             }
 
-    def _check_for_local_file(self, file_metadata):
+    def _check_for_local_file(self, file_metadata, file_id=None):
         """ Try to get pointer to locally accessible copy of file for extractor."""
+        # Check if file is present in a minio mount (only valid for Clowder v2)
+        if self.minio_mounted_path and file_id:
+            minio_file_path = self.minio_mounted_path + "/" + file_id
+            if os.path.isfile(minio_file_path):
+                return minio_file_path
 
         # first check if file is accessible locally
         if 'filepath' in file_metadata:
@@ -278,7 +287,6 @@ class Connector(object):
             # first simply check if file is present locally
             if os.path.isfile(file_path):
                 return file_path
-
             # otherwise check any mounted paths...
             if len(self.mounted_paths) > 0:
                 for source_path in self.mounted_paths:
@@ -317,7 +325,6 @@ class Connector(object):
         temp_link_dir = tempfile.mkdtemp()
         tmp_dirs_created.append(temp_link_dir)
 
-        # first check if any files in dataset accessible locally
         ds_file_list = pyclowder.datasets.get_file_list(self, host, secret_key, resource["id"])
         for ds_file in ds_file_list:
             file_path = self._check_for_local_file(ds_file)
@@ -333,7 +340,7 @@ class Connector(object):
 
                 # Also get file metadata in format expected by extrator
                 (file_md_dir, file_md_tmp) = self._download_file_metadata(host, secret_key, ds_file['id'],
-                                                                          ds_file['filepath'])
+                                                                        ds_file['filepath'])
                 located_files.append(file_path)
                 located_files.append(file_md_tmp)
                 tmp_files_created.append(file_md_tmp)
@@ -427,7 +434,7 @@ class Connector(object):
                         try:
                             if check_result != pyclowder.utils.CheckMessage.bypass:
                                 file_metadata = pyclowder.files.download_info(self, host, secret_key, resource["id"])
-                                file_path = self._check_for_local_file(file_metadata)
+                                file_path = self._check_for_local_file(file_metadata, resource["id"])
                                 if not file_path:
                                     file_path = pyclowder.files.download(self, host, secret_key, resource["id"],
                                                                          resource["intermediate_id"],
@@ -628,10 +635,10 @@ class RabbitMQConnector(Connector):
     # pylint: disable=too-many-arguments
     def __init__(self, extractor_name, extractor_info,
                  rabbitmq_uri, rabbitmq_key=None, rabbitmq_queue=None,
-                 check_message=None, process_message=None, ssl_verify=True, mounted_paths=None,
+                 check_message=None, process_message=None, ssl_verify=True, mounted_paths=None, minio_mounted_path=None,
                  heartbeat=10, clowder_url=None, max_retry=10, extractor_key=None, clowder_email=None):
         super(RabbitMQConnector, self).__init__(extractor_name, extractor_info, check_message, process_message,
-                                                ssl_verify, mounted_paths, clowder_url, max_retry, extractor_key, clowder_email)
+                                                ssl_verify, mounted_paths, minio_mounted_path, clowder_url, max_retry, extractor_key, clowder_email)
         self.rabbitmq_uri = rabbitmq_uri
         self.rabbitmq_key = rabbitmq_key
         if rabbitmq_queue is None:
@@ -756,7 +763,7 @@ class RabbitMQConnector(Connector):
                 job_id = None
 
             self.worker = RabbitMQHandler(self.extractor_name, self.extractor_info, job_id, self.check_message,
-                                          self.process_message, self.ssl_verify, self.mounted_paths, self.clowder_url,
+                                          self.process_message, self.ssl_verify, self.mounted_paths, self.minio_mounted_path, self.clowder_url,
                                           method, header, body)
             self.worker.start_thread(json_body)
 
@@ -836,10 +843,10 @@ class RabbitMQHandler(Connector):
     """
 
     def __init__(self, extractor_name, extractor_info, job_id, check_message=None, process_message=None, ssl_verify=True,
-                 mounted_paths=None, clowder_url=None, method=None, header=None, body=None, max_retry=10):
+                 mounted_paths=None, minio_mounted_path=None, clowder_url=None, method=None, header=None, body=None, max_retry=10):
 
         super(RabbitMQHandler, self).__init__(extractor_name, extractor_info, check_message, process_message,
-                                              ssl_verify, mounted_paths, clowder_url, max_retry)
+                                              ssl_verify, mounted_paths, minio_mounted_path,clowder_url, max_retry)
         self.method = method
         self.header = header
         self.body = body
