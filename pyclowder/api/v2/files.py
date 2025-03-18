@@ -423,7 +423,7 @@ def upload_multiple_files(connector, client, datasetid, filepaths, folder_id=Non
     files = []
     for filepath in filepaths:
         if os.path.exists(filepath):
-            files.append(os.path.basename(filepath), open(filepath, 'rb'))
+            files.append(("files", open(filepath, 'rb')))
         else:
             logger.error("unable to upload file %s (not found)", filepath)
             return None

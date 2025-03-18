@@ -361,20 +361,21 @@ def create_folder(connector, client, datasetid, foldername, parent_folder=None):
         parent_folder -- the id of the parent folder, if not provided, the folder will be created at the root of the dataset
     """
     
+    logger = logging.getLogger(__name__)
+
     url = posixpath.join(client.host, 'api/v2/datasets/%s/folders' % datasetid)
     headers = {"X-API-KEY": client.key,
                "Content-Type": "application/json"}
 
+    folder_data = {"name": foldername}
     if parent_folder is not None:
-        folder_data = json.dumps({"name": foldername, "parent_folder": parent_folder})
-    else:
-        folder_data = json.dumps({"name": foldername})
+        folder_data["parent_folder"] = parent_folder  # Add only if provided
     
     result = requests.post(url, headers=headers, json=folder_data,
                            verify=connector.ssl_verify if connector else True)
     result.raise_for_status()
     folder_id = result.json()["id"]
-    logger.debug("created folder id = [%s]", folder_id)
+    logger.debug("created folder id = %s", folder_id)
     return folder_id
 
 
