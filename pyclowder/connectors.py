@@ -309,8 +309,6 @@ class Connector(object):
         (fd, md_file) = tempfile.mkstemp(suffix=md_name, dir=md_dir)
 
         with os.fdopen(fd, "wb") as tmp_file:
-            print("Writing metadata to %s" % md_file)
-            print(file_md)
             tmp_file.write(json.dumps(file_md))
 
         return (md_dir, md_file)
@@ -328,23 +326,6 @@ class Connector(object):
         temp_link_dir = tempfile.mkdtemp()
         tmp_dirs_created.append(temp_link_dir)
 
-        # Check if miniomounted path is set and if the file is in the minio mounted path
-        # if self.minio_mounted_path:
-        #     for file in resource['files']:
-        #         file_path = self._check_for_local_file(file, file['id'])
-        #         if not file_path:
-        #             missing_files.append(file)
-        #         else:
-        #             md_file_path = file['name'].split('.')[0] + "_metadata.json"
-        #             (file_md_dir, file_md_tmp) = self._download_file_metadata(host, secret_key, file['id'], md_file_path)
-        #             located_files.append(file_path)
-        #             located_files.append(file_md_tmp)
-        #             tmp_files_created.append(file_md_tmp)
-        #             tmp_dirs_created.append(file_md_dir)
-                
-        # else:
-        
-        #check if any files in dataset accessible locally
         ds_file_list = pyclowder.datasets.get_file_list(self, host, secret_key, resource["id"])
         for ds_file in ds_file_list:
             file_path = self._check_for_local_file(ds_file)
@@ -404,7 +385,6 @@ class Connector(object):
             except Exception as e:
                 logger.exception("No files found and download failed")
 
-        print("File paths: %s" % file_paths)
         return (file_paths, tmp_files_created, tmp_dirs_created)
 
     # pylint: disable=too-many-branches,too-many-statements
