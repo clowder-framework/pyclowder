@@ -349,3 +349,32 @@ def upload_thumbnail(connector, client, datasetid, thumbnail):
         return result.json()["thumbnail_id"]
     else:
         logger.error("unable to upload thumbnail %s to dataset %s", thumbnail, datasetid)
+
+def create_folder(connector, client, datasetid, foldername, parent_folder=None):
+    """Create a new folder in Clowder.
+
+        Keyword arguments:
+        connector -- connector information, used to get missing parameters and send status updates
+        client -- ClowderClient containing authentication credentials
+        datasetid -- the dataset that the folder should be associated with
+        foldername -- the name of the folder to create
+        parent_folder -- the id of the parent folder, if not provided, the folder will be created at the root of the dataset
+    """
+    
+    url = posixpath.join(client.host, 'api/v2/datasets/%s/folders' % datasetid)
+    headers = {"X-API-KEY": client.key,
+               "Content-Type": "application/json"}
+
+    if parent_folder is not None:
+        folder_data = json.dumps({"name": foldername, "parent_folder": parent_folder})
+    else:
+        folder_data = json.dumps({"name": foldername})
+    
+    result = requests.post(url, headers=headers, json=folder_data,
+                           verify=connector.ssl_verify if connector else True)
+    result.raise_for_status()
+    folder_id = result.json()["id"]
+    logger.debug("created folder id = [%s]", folder_id)
+    return folder_id
+
+

@@ -406,3 +406,40 @@ def _upload_to_dataset_local(connector, client, datasetid, filepath):
         return uploadedfileid
     else:
         logger.error("unable to upload local file %s (not found)", filepath)
+
+
+def upload_multiple_files(connector, client, datasetid, filepaths, folder_id=None):
+    """Upload multiple files to existing Clowder dataset.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    client -- ClowderClient containing authentication credentials
+    datasetid -- the dataset that the files should be associated with
+    filepaths -- list of file paths to upload
+    folder_id -- the folder that the files should be uploaded to
+    """
+    logger = logging.getLogger(__name__)
+
+    files = []
+    for filepath in filepaths:
+        if os.path.exists(filepath):
+            files.append(os.path.basename(filepath), open(filepath, 'rb'))
+        else:
+            logger.error("unable to upload file %s (not found)", filepath)
+            return None
+    
+
+    url = posixpath.join(client.host, 'api/v2/datasets/%s/filesMultiple' % datasetid)
+    if folder_id is not None:
+        url = '%s?folder_id=%s' % (url, folder_id)
+    
+    headers = {"X-API-KEY": client.key}
+    response = connector.post(url, files=files, headers=headers,
+                              verify=connector.ssl_verify if connector else True)
+                              
+    if response.status_code == 200:
+        return response.json()
+    else:
+        logger.error("Error uploading files to dataset %s", datasetid)
+        return None
+

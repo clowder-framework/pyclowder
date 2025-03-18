@@ -260,3 +260,23 @@ def upload_thumbnail(connector, host, key, datasetid, thumbnail):
 
     client = ClowderClient(host=host, key=key)
     return datasets.upload_thumbnail(connector, client, datasetid, thumbnail)
+
+
+def create_folder(connector, host, key, datasetid, foldername, parent_folder_id=None):
+    """Create a new folder in Clowder.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    datasetid -- the dataset that the folder should be associated with
+    foldername -- the name of the folder to create
+    parent_folder_id -- the id of the parent folder, if not provided, the folder will be created at the root of the dataset
+    """
+    logger = logging.getLogger(__name__)
+    if clowder_version == 2:
+        client = ClowderClient(host=host, key=key)
+        return datasets.create_folder(connector, client, datasetid, foldername, parent_folder_id)
+    else:
+        logger.error("Function not supported for Clowder version %s", clowder_version)
+        return None

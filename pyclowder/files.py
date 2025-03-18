@@ -322,3 +322,22 @@ def _upload_to_dataset_local(connector, host, key, datasetid, filepath):
     client = ClowderClient(host=host, key=key)
     uploadedfileid = files._upload_to_dataset_local(connector, client, datasetid, filepath)
     return uploadedfileid
+
+def upload_multiple_files(connector, host, key, datasetid, filepaths, folder_id=None):
+    """Upload multiple files to existing Clowder dataset.
+
+    Keyword arguments:
+    connector -- connector information, used to get missing parameters and send status updates
+    host -- the clowder host, including http and port, should end with a /
+    key -- the secret key to login to clowder
+    datasetid -- the dataset that the files should be associated with
+    filepaths -- list of file paths to upload
+    folder_id -- the folder that the files should be uploaded to
+    """
+    client = ClowderClient(host=host, key=key)
+    if clowder_version == 2:
+        return files.upload_multiple_files(connector, client, datasetid, filepaths, folder_id)
+    else:
+        logger = logging.getLogger(__name__)
+        logger.error("Function not supported for Clowder version %s", clowder_version)
+        return None
