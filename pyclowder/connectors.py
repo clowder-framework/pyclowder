@@ -287,7 +287,6 @@ class Connector(object):
             # first simply check if file is present locally
             if os.path.isfile(file_path):
                 return file_path
-            
             # otherwise check any mounted paths...
             if len(self.mounted_paths) > 0:
                 for source_path in self.mounted_paths:
